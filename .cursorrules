@@ -1,0 +1,409 @@
+project:
+  name: "GitHub Trend API Service"
+  description: |
+    这是一个基于 NestJS 的后端接口服务，使用 TypeScript 语言开发。
+    项目目标是构建一个 GitHub Trending 仓库的数据采集和查询服务。
+
+background: |
+  本项目面向的用户是不熟悉代码的初中生，需要通过简单的 API 接口获取 GitHub 上热门的项目信息。
+  开发团队由具有 20 年经验的产品经理和全栈工程师组成，精通 ChatGPT 等 AI 模型的应用。
+
+tech_stack:
+  framework: "NestJS"
+  packageManager: "pnpm"
+  language: "TypeScript"
+  database: "MongoDB"
+  documentation: "Swagger"
+  authentication: 
+    - "No Auth Mode"
+    - "Google OAuth"
+
+features:
+  - name: "RESTful API 接口"
+    description: |
+      - 提供标准的 RESTful API
+      - 使用 Swagger UI 提供接口文档
+      - 支持 API 版本控制
+
+  - name: "认证系统"
+    description: |
+      支持两种认证模式，通过配置文件切换：
+      1. 无认证模式：开放访问
+      2. Google 认证模式：使用 Google OAuth 2.0
+
+  - name: "GitHub Trending 数据采集"
+    description: |
+      - 爬取 GitHub Trending 仓库数据
+      - 过滤条件：Star 数超过 4000
+      - 自动分析并标记仓库标签（Tags）
+      - 数据持久化到 MongoDB
+
+  - name: "数据查询 API"
+    description: |
+      提供灵活的仓库数据查询接口：
+      - 支持按 Star 数过滤
+      - 支持按 Tag 过滤
+      - 支持自定义排序
+      - 支持分页查询
+
+architecture:
+  - layer: "Controller Layer"
+    responsibility: "处理 HTTP 请求，参数验证，返回响应"
+
+  - layer: "Service Layer"
+    responsibility: "实现业务逻辑，数据处理，GitHub 数据爬取"
+
+  - layer: "Repository Layer"
+    responsibility: "数据库操作，数据持久化"
+
+  - layer: "Auth Layer"
+    responsibility: "认证逻辑，Google OAuth 集成"
+
+rules:
+  # NestJS 项目结构规范
+  - description: "遵循 NestJS 模块化架构"
+    pattern: "src/**/*.module.ts"
+    rule: |
+      每个功能模块都应该有自己的 module 文件
+      确保正确导入和导出必要的模块
+      使用 @Module 装饰器进行模块配置
+
+  - description: "控制器命名规范"
+    pattern: "src/**/*.controller.ts"
+    rule: |
+      控制器类名应以 Controller 结尾
+      使用 @Controller() 装饰器定义路由前缀
+      遵循 RESTful API 设计原则
+      为每个端点添加适当的 HTTP 方法装饰器
+
+  - description: "服务层实现规范"
+    pattern: "src/**/*.service.ts"
+    rule: |
+      服务类名应以 Service 结尾
+      使用 @Injectable() 装饰器
+      实现业务逻辑，保持控制器层简洁
+      使用依赖注入管理服务依赖
+
+  # 数据库相关规范
+  - description: "实体类定义规范"
+    pattern: "src/**/*.entity.ts"
+    rule: |
+      实体类名应与表名对应
+      使用 TypeORM 装饰器定义列属性
+      添加适当的数据验证装饰器
+      实现必要的关联关系
+
+  # DTO 规范
+  - description: "DTO 类规范"
+    pattern: "src/**/*.dto.ts"
+    rule: |
+      使用 class-validator 进行数据验证
+      DTO 类名应以 Dto 结尾
+      为每个属性添加适当的验证装饰器
+      区分创建和更新 DTO
+
+  # 异常处理规范
+  - description: "异常过滤器规范"
+    pattern: "src/**/*.filter.ts"
+    rule: |
+      实现 ExceptionFilter 接口
+      使用 @Catch() 装饰器捕获特定异常
+      统一异常响应格式
+      记录适当的错误日志
+
+  # 中间件规范
+  - description: "中间件实现规范"
+    pattern: "src/**/*.middleware.ts"
+    rule: |
+      实现 NestMiddleware 接口
+      保持中间件功能单一
+      正确处理 next() 调用
+      添加适当的错误处理
+
+  # 配置文件规范
+  - description: "配置文件规范"
+    pattern: "src/config/**/*.ts"
+    rule: |
+      使用 ConfigModule 管理配置
+      区分开发和生产环境配置
+      使用环境变量进行敏感信息配置
+      提供配置验证
+
+  # 测试规范
+  - description: "单元测试规范"
+    pattern: "src/**/*.spec.ts"
+    rule: |
+      为每个服务和控制器编写单元测试
+      使用 Jest 作为测试框架
+      模拟外部依赖
+      测试覆盖率要求达到 80% 以上
+
+  # 代码风格规范
+  - description: "代码风格规范"
+    pattern: "src/**/*.ts"
+    rule: |
+      使用 ESLint 和 Prettier 进行代码格式化
+      遵循 TypeScript 最佳实践
+      添加适当的代码注释
+      使用有意义的变量和函数命名
+
+  # 文档规范
+  - description: "API 文档规范"
+    pattern: "src/**/*.controller.ts"
+    rule: |
+      使用 Swagger 装饰器添加 API 文档
+      为每个端点提供详细的描述
+      标注请求和响应类型
+      包含示例数据
+
+  # 日志规范
+  - description: "日志规范"
+    pattern: "src/**/*.ts"
+    rule: |
+      使用 NestJS 内置的 Logger
+      区分不同级别的日志
+      包含必要的上下文信息
+      避免敏感信息泄露
+
+  # 安全规范
+  - description: "安全实践规范"
+    pattern: "src/**/*.ts"
+    rule: |
+      实现适当的身份认证和授权
+      使用 CORS 保护
+      实现速率限制
+      防止常见的安全漏洞
+
+  # TypeScript 编码规范
+  - description: "TypeScript 类型定义规范"
+    pattern: "src/**/*.ts"
+    rule: |
+      # 类型定义
+      - 优先使用接口而不是类型别名
+      - 为所有函数参数和返回值定义类型
+      - 避免使用 any 类型，优先使用 unknown
+      - 使用 readonly 修饰不可变属性
+      - 合理使用泛型增加代码复用性
+      
+      # 命名规范
+      - 接口名使用 I 前缀（如 IUser）
+      - 类型别名使用 T 前缀（如 TConfig）
+      - 枚举名使用 E 前缀（如 EStatus）
+      - 常量使用 UPPER_SNAKE_CASE
+      - 变量和函数使用 camelCase
+      - 类名使用 PascalCase
+      
+      # 代码组织
+      - 相关的类型定义放在单独的 types.ts 文件中
+      - 导出的类型声明放在文件顶部
+      - 使用命名空间组织相关的类型定义
+      
+      # 最佳实践
+      - 使用 strict 模式
+      - 启用 strictNullChecks
+      - 使用可辨识联合类型代替枚举
+      - 合理使用类型断言，优先使用类型收窄
+      - 使用类型守卫进行类型检查
+
+  - description: "TypeScript 高级特性使用规范"
+    pattern: "src/**/*.ts"
+    rule: |
+      # 装饰器使用
+      - 遵循装饰器组合原则
+      - 使用装饰器工厂函数传递参数
+      - 为自定义装饰器编写类型定义
+      
+      # 泛型使用
+      - 使用有意义的泛型参数名
+      - 合理使用泛型约束
+      - 使用泛型实现可复用的工具类型
+      
+      # 类型工具
+      - 合理使用 Partial<T>, Pick<T>, Omit<T> 等工具类型
+      - 使用 Record<K,T> 定义对象类型
+      - 使用 Readonly<T> 确保类型不可变性
+
+  # 单元测试规范详细版
+  - description: "详细单元测试规范"
+    pattern: "src/**/*.spec.ts"
+    rule: |
+      # 测试文件组织
+      - 测试文件与源文件同目录
+      - 测试文件名使用 .spec.ts 后缀
+      - 使用 describe 块组织相关测试
+      - 使用 context 描述测试场景
+      
+      # 测试用例编写
+      - 每个测试用例只测试一个功能点
+      - 测试用例描述使用 "should..." 开头
+      - 遵循 AAA (Arrange-Act-Assert) 模式
+      - 使用有意义的测试数据
+      
+      # 测试覆盖率要求
+      - 语句覆盖率 (Statements) >= 80%
+      - 分支覆盖率 (Branches) >= 80%
+      - 函数覆盖率 (Functions) >= 90%
+      - 行覆盖率 (Lines) >= 80%
+      
+      # Mock 和 Stub
+      - 使用 @nestjs/testing 的 TestingModule
+      - 正确模拟外部依赖
+      - 使用 jest.spyOn() 监视方法调用
+      - 为异步操作使用 fake timers
+      
+      # 测试数据管理
+      - 使用工厂函数创建测试数据
+      - 在 beforeEach 中重置测试状态
+      - 使用 fixtures 管理大型测试数据
+      - 避免测试间数据互相依赖
+      
+      # 异常测试
+      - 测试预期的错误情况
+      - 验证错误消息和类型
+      - 测试边界条件
+      - 测试异常处理中间件
+      
+      # 集成测试
+      - 使用 supertest 测试 HTTP 端点
+      - 测试数据库操作使用测试数据库
+      - 测试完整的请求-响应周期
+      - 验证中间件和管道的集成
+      
+      # 性能测试
+      - 设置测试超时限制
+      - 测试并发处理能力
+      - 验证内存使用情况
+      - 测试数据库查询性能
+
+  - description: "测试代码质量规范"
+    pattern: "src/**/*.spec.ts"
+    rule: |
+      # 测试代码可维护性
+      - 避免测试代码重复
+      - 抽取共用的测试辅助函数
+      - 保持测试代码简洁清晰
+      - 添加必要的测试注释
+      
+      # 测试命名规范
+      - 描述测试目的而不是实现
+      - 使用一致的命名约定
+      - 清晰表达测试场景
+      - 使用正面的描述语言
+      
+      # 测试隔离
+      - 每个测试用例相互独立
+      - 正确清理测试资源
+      - 避免测试顺序依赖
+      - 使用适当的作用域隔离
+
+project_structure:
+  root:
+    - src/
+    - test/
+    - dist/
+    - node_modules/
+    - .env
+    - .env.example
+    - .gitignore
+    - package.json
+    - tsconfig.json
+    - nest-cli.json
+    - README.md
+
+  src:
+    - main.ts                 # 应用程序入口文件
+    - app.module.ts           # 根模块
+    - app.controller.ts       # 根控制器
+    - app.service.ts         # 根服务
+    - config/                # 配置文件目录
+      - configuration.ts     # 配置定义
+      - validation.ts        # 配置验证
+    - common/               # 通用模块目录
+      - constants/          # 常量定义
+      - decorators/        # 自定义装饰器
+      - filters/           # 异常过滤器
+      - guards/            # 守卫
+      - interceptors/      # 拦截器
+      - interfaces/        # 接口定义
+      - middleware/        # 中间件
+      - pipes/            # 管道
+      - utils/            # 工具函数
+    - modules/            # 功能模块目录
+      - auth/             # 认证模块
+        - dto/           # 数据传输对象
+        - entities/      # 实体定义
+        - guards/        # 认证守卫
+        - strategies/    # 认证策略
+        - auth.module.ts
+        - auth.service.ts
+        - auth.controller.ts
+      - github-trend/     # GitHub趋势模块
+        - dto/
+        - entities/
+        - interfaces/
+        - github-trend.module.ts
+        - github-trend.service.ts
+        - github-trend.controller.ts
+        - github-trend.repository.ts
+    - database/           # 数据库相关
+      - schemas/         # MongoDB Schema 定义
+      - migrations/      # 数据库迁移脚本
+      - seeds/          # 数据库种子文件
+
+  test:
+    - e2e/              # 端到端测试
+    - unit/             # 单元测试
+    - fixtures/         # 测试数据
+
+directory_rules:
+  - pattern: "src/modules/*/"
+    rule: |
+      每个功能模块应包含：
+      - *.module.ts     # 模块定义
+      - *.controller.ts # 控制器
+      - *.service.ts    # 服务
+      - dto/           # 数据传输对象
+      - entities/      # 实体定义
+      - interfaces/    # 接口定义
+      - tests/         # 模块测试
+
+  - pattern: "src/common/"
+    rule: |
+      通用代码应：
+      - 高度可复用
+      - 与具体业务逻辑无关
+      - 提供清晰的文档
+      - 包含单元测试
+
+  - pattern: "src/config/"
+    rule: |
+      配置文件应：
+      - 使用环境变量
+      - 提供类型定义
+      - 包含配置验证
+      - 区分环境配置
+
+  - pattern: "test/"
+    rule: |
+      测试文件应：
+      - 遵循相同的目录结构
+      - 使用 .spec.ts 后缀
+      - 包含必要的测试数据
+      - 独立的测试环境配置
+
+file_naming:
+  rules: |
+    - 使用 kebab-case 命名文件
+    - 模块文件使用功能名称
+    - 测试文件添加 .spec 后缀
+    - 类型定义文件使用 .interface.ts 或 .type.ts
+    - 常量文件使用 .constant.ts
+    - 配置文件使用 .config.ts
+
+module_organization:
+  rules: |
+    - 每个功能模块独立目录
+    - 相关功能组织在同一模块
+    - 避免循环依赖
+    - 使用特性模块而不是共享模块
+    - 导出必要的接口和类型
