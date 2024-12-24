@@ -1,6 +1,6 @@
 import { IsString, IsNumber } from 'class-validator';
 
-export class GitHubTrendDto {
+export class GithubTrendDto {
   @IsString()
   readonly name: string;
 

@@ -1,13 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
-import { GitHubTrendService } from './github-trend.service';
-import { GitHubTrendDto } from './dto/github-trend.dto';
+import { GithubTrendService } from './github-trend.service';
+import { GithubTrendDto } from './dto/github-trend.dto';
 
 @Controller('trending')
-export class GitHubTrendController {
-  constructor(private readonly githubTrendService: GitHubTrendService) {}
+export class GithubTrendController {
+  constructor(private readonly githubTrendService: GithubTrendService) {}
 
   @Get()
-  async getTrendingRepos(): Promise<GitHubTrendDto[]> {
+  async getTrendingRepos(): Promise<GithubTrendDto[]> {
     return this.githubTrendService.fetchTrendingRepos();
   }
 }

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
-import { GitHubTrendModule } from './modules/github-trend/github-trend.module';
+import { GithubTrendModule } from './modules/github-trend/github-trend.module';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { GitHubTrendModule } from './modules/github-trend/github-trend.module';
         uri: process.env.MONGODB_URI,
       }),
     }),
-    GitHubTrendModule,
+    GithubTrendModule,
   ],
   controllers: [],
   providers: [],

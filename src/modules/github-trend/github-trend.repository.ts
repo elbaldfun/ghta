@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GitHubTrendDto } from './dto/github-trend.dto';
+import { GithubTrendDto } from './dto/github-trend.dto';
 
 @Injectable()
-export class GitHubTrendRepository {
-  constructor(@InjectModel('GitHubTrend') private readonly model: Model<GitHubTrendDto>) {}
+export class GithubTrendRepository {
+  constructor(@InjectModel('GitHubTrend') private readonly model: Model<GithubTrendDto>) {}
 
-  async saveTrendingRepo(repo: GitHubTrendDto): Promise<GitHubTrendDto> {
+  async saveTrendingRepo(repo: GithubTrendDto): Promise<GithubTrendDto> {
     const createdRepo = new this.model(repo);
     return createdRepo.save();
   }
 
-  async findAll(): Promise<GitHubTrendDto[]> {
+  async findAll(): Promise<GithubTrendDto[]> {
     return this.model.find().exec();
   }
 }
