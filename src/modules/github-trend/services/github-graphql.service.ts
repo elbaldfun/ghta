@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {inspect} from 'util'
 import axios from 'axios';
 
 @Injectable()
@@ -25,10 +26,25 @@ export class GithubGraphqlService {
       const response = await axios.post(
         this.apiUrl,
         {
+
+                      //  homepageUrl
+                      //  readme: object(expression: "HEAD:README.md") {
+                      //   ... on Blob {
+                      //     text
+                      //   }
+                      // }
           query: `
             query {
               search(query: "stars:>0", type: REPOSITORY, first: 1) {
+                pageInfo {
+                  hasPreviousPage
+                  hasNextPage
+                  startCursor
+                  endCursor
+                  totalCount
+                } 
                 edges {
+                  cursor
                   node {
                     ... on Repository {
                       name
@@ -54,11 +70,6 @@ export class GithubGraphqlService {
                       }
                       url
                       homepageUrl
-                      readme: object(expression: "HEAD:README.md") {
-                        ... on Blob {
-                          text
-                        }
-                      }
                     }
                   }
                 }
@@ -74,8 +85,10 @@ export class GithubGraphqlService {
       );
 
       this.requestCount++;
+
       
       this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search.edges[0].node.url}`);
+      this.logger.debug(`graphql response data: ${inspect(response, {showHidden: true, depth: null})}`)
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch GitHub data: ${error.message}`);
