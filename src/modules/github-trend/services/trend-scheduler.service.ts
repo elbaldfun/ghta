@@ -11,10 +11,10 @@ export class TrendSchedulerService {
 
   constructor(
     private readonly githubGraphqlService: GithubGraphqlService,
-    @InjectModel(GithubTrend.name) private githubTrendModel: Model<GithubTrend>,
+    @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
@@ -27,7 +27,7 @@ export class TrendSchedulerService {
 
       const repo = data.data.search.edges[0].node;
       
-      await this.githubTrendModel.create({
+      await this.GithubTrendSchema.create({
         name: repo.name,
         owner: repo.owner.login,
         description: repo.description,

@@ -85,7 +85,7 @@ export class GithubGraphqlService {
 
   private checkAndResetRequestCount(): void {
     const now = Date.now();
-    if (now - this.lastResetTime >= 3600000) { // 1小时
+    if (now - this.lastResetTime >= 30 * 1000) { // interval 30s 
       this.requestCount = 0;
       this.lastResetTime = now;
     }
