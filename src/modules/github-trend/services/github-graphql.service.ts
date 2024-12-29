@@ -75,7 +75,7 @@ export class GithubGraphqlService {
 
       this.requestCount++;
       
-      this.logger.debug(`Success to fetch GitHub data: ${response.data}`);
+      this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search.edges[0].node.url}`);
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch GitHub data: ${error.message}`);

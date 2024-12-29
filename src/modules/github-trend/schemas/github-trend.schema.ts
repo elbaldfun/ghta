@@ -7,6 +7,9 @@ export class GithubTrend extends Document {
   name: string;
 
   @Prop({ required: true })
+  repoNameID: string;
+
+  @Prop({ required: true })
   owner: string;
 
   @Prop()
@@ -35,6 +38,9 @@ export class GithubTrend extends Document {
 
   @Prop()
   homepageUrl: string;
+
+  @Prop()
+  forkFromRepo: string;
 
   @Prop()
   readme: string;
