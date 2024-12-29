@@ -1,6 +1,37 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
+
+@Schema()
+export class Release {
+    @Prop({ required: true })
+    name: string;
+
+    @Prop({ required: true })
+    tagName: string;
+
+    @Prop({ required: true })
+    isPrerelease: boolean;
+
+    @Prop({ required: true })
+    isLatest: boolean;
+
+    @Prop({ required: true })
+    isDraft: boolean;
+
+    @Prop({ required: true })
+    publishedAt: Date;
+}
+
+@Schema()
+export class repoTopics {
+    @Prop({ required: true })
+    name: string;
+
+    @Prop({ required: true })
+    url: string;
+}
+
 @Schema({ timestamps: true })
 export class GithubTrend extends Document {
   @Prop({ required: true })
@@ -27,21 +58,11 @@ export class GithubTrend extends Document {
   @Prop()
   openIssuesCount: number;
 
-  @Prop({ type: Object })
-  top5Release: {
-    name: string;
-    tagName: string;
-    isPrerelease: boolean;
-    isLatest: boolean;
-    isDraft: boolean;
-    publishedAt: Date;
-  }[];
+  @Prop({ type: [Release], required: false})
+  top5Release: Release[];
 
-  @Prop({ type: Object })
-  repoTopics: {
-    name: string;
-    url: string;
-  }[];
+  @Prop({ type: [repoTopics], required: false })
+  repoTopics: repoTopics[];
 
   @Prop({ required: true })
   url: string;
