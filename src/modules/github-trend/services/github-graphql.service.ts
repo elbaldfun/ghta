@@ -33,15 +33,17 @@ export class GithubGraphqlService {
                       //     text
                       //   }
                       // }
+                      // query: "stars:>300000", type: REPOSITORY, first: 5, after: "Y3Vyc29yOjU="
+                      // search(query: "stars:>0", type: REPOSITORY, first: 1) {
+                      // query: "stars:>300000", type: REPOSITORY, first: 95, after: "Y3Vyc29yOjU="
           query: `
             query {
-              search(query: "stars:>0", type: REPOSITORY, first: 1) {
+              search(query: "stars:>300000", type: REPOSITORY, first: 19) {
                 pageInfo {
                   hasPreviousPage
                   hasNextPage
                   startCursor
                   endCursor
-                  totalCount
                 } 
                 edges {
                   cursor
@@ -51,20 +53,35 @@ export class GithubGraphqlService {
                       owner {
                         login
                       }
+                      repositoryTopics(first: 20) {
+                        edges {
+                          node {
+                            topic {
+                              name
+                            }
+                            url
+                          }
+                        }
+                      }
                       description
                       stargazerCount
                       forkCount
+                      pushedAt
                       primaryLanguage {
                         name
                       }
                       issues(states: OPEN) {
                         totalCount
                       }
-                      releases(first: 1, orderBy: {field: CREATED_AT, direction: DESC}) {
+                      releases(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) {
                         edges {
                           node {
                             name
                             tagName
+                            isPrerelease
+                            isLatest
+                            isDraft
+                            publishedAt
                           }
                         }
                       }
@@ -85,10 +102,9 @@ export class GithubGraphqlService {
       );
 
       this.requestCount++;
-
       
-      this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search.edges[0].node.url}`);
       this.logger.debug(`graphql response data: ${inspect(response, {showHidden: true, depth: null})}`)
+      // this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search.edges[0].node.url}`);
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch GitHub data: ${error.message}`);

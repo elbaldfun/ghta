@@ -28,10 +28,20 @@ export class GithubTrend extends Document {
   openIssuesCount: number;
 
   @Prop({ type: Object })
-  latestRelease: {
+  top5Release: {
     name: string;
     tagName: string;
-  };
+    isPrerelease: boolean;
+    isLatest: boolean;
+    isDraft: boolean;
+    publishedAt: Date;
+  }[];
+
+  @Prop({ type: Object })
+  repoTopics: {
+    name: string;
+    url: string;
+  }[];
 
   @Prop({ required: true })
   url: string;
