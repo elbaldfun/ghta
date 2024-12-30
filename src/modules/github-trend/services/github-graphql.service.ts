@@ -87,6 +87,12 @@ export class GithubGraphqlService {
                       }
                       url
                       homepageUrl
+                      licenseInfo {
+                        name
+                        nickname
+                        description
+                        
+                      }
                     }
                   }
                 }
