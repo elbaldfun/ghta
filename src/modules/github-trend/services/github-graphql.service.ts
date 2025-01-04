@@ -13,7 +13,28 @@ export class GithubGraphqlService {
 
   constructor(private configService: ConfigService) {}
 
-  async queryTrendingRepos(): Promise<any> {
+  async fetchAllTrendingRepos(): Promise<any[]> {
+    let allTrendingRepos = [];
+    let hasNextPage = true;
+    let afterCursor: string | undefined = undefined; // 初始化为 undefined
+  
+    while (hasNextPage) {
+      const response = await this.queryTrendingRepos(300000, 98, afterCursor);
+  
+      // 处理返回的数据
+      const trendingRepos = response.data.search.edges.map(edge => edge.node);
+      allTrendingRepos = [...allTrendingRepos, ...trendingRepos];
+  
+      // 更新分页信息
+      hasNextPage = response.data.search.pageInfo.hasNextPage;
+      afterCursor = response.data.search.pageInfo.endCursor; // 获取下一个游标
+    }
+  
+    return allTrendingRepos;
+  }
+
+
+  async queryTrendingRepos(stars: number, first: number, after?: string): Promise<any> {
     try {
       // 检查并重置计数器
       this.checkAndResetRequestCount();
@@ -38,7 +59,7 @@ export class GithubGraphqlService {
                       // query: "stars:>300000", type: REPOSITORY, first: 95, after: "Y3Vyc29yOjU="
           query: `
             query {
-              search(query: "stars:>300000", type: REPOSITORY, first: 19) {
+              search(query: "stars:>${stars}", type: REPOSITORY, first: ${first}, after: ${after || ''}) {
                 pageInfo {
                   hasPreviousPage
                   hasNextPage
