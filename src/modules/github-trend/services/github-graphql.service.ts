@@ -28,7 +28,7 @@ export class GithubGraphqlService {
   
     while (hasNextPage) {
       this.logger.debug(`fetchAllTrendingRepos, start to fetch, range is ${range}, startCursor is ${startCursor}, afterCursor is ${afterCursor}`)
-      const response = await this.queryTrendingRepos(range, 30, afterCursor);
+      const response = await this.queryTrendingRepos(range, 95, afterCursor);
       if (response.data.search.pageInfo.startCursor === null) {
         this.logger.debug(`Github response no data for range ${range}, because of response.data.search.pageInfo.startCursor is null`)
         break;
@@ -125,7 +125,6 @@ export class GithubGraphqlService {
                         name
                         nickname
                         description
-                        
                       }
                     }
                   }
@@ -134,40 +133,71 @@ export class GithubGraphqlService {
             }
           `
       this.logger.debug(`Query is ${query}`)
-      const response = await axios.post(
-        this.apiUrl,
-        {
 
-                      //  homepageUrl
-                      //  readme: object(expression: "HEAD:README.md") {
-                      //   ... on Blob {
-                      //     text
-                      //   }
-                      // }
-                      // query: "stars:>300000", type: REPOSITORY, first: 5, after: "Y3Vyc29yOjU="
-                      // search(query: "stars:>0", type: REPOSITORY, first: 1) {
-                      // query: "stars:>300000", type: REPOSITORY, first: 95, after: "Y3Vyc29yOjU="
+      // 最大重试次数
+      const MAX_RETRIES = 5;
+      let retryCount = 0;
+      let lastError = null;
 
-                      // query: "stars:300..400", type: REPOSITORY, first: 95, after: "Y3Vyc29yOjU="
-          query: query,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.configService.get('GITHUB_API_TOKEN')}`,
-          },
+      while (retryCount < MAX_RETRIES) {
+        try {
+          const response = await axios.post(
+            this.apiUrl,
+            { query },
+            {
+              headers: {
+                Authorization: `Bearer ${this.configService.get('GITHUB_API_TOKEN')}`,
+              },
+              timeout: 60000, // 10秒超时
+              validateStatus: (status) => status === 200, // 只接受200状态码
+            }
+          );
+
+          this.requestCount++;
+          
+          // 检查GraphQL错误
+          if (response.data.errors) {
+            const errorMessage = response.data.errors.map(e => e.message).join(', ');
+            throw new Error(`GraphQL Error: ${errorMessage}`);
+          }
+
+          this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search?.edges[0]?.node?.url}`);
+          return response.data;
+
+        } catch (error) {
+          lastError = error;
+          
+          // 判断是否需要重试
+          const shouldRetry = error.response?.status === 429 || // Rate limit
+                            error.response?.status >= 500 || // 服务器错误
+                            error.code === 'ECONNABORTED' || // 超时
+                            error.code === 'ECONNRESET'; // 连接重置
+
+          if (shouldRetry && retryCount < MAX_RETRIES - 1) {
+            retryCount++;
+            const delay = Math.pow(2, retryCount) * 1000; // 指数退避
+            this.logger.warn(`Retry ${retryCount}/${MAX_RETRIES} after ${delay}ms due to: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          // 记录详细错误信息
+          this.logger.error(`Failed to fetch GitHub data: ${error.message}`, {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            code: error.code,
+            retryCount
+          });
+          
+          throw error;
         }
-      );
-
-      this.requestCount++;
-      if (response.status != 200) {
-        this.logger.error(`Failed to fetch GitHub data: ${response.status}, ${response.data}`)
       }
+
+      throw lastError;
       
-      // this.logger.debug(`Github Graphql API response data: ${inspect(response, {showHidden: true, depth: null})}`)
-      this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search?.edges[0]?.node?.url}`);
-      return response.data;
     } catch (error) {
-      this.logger.error(`Failed to fetch GitHub data: ${error.message}`);
+      this.logger.error(`Final failure fetching GitHub data: ${error.message}`);
       throw error;
     }
   }

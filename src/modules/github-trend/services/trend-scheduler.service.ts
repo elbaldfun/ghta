@@ -14,7 +14,8 @@ export class TrendSchedulerService {
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_3_HOURS)
+  @Cron(CronExpression.EVERY_12_HOURS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
