@@ -14,7 +14,7 @@ export class TrendSchedulerService {
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_3_HOURS)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
@@ -31,73 +31,19 @@ export class TrendSchedulerService {
       // 10. 3000..4000
       // 11. 2000..3000
       const start = 200000;
-      const end = 400000;
-      for (let i = end; i >= start; i -= 10000) {
-        const range = `${i - 10000}..${i}`;
-        const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
-        this.logger.log(`try to fetch trending repos, range: ${range}, datas length: ${datas.length}`);
-        await this.parseTrendingReposIntoDB(datas);
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
+      const end = 800000;
+      // for (let i = end; i >= start; i -= 20000) {
+      //   const range = `${i - 20000}..${i}`;
+      //   const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
+      //   this.logger.log(`try to fetch trending repos, range: ${range}`);
+      // }
+      const range = '10000..800000';
+      const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
+      this.logger.log(`try to fetch trending repos, range: ${range}`);
 
     } catch (error) {
       this.logger.error(error);
       this.logger.error(`Failed to fetch and save trending data: ${error.message}`);
-    }
-  }
-
-  async parseTrendingReposIntoDB(datas: any[]) {
-    this.logger.debug(`parseTrendingReposIntoDB, start to parse, datas length: ${datas.length}`);
-    for (const data of datas) {
-      if (data?.data?.search?.edges?.length < 1) {
-        this.logger.error(`if result is ${!data?.data?.search?.edges?.length}`);
-          throw new Error('No repository data received');
-        }
-  
-      for (const edge of data.data.search.edges) {
-        // const repo = data.data.search.edges[0].node;
-        const repo = edge.node;
-        const repoNameID = repo.url.split('https://github.com/')[1]; 
-        const existingRepo = await this.GithubTrendSchema.findOne({ repoNameID: repoNameID });
-        
-        if (existingRepo) {
-          await this.GithubTrendSchema.updateOne({repoNameID: repoNameID}, {
-            owner: repo.owner.login,
-            name: repo.name,
-            repoNameID: repoNameID,
-            description: repo.description,
-            starCount: repo.stargazerCount,
-            forkCount: repo.forkCount,
-            forkFromRepo: repo.forkFromRepository?.name,
-            language: repo.primaryLanguage?.name,
-            openIssuesCount: repo.issues.totalCount,
-            latestRelease: repo.releases.edges[0]?.node || null,
-            url: repo.url,
-            homepageUrl: repo.homepageUrl,
-            readme: repo.readme?.text,
-            fetchedAt: new Date(),
-          })
-          this.logger.log(`Successfully updated trending data for ${repo.name}`);
-        } else {
-          await this.GithubTrendSchema.create({
-            owner: repo.owner.login,
-            name: repo.name,
-            repoNameID: repoNameID,
-            description: repo.description,
-            starCount: repo.stargazerCount,
-            forkCount: repo.forkCount,
-            forkFromRepo: repo.forkFromRepository?.name,
-            language: repo.primaryLanguage?.name,
-            openIssuesCount: repo.issues.totalCount,
-            latestRelease: repo.releases.edges[0]?.node || null,
-            url: repo.url,
-            homepageUrl: repo.homepageUrl,
-            readme: repo.readme?.text,
-            fetchedAt: new Date(),
-          });
-          this.logger.log(`Successfully saved trending data for ${repo.name}`);
-        }
-      }
     }
   }
 } 
