@@ -1,6 +1,13 @@
 # mongodb
 
-1. 创建数据库
+1. 安装 mongodb
+    ```
+     docker run -d --name mongodb --privileged  -p 27017:27017   --restart=always   -v /root/workspaces/middleware/mongodb:/bitnami/mongodb/   -e MONGODB_ROOT_PASSWORD=ghta513!   -e MONGODB_USERNAME=ghta   -e MONGODB_PASSWORD=ghta513!   bitnami/mongodb:8.0.4
+
+    ```
+
+
+2. 创建数据库
     ```
     use ghta
     ```
@@ -14,3 +21,9 @@
         ]
     });
     ```
+
+# How to login google account 
+https://blog.twofei.com/784/
+
+# others stars
+https://chrome-stats.com/stats
