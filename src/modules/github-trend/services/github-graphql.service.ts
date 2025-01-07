@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {inspect} from 'util'
-import axios from 'axios';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { time } from 'console';
+import axios from 'axios';
 import { GithubTrend } from '../schemas/github-trend.schema';
 
 @Injectable()
@@ -21,55 +19,53 @@ export class GithubGraphqlService {
   ) {}
 
   async fetchAllTrendingRepos(range: string) {
-    // let allTrendingRepos = [];
     let hasNextPage = true;
-    let startCursor: string = ""; // 初始化为 ""
-    let afterCursor: string = ""; // 初始化为 ""
+    let startCursor: string = ""; 
+    let afterCursor: string = ""; 
   
     while (hasNextPage) {
       this.logger.debug(`fetchAllTrendingRepos, start to fetch, range is ${range}, startCursor is ${startCursor}, afterCursor is ${afterCursor}`)
       const response = await this.queryTrendingRepos(range, 95, afterCursor);
+      
       if (response.data.search.pageInfo.startCursor === null) {
         this.logger.debug(`Github response no data for range ${range}, because of response.data.search.pageInfo.startCursor is null`)
         break;
       }
-      // 处理返回的数据
+      // process response data
       await this.parseTrendingReposIntoDB(response);
       await new Promise(resolve => setTimeout(resolve, 300));
-      // const trendingRepos = response.data.search.edges.map(edge => edge.node);
-      // allTrendingRepos = [...allTrendingRepos, ...trendingRepos];
   
-      // 更新分页信息
+      // update cursor
       hasNextPage = response.data.search.pageInfo.hasNextPage;
-      startCursor = response.data.search.pageInfo.startCursor; // 获取当前游标
-      afterCursor = response.data.search.pageInfo.endCursor; // 获取下一个游标
+      startCursor = response.data.search.pageInfo.startCursor;
+      afterCursor = response.data.search.pageInfo.endCursor;
+      
       if (hasNextPage) {
         this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
         await new Promise(resolve => setTimeout(resolve, 80));
         startCursor = afterCursor;
       }
     }
-  
-    // return allTrendingRepos;
   }
-
 
   async queryTrendingRepos(range: string, first: number, after: string = ""): Promise<any> {
     try {
-      // 检查并重置计数器
+
+      // check and reset request count
       this.checkAndResetRequestCount();
-      // 检查是否超出限制
+      
+      // check if exceed the hourly limit
       if (this.requestCount >= this.MAX_REQUESTS_PER_HOUR) {
+        this.logger.error('Exceeded GitHub API hourly limit');
         throw new Error('Exceeded GitHub API hourly limit');
       }
-      let search = "";
-      if (after === "") {
-        search = `query: "stars:${range}", type: REPOSITORY, first: ${first}`
-      } else {
-        search = `query: "stars:${range}", type: REPOSITORY, first: ${first}, after: "${after}"`
-      }
 
-      this.logger.debug(`Search parameters is ${search}`)
+      let search = after === "" 
+        ? `query: "stars:${range}", type: REPOSITORY, first: ${first}`
+        : `query: "stars:${range}", type: REPOSITORY, first: ${first}, after: "${after}"`;
+
+      this.logger.debug(`GraphQL query parameters: ${search}`);
+      
       const query = `
             query {
               search(${search}) {
@@ -132,9 +128,7 @@ export class GithubGraphqlService {
               }
             }
           `
-      this.logger.debug(`Query is ${query}`)
 
-      // 最大重试次数
       const MAX_RETRIES = 5;
       let retryCount = 0;
       let lastError = null;
@@ -148,41 +142,42 @@ export class GithubGraphqlService {
               headers: {
                 Authorization: `Bearer ${this.configService.get('GITHUB_API_TOKEN')}`,
               },
-              timeout: 60000, // 10秒超时
-              validateStatus: (status) => status === 200, // 只接受200状态码
+              timeout: 60000,
+              validateStatus: (status) => status === 200,
             }
           );
 
           this.requestCount++;
           
-          // 检查GraphQL错误
+          // check if there is any error in the response
           if (response.data.errors) {
             const errorMessage = response.data.errors.map(e => e.message).join(', ');
-            throw new Error(`GraphQL Error: ${errorMessage}`);
+            throw new Error(`GraphQL error: ${errorMessage}`);
           }
 
-          this.logger.debug(`Success to fetch GitHub data: ${response.data.data.search?.edges[0]?.node?.url}`);
+          this.logger.debug(`Successfully fetched GitHub data: ${response.data.data.search?.edges[0]?.node?.url}`);
           return response.data;
 
         } catch (error) {
           lastError = error;
           
-          // 判断是否需要重试
-          const shouldRetry = error.response?.status === 429 || // Rate limit
-                            error.response?.status >= 500 || // 服务器错误
-                            error.code === 'ECONNABORTED' || // 超时
-                            error.code === 'ECONNRESET'; // 连接重置
+          // check if the error is due to rate limiting or server error
+          const shouldRetry = error.response?.status === 429 || 
+                            error.response?.status >= 500 ||
+                            error.code === 'ECONNABORTED' ||
+                            error.code === 'ECONNRESET';
 
           if (shouldRetry && retryCount < MAX_RETRIES - 1) {
             retryCount++;
-            const delay = Math.pow(2, retryCount) * 1000; // 指数退避
-            this.logger.warn(`Retry ${retryCount}/${MAX_RETRIES} after ${delay}ms due to: ${error.message}`);
+            const delay = Math.pow(2, retryCount) * 1000;
+            this.logger.warn(`Retry ${retryCount}/${MAX_RETRIES}, delay ${delay}ms, error: ${error.message}`);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
-          
-          // 记录详细错误信息
-          this.logger.error(`Failed to fetch GitHub data: ${error.message}`, {
+
+          // log the error
+          this.logger.error(`Failed to fetch GitHub data`, {
+            error: error.message,
             status: error.response?.status,
             statusText: error.response?.statusText,
             data: error.response?.data,
@@ -197,62 +192,76 @@ export class GithubGraphqlService {
       throw lastError;
       
     } catch (error) {
-      this.logger.error(`Final failure fetching GitHub data: ${error.message}`);
+      this.logger.error(`Failed to fetch GitHub data: ${error.message}`);
       throw error;
     }
   }
 
   private checkAndResetRequestCount(): void {
     const now = Date.now();
-    if (now - this.lastResetTime >= 30 * 1000) { // interval 30s 
+    if (now - this.lastResetTime >= 30 * 1000) {
       this.requestCount = 0;
       this.lastResetTime = now;
+      this.logger.debug(`Reset API request counter`);
     }
   }
 
   async parseTrendingReposIntoDB(response: any) {
-    this.logger.debug(`Github graphql response data length is ${response.data.search.edges.length}`)
+    this.logger.debug(`Processing GitHub GraphQL response data, number of data: ${response.data.search.edges.length}`);
+    
     for (const edge of response.data.search.edges) {
-      // const repo = data.data.search.edges[0].node;
       const repo = edge.node;
-      const repoNameID = repo.url.split('https://github.com/')[1]; 
-      const existingRepo = await this.GithubTrendSchema.findOne({ repoNameID: repoNameID });
-      if (existingRepo) {
-        await this.GithubTrendSchema.updateOne({repoNameID: repoNameID}, {
-          owner: repo.owner.login,
-          name: repo.name,
-          repoNameID: repoNameID,
-          description: repo.description,
-          starCount: repo.stargazerCount,
-          forkCount: repo.forkCount,
-          forkFromRepo: repo.forkFromRepository?.name,
-          language: repo.primaryLanguage?.name,
-          openIssuesCount: repo.issues.totalCount,
-          latestRelease: repo.releases.edges[0]?.node || null,
-          url: repo.url,
-          homepageUrl: repo.homepageUrl,
-          readme: repo.readme?.text,
-          fetchedAt: new Date(),
-        })
-        this.logger.log(`Successfully updated trending data for ${repo.name}`);
-      } else {
-        await this.GithubTrendSchema.create({
-          owner: repo.owner.login,
-          name: repo.name,
-          repoNameID: repoNameID,
-          description: repo.description,
-          starCount: repo.stargazerCount,
-          forkCount: repo.forkCount,
-          forkFromRepo: repo.forkFromRepository?.name,
-          language: repo.primaryLanguage?.name,
-          openIssuesCount: repo.issues.totalCount,
-          latestRelease: repo.releases.edges[0]?.node || null,
-          url: repo.url,
-          homepageUrl: repo.homepageUrl,
-          readme: repo.readme?.text,
-          fetchedAt: new Date(),
+      const repoNameID = repo.url.split('https://github.com/')[1];
+      
+      try {
+        const existingRepo = await this.GithubTrendSchema.findOne({ repoNameID: repoNameID });
+        
+        if (existingRepo) {
+          await this.GithubTrendSchema.updateOne(
+            { repoNameID: repoNameID },
+            {
+              owner: repo.owner.login,
+              name: repo.name,
+              repoNameID: repoNameID,
+              description: repo.description,
+              starCount: repo.stargazerCount,
+              forkCount: repo.forkCount,
+              forkFromRepo: repo.forkFromRepository?.name,
+              language: repo.primaryLanguage?.name,
+              openIssuesCount: repo.issues.totalCount,
+              latestRelease: repo.releases.edges[0]?.node || null,
+              url: repo.url,
+              homepageUrl: repo.homepageUrl,
+              readme: repo.readme?.text,
+              fetchedAt: new Date(),
+            }
+          );
+          this.logger.log(`Update repository data successfully: ${repo.name}`);
+        } else {
+          await this.GithubTrendSchema.create({
+            owner: repo.owner.login,
+            name: repo.name,
+            repoNameID: repoNameID,
+            description: repo.description,
+            starCount: repo.stargazerCount,
+            forkCount: repo.forkCount,
+            forkFromRepo: repo.forkFromRepository?.name,
+            language: repo.primaryLanguage?.name,
+            openIssuesCount: repo.issues.totalCount,
+            latestRelease: repo.releases.edges[0]?.node || null,
+            url: repo.url,
+            homepageUrl: repo.homepageUrl,
+            readme: repo.readme?.text,
+            fetchedAt: new Date(),
+          });
+          this.logger.log(`Save new repository data successfully: ${repo.name}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to process repository data: ${repo.name}`, {
+          error: error.message,
+          repoNameID,
+          url: repo.url
         });
-        this.logger.log(`Successfully saved trending data for ${repo.name}`);
       }
     }
   }
