@@ -4,31 +4,31 @@ import { Document } from 'mongoose';
 
 @Schema()
 export class Release {
-    @Prop({ required: true })
+    @Prop({ required: false })
     name: string;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     tagName: string;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     isPrerelease: boolean;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     isLatest: boolean;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     isDraft: boolean;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     publishedAt: Date;
 }
 
 @Schema()
 export class repoTopics {
-    @Prop({ required: true })
+    @Prop({ required: false })
     name: string;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     url: string;
 }
 

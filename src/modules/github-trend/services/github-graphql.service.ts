@@ -234,6 +234,19 @@ export class GithubGraphqlService {
               openIssuesCount: repo.issues.totalCount,
               latestRelease: repo.releases.edges[0]?.node || null,
               url: repo.url,
+              repoTopics: repo.repositoryTopics.edges.map(edge => ({
+                name: edge.node.topic.name,
+                url: edge.node.url
+              })),
+              top5Release: repo.releases.edges.map(edge => ({
+                name: edge.node.name,
+                tagName: edge.node.tagName,
+                isPrerelease: edge.node.isPrerelease,
+                isLatest: edge.node.isLatest,
+                isDraft: edge.node.isDraft,
+                publishedAt: edge.node.publishedAt
+              })),
+              licenseInfo: repo.licenseInfo?.name || null,
               homepageUrl: repo.homepageUrl,
               readme: repo.readme?.text,
               fetchedAt: new Date(),
@@ -253,6 +266,19 @@ export class GithubGraphqlService {
             openIssuesCount: repo.issues.totalCount,
             latestRelease: repo.releases.edges[0]?.node || null,
             url: repo.url,
+            repoTopics: repo.repositoryTopics.edges.map(edge => ({
+              name: edge.node.topic.name,
+              url: edge.node.url
+            })),
+            top5Release: repo.releases.edges.map(edge => ({
+              name: edge.node?.name,
+              tagName: edge.node?.tagName,
+              isPrerelease: edge.node?.isPrerelease,
+              isLatest: edge.node?.isLatest,
+              isDraft: edge.node?.isDraft,
+              publishedAt: edge.node?.publishedAt
+            })),
+            licenseInfo: repo.licenseInfo?.name || null,
             homepageUrl: repo.homepageUrl,
             readme: repo.readme?.text,
             fetchedAt: new Date(),
