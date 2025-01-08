@@ -14,8 +14,8 @@ export class TrendSchedulerService {
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_12_HOURS)
-  // @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  // @Cron(CronExpression.)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
@@ -38,9 +38,9 @@ export class TrendSchedulerService {
       //   const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
       //   this.logger.log(`try to fetch trending repos, range: ${range}`);
       // }
-      const range = '10000..800000';
+      const range = '7000..9000';
       const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
-      this.logger.log(`try to fetch trending repos, range: ${range}`);
+      this.logger.log(`Finished to fetch trending repos, range: ${range}`);
 
     } catch (error) {
       this.logger.error(error);

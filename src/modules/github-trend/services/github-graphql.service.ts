@@ -24,7 +24,6 @@ export class GithubGraphqlService {
     let afterCursor: string = ""; 
   
     while (hasNextPage) {
-      this.logger.debug(`fetchAllTrendingRepos, start to fetch, range is ${range}, startCursor is ${startCursor}, afterCursor is ${afterCursor}`)
       const response = await this.queryTrendingRepos(range, 95, afterCursor);
       
       if (response.data.search.pageInfo.startCursor === null) {
@@ -40,19 +39,23 @@ export class GithubGraphqlService {
       startCursor = response.data.search.pageInfo.startCursor;
       afterCursor = response.data.search.pageInfo.endCursor;
       
-      if (hasNextPage) {
-        this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
-        await new Promise(resolve => setTimeout(resolve, 80));
-        startCursor = afterCursor;
-      }
+      // if (hasNextPage) {
+      //   this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
+      //   await new Promise(resolve => setTimeout(resolve, 80));
+      // } else {
+      //   this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
+      // }
+      this.logger.debug(`Start to fetch data, current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
+      
     }
+
   }
 
   async queryTrendingRepos(range: string, first: number, after: string = ""): Promise<any> {
     try {
 
       // check and reset request count
-      this.checkAndResetRequestCount();
+      // this.checkAndResetRequestCount();
       
       // check if exceed the hourly limit
       if (this.requestCount >= this.MAX_REQUESTS_PER_HOUR) {
@@ -155,7 +158,7 @@ export class GithubGraphqlService {
             throw new Error(`GraphQL error: ${errorMessage}`);
           }
 
-          this.logger.debug(`Successfully fetched GitHub data: ${response.data.data.search?.edges[0]?.node?.url}`);
+          this.logger.debug(`Successfully fetched GitHub data, range: ${range}, first: ${first}, afterCursor: ${after}, data length: ${response.data.data.search?.edges.length}`);
           return response.data;
 
         } catch (error) {
@@ -207,7 +210,7 @@ export class GithubGraphqlService {
   }
 
   async parseTrendingReposIntoDB(response: any) {
-    this.logger.debug(`Processing GitHub GraphQL response data, number of data: ${response.data.search.edges.length}`);
+    this.logger.debug(`Processing GitHub GraphQL response data into DB, number of data: ${response.data.search.edges.length}`);
     
     for (const edge of response.data.search.edges) {
       const repo = edge.node;
@@ -236,7 +239,7 @@ export class GithubGraphqlService {
               fetchedAt: new Date(),
             }
           );
-          this.logger.log(`Update repository data successfully: ${repo.name}`);
+          // this.logger.log(`Update repository data successfully: ${repo.name}`);
         } else {
           await this.GithubTrendSchema.create({
             owner: repo.owner.login,
@@ -254,7 +257,7 @@ export class GithubGraphqlService {
             readme: repo.readme?.text,
             fetchedAt: new Date(),
           });
-          this.logger.log(`Save new repository data successfully: ${repo.name}`);
+          // this.logger.log(`Save new repository data successfully: ${repo.name}`);
         }
       } catch (error) {
         this.logger.error(`Failed to process repository data: ${repo.name}`, {
