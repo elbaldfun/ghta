@@ -17,6 +17,7 @@ export const winstonConfig = {
           colors: true,
         }),
       ),
+      level: 'debug',
     }),
     // 信息级别日志文件
     new winston.transports.DailyRotateFile({
@@ -30,7 +31,7 @@ export const winstonConfig = {
         winston.format.timestamp(),
         winston.format.json(),
       ),
-      level: 'info',
+      level: 'debug',
     }),
     // 错误级别日志文件
     new winston.transports.DailyRotateFile({
