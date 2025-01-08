@@ -50,9 +50,6 @@ importers:
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
-      rxjs:
-        specifier: ^7.8.1
-        version: 7.8.1
       winston:
         specifier: ^3.17.0
         version: 3.17.0
