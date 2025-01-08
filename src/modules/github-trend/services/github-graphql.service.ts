@@ -38,13 +38,7 @@ export class GithubGraphqlService {
       hasNextPage = response.data.search.pageInfo.hasNextPage;
       startCursor = response.data.search.pageInfo.startCursor;
       afterCursor = response.data.search.pageInfo.endCursor;
-      
-      // if (hasNextPage) {
-      //   this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
-      //   await new Promise(resolve => setTimeout(resolve, 80));
-      // } else {
-      //   this.logger.debug(`Current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
-      // }
+
       this.logger.debug(`Start to fetch data, current range is ${range}, hasNextPage is ${hasNextPage}, current cursor is ${startCursor}, the next cursor is ${afterCursor}`)
       
     }

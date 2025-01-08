@@ -14,33 +14,37 @@ export class TrendSchedulerService {
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_4_HOURS)
   // @Cron(CronExpression.)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
-      // const start = 10000;
-      // 1. 100000..400000
-      // 2. 50000..100000
-      // 3. 30000..50000
-      // 4. 10000..30000
-      // 5. 8000..10000
-      // 6. 7000..8000
-      // 7. 6000..7000
-      // 8. 5000..6000
-      // 9. 4000..5000
-      // 10. 3000..4000
-      // 11. 2000..3000
-      const start = 200000;
-      const end = 800000;
-      // for (let i = end; i >= start; i -= 20000) {
-      //   const range = `${i - 20000}..${i}`;
-      //   const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
-      //   this.logger.log(`try to fetch trending repos, range: ${range}`);
-      // }
-      const range = '7000..9000';
-      const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
-      this.logger.log(`Finished to fetch trending repos, range: ${range}`);
+      const rangeDict: { start: number; end: number; step: number }[] = [
+        { start: 100000, end: 600000, step: 100000 },
+        { start: 50000, end: 100000, step: 10000 },
+        { start: 30000, end: 50000, step: 500 },
+        { start: 10000, end: 30000, step: 200 },
+        { start: 8000, end: 10000, step: 100 },
+        { start: 7000, end: 8000, step: 100 },
+        { start: 6000, end: 7000, step: 100 },
+        { start: 5000, end: 6000, step: 100 },
+        { start: 4000, end: 5000, step: 100 },
+        { start: 3000, end: 4000, step: 100 },
+        { start: 2000, end: 3000, step: 100 },
+      ]
+
+      for (const range of rangeDict) {
+        const { start, end, step } = range;
+        for (let i = end; i >= start; i -= step) {
+          const range = `${i - step}..${i}`;
+          this.logger.log(`Start to fetch trending repos, range: ${range}`);
+          const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
+          this.logger.log(`Finished to fetch trending repos, range: ${range}`);
+        }
+      }
+      // const range = '7000..9000';
+      // const datas = await this.githubGraphqlService.fetchAllTrendingRepos(range);
+      // this.logger.log(`Finished to fetch trending repos, range: ${range}`);
 
     } catch (error) {
       this.logger.error(error);
