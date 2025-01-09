@@ -24,7 +24,7 @@ export class GithubGraphqlService {
     let afterCursor: string = ""; 
   
     while (hasNextPage) {
-      const response = await this.queryTrendingRepos(range, 95, afterCursor);
+      const response = await this.queryTrendingRepos(range, 98, afterCursor);
       
       if (response.data.search.pageInfo.startCursor === null) {
         this.logger.debug(`Github response no data for range ${range}, because of response.data.search.pageInfo.startCursor is null`)
