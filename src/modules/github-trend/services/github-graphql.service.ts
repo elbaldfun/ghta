@@ -119,6 +119,11 @@ export class GithubGraphqlService {
                         nickname
                         description
                       }
+                      readme: object(expression: "HEAD:README.md"){
+                        ... on Blob {
+                          text
+                        }
+                      }
                     }
                   }
                 }
