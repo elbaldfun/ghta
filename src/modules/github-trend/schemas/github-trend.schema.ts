@@ -24,7 +24,7 @@ export class Release {
 }
 
 @Schema()
-export class repoTopics {
+export class RepoTopics {
     @Prop({ required: false })
     name: string;
 
@@ -61,8 +61,8 @@ export class GithubTrend extends Document {
   @Prop({ type: [Release], required: false})
   top5Release: Release[];
 
-  @Prop({ type: [repoTopics], required: false })
-  repoTopics: repoTopics[];
+  @Prop({ type: [RepoTopics], required: false })
+  repoTopics: RepoTopics[];
 
   @Prop({ required: true })
   url: string;
