@@ -15,6 +15,7 @@ export class TrendSchedulerService {
   ) {}
 
   @Cron(CronExpression.EVERY_12_HOURS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   // @Cron(CronExpression.)
   async fetchTrendingRepos() {
     try {

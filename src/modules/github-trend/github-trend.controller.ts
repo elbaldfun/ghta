@@ -13,16 +13,10 @@ export class GithubTrendController {
     description: '获取 GitHub 趋势仓库列表，支持多种过滤和排序选项'
   })
   @ApiQuery({
-    name: 'minStars',
+    name: 'stars',
     required: false,
-    type: Number,
-    description: '最小 star 数量'
-  })
-  @ApiQuery({
-    name: 'maxStars', 
-    required: false,
-    type: Number,
-    description: '最大 star 数量'
+    type: String,
+    description: 'star 数量，格式为 starts:1000..2000，starts:>1000，starts:<1000，starts:1000'
   })
   @ApiQuery({
     name: 'language',
@@ -31,28 +25,22 @@ export class GithubTrendController {
     description: '编程语言'
   })
   @ApiQuery({
-    name: 'minIssues',
+    name: 'issues',
     required: false,
-    type: Number,
-    description: '最小 issue 数量'
-  })
-  @ApiQuery({
-    name: 'maxIssues',
-    required: false,
-    type: Number,
-    description: '最大 issue 数量'
+    type: String,
+    description: 'issue 数量，格式为 issues:100..200，issues:>100，issues:<100，issues:100'
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: '返回结果数量限制，默认 100'
+    description: '返回结果数量限制，默认 10'
   })
   @ApiQuery({
     name: 'sort',
     required: false,
     type: String,
-    description: '排序方式，格式为 field:order，例如 starCount:desc'
+    description: '排序方式，格式为 field:order，例如 stars:desc, stars:asc'
   })
   @ApiResponse({
     status: 200,
@@ -61,21 +49,17 @@ export class GithubTrendController {
     isArray: true
   })
   async getTrendingRepos(
-    @Query('minStars') minStars?: number,
-    @Query('maxStars') maxStars?: number,
+    @Query('stars') stars?: string,
+    @Query('issues') issues?: number,
     @Query('language') language?: string,
-    @Query('minIssues') minIssues?: number,
-    @Query('maxIssues') maxIssues?: number,
     @Query('limit') limit?: number,
     @Query('sort') sort?: string,
   ): Promise<{data: GithubTrend[]}> {
     const filters: any = {};
     
-    if (minStars) filters.minStars = Number(minStars);
-    if (maxStars) filters.maxStars = Number(maxStars);
+    if (stars) filters.stars = stars;
     if (language) filters.language = language;
-    if (minIssues) filters.minIssues = Number(minIssues);
-    if (maxIssues) filters.maxIssues = Number(maxIssues);
+    if (issues) filters.issues = issues;
     if (limit) filters.limit = Number(limit);
     
     if (sort) {
