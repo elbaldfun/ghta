@@ -21,19 +21,19 @@ export class TrendSchedulerService {
     try {
       this.logger.log('Starting to fetch trending repositories...');
       const rangeDict: { start: number; end: number; step: number }[] = [
-        { start: 100000, end: 600000, step: 100000 },
+        { start: 100000, end: 800000, step: 100000 },
         { start: 50000, end: 100000, step: 2000 },
         { start: 30000, end: 50000, step: 100 },
         { start: 10000, end: 30000, step: 50 },
         { start: 9000, end: 10000, step: 20 },
         { start: 8000, end: 9000, step: 20 },
-        { start: 7000, end: 8000, step: 20 },
-        { start: 6000, end: 7000, step: 20 },
-        { start: 5000, end: 6000, step: 20 },
-        { start: 4000, end: 5000, step: 20 },
-        { start: 3000, end: 4000, step: 20 },
-        { start: 2000, end: 3000, step: 20 },
-        { start: 1000, end: 2000, step: 20 },
+        { start: 7000, end: 8000, step: 10 },
+        { start: 6000, end: 7000, step: 5 },
+        { start: 5000, end: 6000, step: 5 },
+        { start: 4000, end: 5000, step: 5 },
+        { start: 3000, end: 4000, step: 5 },
+        { start: 2000, end: 3000, step: 5 },
+        { start: 1000, end: 2000, step: 5 },
       ]
 
       for (const range of rangeDict) {
