@@ -25,10 +25,10 @@ async function bootstrap() {
 
   // Swagger 配置
   const config = new DocumentBuilder()
-    .setTitle('GitHub Trend API')
-    .setDescription('GitHub Trending 仓库数据采集和查询服务')
+    .setTitle('GitHub Trend Insights')
+    .setDescription('GitHub Trending Insights')
     .setVersion('1.0')
-    .addTag('github-trend')
+    // .addTag('github-trend')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

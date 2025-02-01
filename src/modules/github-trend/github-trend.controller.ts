@@ -9,7 +9,7 @@ export class GithubTrendController {
 
   @Get()
   @ApiOperation({
-    summary: '获取 GitHub 趋势仓库',
+    summary: '获取 GitHub 仓库趋势',
     description: '获取 GitHub 趋势仓库列表，支持多种过滤和排序选项'
   })
   @ApiQuery({
@@ -22,7 +22,7 @@ export class GithubTrendController {
     name: 'language',
     required: false,
     type: String,
-    description: '编程语言'
+    description: '编程语言，如 Python, JavaScript, TypeScript, Java, C++, C# 等'
   })
   @ApiQuery({
     name: 'issues',
