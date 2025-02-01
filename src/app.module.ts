@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import { GithubTrendModule } from './modules/github-trend/github-trend.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GithubTrendModule } from './modules/github-trend/github-trend.module';
       }),
     }),
     GithubTrendModule,
+    UserModule,
   ],
   controllers: [],
   providers: [],
