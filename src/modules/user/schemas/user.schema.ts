@@ -6,7 +6,7 @@ export enum LoginType {
     GITHUB = 'github',
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false, id: true })
 export class User extends Document {
     @Prop({
       required: true,

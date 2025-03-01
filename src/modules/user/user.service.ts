@@ -21,7 +21,7 @@ export class UserService {
     return await this.userModel.find();
   }
   async findOne(id: string): Promise<User> {
-    return this.userModel.findOne({ where: { _id: id  } });
+    return this.userModel.findById(id);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

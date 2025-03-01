@@ -32,7 +32,7 @@ export class RepoTopics {
     url: string;
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false, id: true })
 export class GithubTrend extends Document {
   @Prop({ required: true })
   name: string;
