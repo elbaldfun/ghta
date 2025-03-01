@@ -27,3 +27,11 @@ https://blog.twofei.com/784/
 
 # others stars
 https://chrome-stats.com/stats
+
+# How to start server
+
+```
+npm run start:dev
+```
+
+

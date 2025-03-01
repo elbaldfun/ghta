@@ -32,6 +32,9 @@ importers:
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.0(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@10.4.15)(reflect-metadata@0.2.2)(rxjs@7.8.1)(typeorm@0.3.20(ts-node@10.9.2(@types/node@20.17.10)(typescript@5.7.2)))
+      '@reis/mongoose-to-json':
+        specifier: git+https://github.com/meanie/mongoose-to-json.git
+        version: git+https://github.com/meanie/mongoose-to-json.git#289da22ac85ca0d4155f8e94bdf9fff5fa86d212(mongoose@8.9.2)
       axios:
         specifier: ^1.7.9
         version: 1.7.9
@@ -630,6 +633,13 @@ packages:
   '@pkgr/core@0.1.1':
     resolution: {integrity: sha512-cq8o4cWH0ibXh9VGi5P20Tu9XF/0fFXl9EUinr9QfTM7a7p0oTA4iJRCQWppXR1Pg8dSM0UCItCkPwsk9qWWYA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+
+  '@reis/mongoose-to-json@git+https://github.com/meanie/mongoose-to-json.git#289da22ac85ca0d4155f8e94bdf9fff5fa86d212':
+    resolution: {commit: 289da22ac85ca0d4155f8e94bdf9fff5fa86d212, repo: https://github.com/meanie/mongoose-to-json.git, type: git}
+    version: 3.0.0
+    engines: {node: '>=18'}
+    peerDependencies:
+      mongoose: '>=7.1.0'
 
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
@@ -3875,6 +3885,10 @@ snapshots:
     optional: true
 
   '@pkgr/core@0.1.1': {}
+
+  '@reis/mongoose-to-json@git+https://github.com/meanie/mongoose-to-json.git#289da22ac85ca0d4155f8e94bdf9fff5fa86d212(mongoose@8.9.2)':
+    dependencies:
+      mongoose: 8.9.2
 
   '@scarf/scarf@1.4.0': {}
 
