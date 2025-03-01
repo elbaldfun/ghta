@@ -5,6 +5,7 @@ import configuration from './config/configuration';
 import { GithubTrendModule } from './modules/github-trend/github-trend.module';
 import { UserModule } from './modules/user/user.module';
 import { CategoryModule } from './modules/category/category.module';
+import { AiService } from './modules/ai/ai.service';
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { CategoryModule } from './modules/category/category.module';
     CategoryModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [AiService],
 })
 export class AppModule {}
