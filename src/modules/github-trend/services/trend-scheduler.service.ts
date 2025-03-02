@@ -14,14 +14,17 @@ export class TrendSchedulerService {
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
   ) {}
 
-  @Cron(CronExpression.EVERY_12_HOURS)
+  // @Cron(CronExpression.EVERY_5_HOURS)
+  @Cron('0 10 08 * * *') // 每天下午14:50运行
   // @Cron(CronExpression.EVERY_30_SECONDS)
-  // @Cron(CronExpression.)
   async fetchTrendingRepos() {
     try {
       this.logger.log('Starting to fetch trending repositories...');
       const rangeDict: { start: number; end: number; step: number }[] = [
         { start: 100000, end: 800000, step: 100000 },
+        // { start: 300000, end: 400000, step: 100000 },
+        // { start: 200000, end: 300000, step: 100000 },
+        // { start: 100000, end: 200000, step: 100000 },
         { start: 50000, end: 100000, step: 2000 },
         { start: 30000, end: 50000, step: 100 },
         { start: 10000, end: 30000, step: 50 },

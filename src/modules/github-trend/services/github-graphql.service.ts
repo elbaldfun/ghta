@@ -12,7 +12,7 @@ export class GithubGraphqlService {
   private requestCount = 0;
   private lastResetTime = Date.now();
   private readonly MAX_REQUESTS_PER_HOUR = 5000; // GitHub API 限制
-
+  private readonly MAX_FETCH_COUNT = this.configService.get('MAX_FETCH_COUNT');
   constructor(
     private configService: ConfigService,
     @InjectModel(GithubTrend.name) private GithubTrendSchema: Model<GithubTrend>,
@@ -24,7 +24,7 @@ export class GithubGraphqlService {
     let afterCursor: string = ""; 
   
     while (hasNextPage) {
-      const response = await this.queryTrendingRepos(range, 98, afterCursor);
+      const response = await this.queryTrendingRepos(range, this.MAX_FETCH_COUNT, afterCursor);
       
       if (response.data.search.pageInfo.startCursor === null) {
         this.logger.debug(`Github response no data for range ${range}, because of response.data.search.pageInfo.startCursor is null`)
