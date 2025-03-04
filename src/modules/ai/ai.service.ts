@@ -19,7 +19,7 @@ export class AiService {
   ) {}
 
   // @Cron(CronExpression.EVERY_6_HOURS)
-  @Cron('0 10 08 * * *') // 每天下午14:50运行
+  @Cron('0 12 13 * * *') // 每天下午14:50运行
   async analyzeRepositoriesTask() {
     try {
       this.logger.log('Starting repository analysis task...');
@@ -115,7 +115,14 @@ Please respond in JSON format with the following structure:
 
   private buildCategoryBranch(category: Category, allCategories: Category[], level: number): string {
     const indent = '  '.repeat(level);
-    const children = allCategories.filter(c => c.parentId.toString() === category._id.toString());
+    // 处理 parentId 可能为空的情况
+    const children = allCategories.filter(c => {
+      if (!c.parentId && !category.parentId && category._id.toString() === c._id.toString()) {
+        return false; // 避免自引用
+      }
+      return c.parentId && category._id && c.parentId.toString() === category._id.toString();
+    });
+
     const childrenStr = children.map(child => 
       this.buildCategoryBranch(child, allCategories, level + 1)
     ).join('\n');

@@ -70,6 +70,9 @@ export class GithubTrend extends Document {
   @Prop({ required: false })
   licenseInfo: string;
 
+  @Prop({ required: false })
+  categoryId: [string];
+
   @Prop()
   homepageUrl: string;
 
