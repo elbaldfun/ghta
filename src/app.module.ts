@@ -5,7 +5,7 @@ import configuration from './config/configuration';
 import { GithubTrendModule } from './modules/github-trend/github-trend.module';
 import { UserModule } from './modules/user/user.module';
 import { CategoryModule } from './modules/category/category.module';
-
+import { AiModule } from './modules/ai/ai.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +25,7 @@ import { CategoryModule } from './modules/category/category.module';
     GithubTrendModule,
     UserModule,
     CategoryModule,
+    AiModule
   ],
   controllers: [],
   providers: [],
