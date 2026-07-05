@@ -2,7 +2,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -40,12 +39,31 @@ func (h *TrendingHandler) List(c *gin.Context) {
 
 	items, err := h.svc.List(c.Request.Context(), q)
 	if err != nil {
-		var inputErr service.InputError
-		if errors.As(err, &inputErr) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": inputErr.Error()})
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
+// Rising handles GET /trending/rising.
+func (h *TrendingHandler) Rising(c *gin.Context) {
+	q := service.RisingQuery{
+		Window:   c.Query("window"),
+		Source:   c.Query("source"),
+		Category: c.Query("category"),
+		Language: c.Query("language"),
+	}
+	if l := c.Query("limit"); l != "" {
+		n, err := strconv.Atoi(l)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be a number"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		q.Limit = n
+	}
+	items, err := h.svc.Rising(c.Request.Context(), q)
+	if err != nil {
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})

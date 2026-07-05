@@ -65,12 +65,16 @@ func (s *Store) ensureSnapshotCollection(ctx context.Context) error {
 	if len(names) > 0 {
 		return nil // already exists
 	}
-	opts := options.CreateCollection().SetTimeSeriesOptions(
-		options.TimeSeries().
-			SetTimeField("capturedAt").
-			SetMetaField("meta").
-			SetGranularity("hours"),
-	)
+	// Retain snapshots ~400 days (covers year-over-year), then auto-expire.
+	const retentionSeconds = int64(400 * 24 * 60 * 60)
+	opts := options.CreateCollection().
+		SetTimeSeriesOptions(
+			options.TimeSeries().
+				SetTimeField("capturedAt").
+				SetMetaField("meta").
+				SetGranularity("hours"),
+		).
+		SetExpireAfterSeconds(retentionSeconds)
 	if err := s.DB.CreateCollection(ctx, CollSnapshots, opts); err != nil {
 		return fmt.Errorf("create timeseries collection: %w", err)
 	}

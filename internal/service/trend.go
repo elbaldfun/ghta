@@ -108,6 +108,67 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 	return items, nil
 }
 
+// risingWindows maps a window name to the stored increase field.
+var risingWindows = map[string]string{
+	"daily":   "dailyIncrease",
+	"weekly":  "weeklyIncrease",
+	"monthly": "monthlyIncrease",
+}
+
+type RisingQuery struct {
+	Window   string // daily | weekly | monthly (default weekly)
+	Source   string
+	Category string
+	Language string
+	Limit    int
+}
+
+// Rising returns items ranked by their growth in the requested window, highest
+// first, excluding items whose increase for that window is null (no baseline).
+func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.TrackedItem, error) {
+	window := q.Window
+	if window == "" {
+		window = "weekly"
+	}
+	field, ok := risingWindows[window]
+	if !ok {
+		return nil, badInput("window must be one of: daily, weekly, monthly")
+	}
+
+	filter := bson.M{field: bson.M{"$ne": nil}}
+	if q.Source != "" {
+		filter["source"] = q.Source
+	}
+	if q.Language != "" {
+		filter["language"] = q.Language
+	}
+	if q.Category != "" {
+		filter["categoryId"] = q.Category
+	}
+
+	limit := q.Limit
+	if limit == 0 {
+		limit = defaultLimit
+	}
+	if limit < 0 || limit > maxLimit {
+		return nil, badInput("limit must be between 1 and %d", maxLimit)
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: field, Value: -1}}).
+		SetLimit(int64(limit))
+
+	cur, err := s.store.Items().Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	items := []domain.TrackedItem{}
+	if err := cur.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 // parseSort validates "field:order" against the whitelist, defaulting to
 // fetchedAt descending.
 func parseSort(sort string) (string, int, error) {

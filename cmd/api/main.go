@@ -58,13 +58,21 @@ func main() {
 
 	fetcher := job.NewFetcher(store, registry, logger)
 
+	// Trend metrics (growth over the snapshot history).
+	metrics := service.NewMetricsService(store, logger)
+
 	// AI categorization.
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
 	categorizer := job.NewCategorizer(store, aiService, logger)
 
-	// Scheduled jobs.
+	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
-	if _, err := scheduler.AddFunc(cfg.FetchCron, func() { fetcher.Run(rootCtx) }); err != nil {
+	if _, err := scheduler.AddFunc(cfg.FetchCron, func() {
+		fetcher.Run(rootCtx)
+		if err := metrics.Run(rootCtx); err != nil {
+			slog.Error("metrics computation failed", "err", err)
+		}
+	}); err != nil {
 		slog.Error("invalid FETCH_CRON", "err", err)
 		os.Exit(1)
 	}
@@ -75,7 +83,7 @@ func main() {
 	scheduler.Start()
 	defer scheduler.Stop()
 
-	router := newRouter(store, fetcher, categorizer, rootCtx)
+	router := newRouter(store, fetcher, categorizer, metrics, rootCtx)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -105,7 +113,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, jobCtx context.Context) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, jobCtx context.Context) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -116,6 +124,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	trending := handler.NewTrendingHandler(service.NewTrendService(store))
 	r.GET("/trending", trending.List)
+	r.GET("/trending/rising", trending.Rising)
 
 	handler.NewCategoryHandler(service.NewCategoryService(store)).Register(r)
 	handler.NewUserHandler(service.NewUserService(store)).Register(r)
@@ -141,6 +150,15 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.POST("/internal/categorize", func(c *gin.Context) {
 		go categorizer.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started"})
+	})
+
+	// Internal: recompute growth metrics (synchronous, so callers can read fresh data).
+	r.POST("/internal/metrics", func(c *gin.Context) {
+		if err := metrics.Run(c.Request.Context()); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "metrics computed"})
 	})
 
 	return r
