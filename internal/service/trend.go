@@ -4,10 +4,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/elbaldfun/ghta/internal/domain"
@@ -106,6 +109,36 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, err
 	}
 	return items, nil
+}
+
+// Item returns a single tracked item and its recent snapshot history (for the
+// detail page's metric-history chart).
+func (s *TrendService) Item(ctx context.Context, source, externalID string) (*domain.TrackedItem, []domain.MetricSnapshot, error) {
+	if source == "" || externalID == "" {
+		return nil, nil, badInput("source and externalId are required")
+	}
+	var item domain.TrackedItem
+	err := s.store.Items().FindOne(ctx, bson.M{"source": source, "externalId": externalID}).Decode(&item)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+
+	from := time.Now().UTC().AddDate(0, 0, -90)
+	cur, err := s.store.Snapshots().Find(ctx,
+		bson.M{"meta.source": source, "meta.externalId": externalID, "capturedAt": bson.M{"$gte": from}},
+		options.Find().SetSort(bson.D{{Key: "capturedAt", Value: 1}}),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	history := []domain.MetricSnapshot{}
+	if err := cur.All(ctx, &history); err != nil {
+		return nil, nil, err
+	}
+	return &item, history, nil
 }
 
 // risingWindows maps a window name to the stored increase field.

@@ -39,6 +39,52 @@ paths:
                     items: { $ref: "#/components/schemas/TrackedItem" }
         "400": { description: Invalid filter/sort/limit }
 
+  /trending/rising:
+    get:
+      summary: Items ranked by growth in a window
+      parameters:
+        - { name: window, in: query, schema: { type: string, enum: [daily, weekly, monthly], default: weekly } }
+        - { name: source, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: language, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50, default: 50 } }
+      responses:
+        "200":
+          description: Items with a non-null increase for the window, highest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TrackedItem" }
+        "400": { description: Invalid window/limit }
+
+  /trending/item:
+    get:
+      summary: One item plus its snapshot history
+      parameters:
+        - { name: source, in: query, required: true, schema: { type: string } }
+        - { name: externalId, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Item and recent metric snapshots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      item: { $ref: "#/components/schemas/TrackedItem" }
+                      history:
+                        type: array
+                        items: { $ref: "#/components/schemas/MetricSnapshot" }
+        "400": { description: Missing source/externalId }
+        "404": { description: Not found }
+
   /category:
     get:
       summary: Category tree
@@ -146,6 +192,11 @@ components:
         analysisStatus: { type: string, enum: [pending, done, failed] }
         sourceData: { type: object, additionalProperties: true }
         fetchedAt: { type: string, format: date-time }
+    MetricSnapshot:
+      type: object
+      properties:
+        capturedAt: { type: string, format: date-time }
+        metrics: { type: object, additionalProperties: { type: number } }
     CategoryTree:
       type: object
       properties:

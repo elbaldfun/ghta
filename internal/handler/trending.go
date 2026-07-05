@@ -45,6 +45,17 @@ func (h *TrendingHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
+// Item handles GET /trending/item?source=&externalId= — one item plus its
+// snapshot history, for the detail page.
+func (h *TrendingHandler) Item(c *gin.Context) {
+	item, history, err := h.svc.Item(c.Request.Context(), c.Query("source"), c.Query("externalId"))
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"item": item, "history": history}})
+}
+
 // Rising handles GET /trending/rising.
 func (h *TrendingHandler) Rising(c *gin.Context) {
 	q := service.RisingQuery{

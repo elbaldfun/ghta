@@ -1,0 +1,19 @@
+# GHTA — Multi-source developer & software trends
+
+GHTA aggregates ranking and growth data across developer/software ecosystems
+(GitHub today; App Store, Chrome Web Store, Microsoft Store next), tracks metric
+history, and classifies items into an AI-assisted category tree.
+
+## Key pages
+- /trending — items filtered by source, language, popularity
+- /rising — items ranked by daily/weekly/monthly growth
+- /categories — browse by category
+- /item/{source}/{externalId} — item detail with metric history
+
+## Data
+Each item exposes: source, externalId, name, description, language, category,
+primary metric (e.g. GitHub stars), and daily/weekly/monthly growth. Facts such
+as "X gained N stars this week" are rendered as plain text for citation.
+
+## API
+A public REST API mirrors these pages (see /api/openapi.yaml in the source repo).

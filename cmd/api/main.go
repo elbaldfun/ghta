@@ -125,6 +125,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	trending := handler.NewTrendingHandler(service.NewTrendService(store))
 	r.GET("/trending", trending.List)
 	r.GET("/trending/rising", trending.Rising)
+	r.GET("/trending/item", trending.Item)
 
 	handler.NewCategoryHandler(service.NewCategoryService(store)).Register(r)
 	handler.NewUserHandler(service.NewUserService(store)).Register(r)
