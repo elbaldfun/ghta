@@ -1,0 +1,98 @@
+// Package config loads and validates runtime configuration from the environment.
+// Missing or invalid required values cause startup to fail with the offending
+// field named — the app never silently runs with a bad config.
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	Port     int
+	LogLevel string
+
+	MongoURI string
+	MongoDB  string
+
+	GitHubToken string
+
+	// AI
+	AIProvider      string // "openai" | "deepseek"
+	OpenAIAPIKey    string
+	OpenAIModel     string
+	LMStudioBaseURL string
+	LMStudioModel   string
+
+	// Fetch scheduling
+	FetchCron       string
+	CategorizeCron  string
+	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
+}
+
+// Load reads .env (if present) then the environment, validates, and returns the
+// config or an aggregated error listing every invalid field.
+func Load() (*Config, error) {
+	_ = godotenv.Load() // .env is optional; real env always wins
+
+	var errs []string
+
+	cfg := &Config{
+		LogLevel:        getEnv("LOG_LEVEL", "info"),
+		MongoURI:        os.Getenv("MONGODB_URI"),
+		MongoDB:         getEnv("MONGODB_DB", "github-trend"),
+		GitHubToken:     os.Getenv("GITHUB_API_TOKEN"),
+		AIProvider:      getEnv("AI_PROVIDER", "openai"),
+		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
+		OpenAIModel:     getEnv("OPENAI_MODEL", "gpt-4o-mini"),
+		LMStudioBaseURL: getEnv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
+		LMStudioModel:   os.Getenv("LMSTUDIO_LOCAL_MODULE_NAME"),
+		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
+		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
+	}
+
+	// PORT
+	port, err := strconv.Atoi(getEnv("PORT", "3000"))
+	if err != nil {
+		errs = append(errs, "PORT must be a number")
+	}
+	cfg.Port = port
+
+	// RATE_LIMIT_BUFFER
+	buf, err := strconv.Atoi(getEnv("RATE_LIMIT_BUFFER", "200"))
+	if err != nil {
+		errs = append(errs, "RATE_LIMIT_BUFFER must be a number")
+	}
+	cfg.RateLimitBuffer = buf
+
+	// Required
+	if cfg.MongoURI == "" {
+		errs = append(errs, "MONGODB_URI is required")
+	}
+	if cfg.GitHubToken == "" {
+		errs = append(errs, "GITHUB_API_TOKEN is required")
+	}
+
+	// Enum
+	switch cfg.AIProvider {
+	case "openai", "deepseek":
+	default:
+		errs = append(errs, "AI_PROVIDER must be one of: openai, deepseek")
+	}
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))
+	}
+	return cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}

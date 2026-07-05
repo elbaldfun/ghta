@@ -2,6 +2,11 @@
 /dist
 /node_modules
 
+# Go
+/bin
+*.out
+coverage.out
+
 # Logs
 logs
 *.log

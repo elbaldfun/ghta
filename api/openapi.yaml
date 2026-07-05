@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: GHTA API
+  version: "1.0"
+  description: >
+    Multi-source trend aggregation API. GitHub is the first source; App Store,
+    Chrome Web Store and Microsoft Store adapters conform to the same model.
+    This contract is frozen for the frontend (change 5).
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      responses:
+        "200": { description: OK }
+
+  /trending:
+    get:
+      summary: List tracked items with filtering and sorting
+      parameters:
+        - { name: source, in: query, schema: { type: string, enum: [github, appstore, chrome, msstore] }, description: "Filter by source; omit for all sources" }
+        - { name: stars, in: query, schema: { type: string }, description: "Range on metrics.stars: a..b, >n, <n, n (0 is valid)" }
+        - { name: issues, in: query, schema: { type: string }, description: "Range on metrics.openIssues" }
+        - { name: language, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string }, description: "categoryId" }
+        - { name: sort, in: query, schema: { type: string }, description: "field:order; field in [stars,forks,issues,fetchedAt] (stars aliases metrics.stars)" }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50, default: 50 } }
+      responses:
+        "200":
+          description: Matching items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TrackedItem" }
+        "400": { description: Invalid filter/sort/limit }
+
+  /category:
+    get:
+      summary: Category tree
+      responses:
+        "200":
+          description: Nested category tree
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/CategoryTree" }
+    post:
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "201": { description: Created }
+        "400": { description: Invalid body }
+  /category/{id}:
+    get:
+      summary: Get a category
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK }
+        "404": { description: Not found }
+    patch:
+      summary: Update a category
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "200": { description: Updated }
+        "404": { description: Not found }
+    delete:
+      summary: Delete a category
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Deleted }
+        "404": { description: Not found }
+
+  /user:
+    get:
+      summary: List users
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create a user
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserInput" }
+      responses:
+        "201": { description: Created }
+  /user/{id}:
+    get:
+      summary: Get a user
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK }
+        "404": { description: Not found }
+    patch:
+      summary: Update a user
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserInput" }
+      responses:
+        "200": { description: Updated }
+        "404": { description: Not found }
+    delete:
+      summary: Delete a user
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Deleted }
+        "404": { description: Not found }
+
+components:
+  schemas:
+    TrackedItem:
+      type: object
+      properties:
+        id: { type: string }
+        source: { type: string }
+        externalId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        language: { type: string }
+        categoryId: { type: array, items: { type: string } }
+        categoryPath: { type: string }
+        primaryMetric: { type: string }
+        metricDirection: { type: string, enum: [desc-better, asc-better] }
+        metrics: { type: object, additionalProperties: { type: number } }
+        dailyIncrease: { type: number, nullable: true }
+        weeklyIncrease: { type: number, nullable: true }
+        monthlyIncrease: { type: number, nullable: true }
+        analysisStatus: { type: string, enum: [pending, done, failed] }
+        sourceData: { type: object, additionalProperties: true }
+        fetchedAt: { type: string, format: date-time }
+    CategoryTree:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        path: { type: string }
+        children:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryTree" }
+    CategoryInput:
+      type: object
+      required: [name, path]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        parentId: { type: string, nullable: true }
+        path: { type: string }
+    UserInput:
+      type: object
+      properties:
+        email: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [admin, user] }
