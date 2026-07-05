@@ -20,6 +20,54 @@ type Provider interface {
 	AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt string) (string, error)
 }
 
+// Embedder turns texts into vectors for similarity-based classification.
+type Embedder interface {
+	Embed(ctx context.Context, texts []string) ([][]float32, error)
+}
+
+// NewEmbedder returns the configured embedder, or nil when no embedding backend
+// is available — the classification pipeline then skips its embedding layer.
+func NewEmbedder(cfg *config.Config, log *slog.Logger) Embedder {
+	if cfg.EmbedModel == "" {
+		return nil
+	}
+	switch cfg.AIProvider {
+	case "deepseek":
+		c := openai.DefaultConfig("not-needed")
+		c.BaseURL = cfg.LMStudioBaseURL
+		return &embedProvider{client: openai.NewClientWithConfig(c), model: cfg.EmbedModel, log: log}
+	default:
+		if cfg.OpenAIAPIKey == "" {
+			return nil
+		}
+		return &embedProvider{client: openai.NewClient(cfg.OpenAIAPIKey), model: cfg.EmbedModel, log: log}
+	}
+}
+
+type embedProvider struct {
+	client *openai.Client
+	model  string
+	log    *slog.Logger
+}
+
+func (p *embedProvider) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	resp, err := p.client.CreateEmbeddings(ctx, openai.EmbeddingRequest{
+		Model: openai.EmbeddingModel(p.model),
+		Input: texts,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("embed: %w", err)
+	}
+	if len(resp.Data) != len(texts) {
+		return nil, fmt.Errorf("embed: got %d vectors for %d texts", len(resp.Data), len(texts))
+	}
+	out := make([][]float32, len(texts))
+	for _, d := range resp.Data {
+		out[d.Index] = d.Embedding
+	}
+	return out, nil
+}
+
 // New builds the configured provider. DeepSeek/LM Studio point the OpenAI client
 // at a local base URL; OpenAI uses the hosted API.
 func New(cfg *config.Config, log *slog.Logger) Provider {

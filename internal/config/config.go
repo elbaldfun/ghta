@@ -34,6 +34,11 @@ type Config struct {
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
 
 	CategorizeBatchSize int // items per AI categorization call
+
+	// Embedding classification layer (skipped when EmbedModel is empty or the
+	// provider has no credentials).
+	EmbedModel        string
+	EmbedSimThreshold float64
 }
 
 // Load reads .env (if present) then the environment, validates, and returns the
@@ -77,6 +82,14 @@ func Load() (*Config, error) {
 		errs = append(errs, "CATEGORIZE_BATCH_SIZE must be a positive number")
 	}
 	cfg.CategorizeBatchSize = batch
+
+	// Embedding layer
+	cfg.EmbedModel = getEnv("EMBED_MODEL", "text-embedding-3-small")
+	thr, err := strconv.ParseFloat(getEnv("EMBED_SIM_THRESHOLD", "0.35"), 64)
+	if err != nil || thr <= 0 || thr >= 1 {
+		errs = append(errs, "EMBED_SIM_THRESHOLD must be a number between 0 and 1")
+	}
+	cfg.EmbedSimThreshold = thr
 
 	// Required
 	if cfg.MongoURI == "" {

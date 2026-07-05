@@ -26,6 +26,7 @@ import (
 	"github.com/elbaldfun/ghta/internal/service"
 	"github.com/elbaldfun/ghta/internal/source"
 	"github.com/elbaldfun/ghta/internal/source/github"
+	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
 func main() {
@@ -61,9 +62,27 @@ func main() {
 	// Trend metrics (growth over the snapshot history).
 	metrics := service.NewMetricsService(store, logger)
 
-	// AI categorization.
+	// Taxonomy: the git-controlled category tree is the single source of truth.
+	taxNodes, err := taxonomy.Load("taxonomy/taxonomy.yaml")
+	if err != nil {
+		slog.Error("taxonomy load failed", "err", err)
+		os.Exit(1)
+	}
+	if err := taxonomy.Sync(rootCtx, store, taxNodes); err != nil {
+		slog.Error("taxonomy sync failed", "err", err)
+		os.Exit(1)
+	}
+	rules, err := taxonomy.LoadRules("taxonomy/topic-map.yaml")
+	if err != nil {
+		slog.Error("topic map load failed", "err", err)
+		os.Exit(1)
+	}
+	slog.Info("taxonomy synced", "categories", len(taxNodes), "topicRules", len(rules.Topics))
+
+	// AI categorization pipeline: rules -> embedding (optional) -> LLM.
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
-	categorizer := job.NewCategorizer(store, aiService, cfg.CategorizeBatchSize, logger)
+	embedClassifier := service.NewEmbedClassifier(provider.NewEmbedder(cfg, logger), cfg.EmbedSimThreshold)
+	categorizer := job.NewCategorizer(store, rules, embedClassifier, aiService, cfg.CategorizeBatchSize, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())

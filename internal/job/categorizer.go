@@ -5,11 +5,13 @@ import (
 	"log/slog"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/repository"
 	"github.com/elbaldfun/ghta/internal/service"
+	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
 const (
@@ -17,29 +19,30 @@ const (
 	maxAnalysisFail = 3
 )
 
-// Categorizer assigns categories to unanalyzed items via the AI service, in
-// batches to amortize the per-call cost.
+// Categorizer assigns categories to unanalyzed items via a three-tier pipeline
+// ordered by cost: (1) topic-map rules, (2) embedding similarity, (3) LLM batch.
+// Each tier only sees what the previous tiers left unresolved.
 type Categorizer struct {
 	store     *repository.Store
+	rules     *taxonomy.Rules
+	embed     *service.EmbedClassifier
 	ai        *service.AIService
 	batchSize int
 	log       *slog.Logger
 }
 
-func NewCategorizer(store *repository.Store, ai *service.AIService, batchSize int, log *slog.Logger) *Categorizer {
+func NewCategorizer(store *repository.Store, rules *taxonomy.Rules, embed *service.EmbedClassifier, ai *service.AIService, batchSize int, log *slog.Logger) *Categorizer {
 	if batchSize < 1 {
 		batchSize = 15
 	}
-	return &Categorizer{store: store, ai: ai, batchSize: batchSize, log: log}
+	return &Categorizer{store: store, rules: rules, embed: embed, ai: ai, batchSize: batchSize, log: log}
 }
 
-// Run categorizes up to maxItemsPerRun pending items. An item is pending when
-// its analysisStatus is neither done nor failed (missing counts as pending), so
-// pre-existing documents are still picked up.
+// Run categorizes up to maxItemsPerRun pending items.
 func (c *Categorizer) Run(ctx context.Context) {
-	cats, err := c.loadCategories(ctx)
+	cats, idByPath, err := c.loadTaxonomy(ctx)
 	if err != nil {
-		c.log.Error("categorizer: load categories failed", "err", err)
+		c.log.Error("categorizer: load taxonomy failed", "err", err)
 		return
 	}
 
@@ -54,12 +57,65 @@ func (c *Categorizer) Run(ctx context.Context) {
 		c.log.Error("categorizer: decode failed", "err", err)
 		return
 	}
-	c.log.Info("categorizer starting", "items", len(items), "batchSize", c.batchSize)
 
+	// Tier 1: rule mapping (free, deterministic, multi-label).
+	var unresolved []domain.TrackedItem
+	ruleDone := 0
+	for _, item := range items {
+		paths := c.rules.Classify(topicNames(item), item.Language)
+		if len(paths) == 0 {
+			unresolved = append(unresolved, item)
+			continue
+		}
+		ids := make([]string, 0, len(paths))
+		for _, p := range paths {
+			if id, ok := idByPath[p]; ok {
+				ids = append(ids, id)
+			}
+		}
+		if len(ids) == 0 { // mapped paths missing from the tree: treat as unresolved
+			unresolved = append(unresolved, item)
+			continue
+		}
+		if err := c.markDone(ctx, item.ID, ids, paths[0], "rule"); err == nil {
+			ruleDone++
+		}
+	}
+
+	// Tier 2: embedding similarity (skipped when no backend is configured).
+	embedDone := 0
+	if c.embed.Enabled() && len(unresolved) > 0 {
+		next := unresolved[:0]
+		results, err := c.embed.Classify(ctx, cats, unresolved)
+		if err != nil {
+			c.log.Warn("categorizer: embedding tier failed, falling through to LLM", "err", err)
+		} else {
+			for _, item := range unresolved {
+				r, ok := results[item.ExternalID]
+				if !ok {
+					next = append(next, item)
+					continue
+				}
+				if err := c.markDone(ctx, item.ID, []string{r.CategoryID}, r.Path, "embedding"); err == nil {
+					embedDone++
+				}
+			}
+			unresolved = next
+		}
+	}
+
+	// Tier 3: LLM batches for the long tail.
+	llmDone := c.runLLMTier(ctx, cats, idByPath, unresolved)
+
+	c.log.Info("categorizer done",
+		"items", len(items), "rule", ruleDone, "embedding", embedDone, "llm", llmDone)
+}
+
+func (c *Categorizer) runLLMTier(ctx context.Context, cats []domain.Category, idByPath map[string]string, items []domain.TrackedItem) int {
 	done := 0
 	for start := 0; start < len(items); start += c.batchSize {
 		if ctx.Err() != nil {
-			return
+			return done
 		}
 		end := start + c.batchSize
 		if end > len(items) {
@@ -67,54 +123,88 @@ func (c *Categorizer) Run(ctx context.Context) {
 		}
 		batch := items[start:end]
 
-		results, created, err := c.ai.AnalyzeBatch(ctx, cats, batch)
+		results, err := c.ai.AnalyzeBatch(ctx, cats, batch)
 		if err != nil {
-			// Whole-batch failure: count an attempt against each item.
 			c.log.Warn("categorize batch failed", "err", err, "size", len(batch))
 			for _, item := range batch {
 				c.markFailed(ctx, item)
 			}
 			continue
 		}
-		cats = append(cats, created...) // keep the tree cache fresh within the run
-
 		for _, item := range batch {
 			r, ok := results[item.ExternalID]
 			if !ok {
 				c.markFailed(ctx, item)
 				continue
 			}
-			if err := c.markDone(ctx, item.ID, r.CategoryID, r.Path); err != nil {
+			id := r.CategoryID
+			if id == "" { // model returned only a path
+				id = idByPath[r.Path]
+			}
+			if id == "" {
+				c.markFailed(ctx, item)
+				continue
+			}
+			if err := c.markDone(ctx, item.ID, []string{id}, r.Path, "llm"); err != nil {
 				c.log.Error("categorize update failed", "item", item.ExternalID, "err", err)
 				continue
 			}
 			done++
 		}
 	}
-	c.log.Info("categorizer done", "analyzed", done, "of", len(items))
+	return done
 }
 
-func (c *Categorizer) loadCategories(ctx context.Context) ([]domain.Category, error) {
-	cur, err := c.store.Categories().Find(ctx, bson.M{})
+// loadTaxonomy returns the frozen tree (createdBy=taxonomy only — legacy
+// AI-created categories are not assignment targets) plus a path→id index.
+func (c *Categorizer) loadTaxonomy(ctx context.Context) ([]domain.Category, map[string]string, error) {
+	cur, err := c.store.Categories().Find(ctx, bson.M{"createdBy": "taxonomy"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var cats []domain.Category
 	if err := cur.All(ctx, &cats); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return cats, nil
+	idByPath := make(map[string]string, len(cats))
+	for _, cat := range cats {
+		idByPath[cat.Path] = cat.ID.Hex()
+	}
+	return cats, idByPath, nil
 }
 
-func (c *Categorizer) markDone(ctx context.Context, id interface{}, catID, path string) error {
-	catIDs := []string{}
-	if catID != "" {
-		catIDs = []string{catID}
+func topicNames(item domain.TrackedItem) []string {
+	raw, ok := item.SourceData["topicNames"]
+	if !ok {
+		return nil
 	}
+	switch v := raw.(type) {
+	case []string:
+		return v
+	case primitive.A:
+		return anyToStrings(v)
+	case []interface{}:
+		return anyToStrings(v)
+	}
+	return nil
+}
+
+func anyToStrings(in []interface{}) []string {
+	out := make([]string, 0, len(in))
+	for _, x := range in {
+		if s, ok := x.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func (c *Categorizer) markDone(ctx context.Context, id interface{}, catIDs []string, path, by string) error {
 	_, err := c.store.Items().UpdateByID(ctx, id, bson.M{"$set": bson.M{
 		"categoryId":     catIDs,
 		"categoryPath":   path,
 		"analysisStatus": domain.AnalysisDone,
+		"classifiedBy":   by,
 	}})
 	return err
 }

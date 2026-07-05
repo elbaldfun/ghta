@@ -54,6 +54,7 @@ type TrackedItem struct {
 
 	AnalysisStatus    string         `bson:"analysisStatus" json:"analysisStatus"`
 	AnalysisFailCount int            `bson:"analysisFailCount" json:"analysisFailCount"`
+	ClassifiedBy      string         `bson:"classifiedBy,omitempty" json:"classifiedBy,omitempty"` // rule | embedding | llm
 	SourceData        map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
 
 	FetchedAt time.Time `bson:"fetchedAt" json:"fetchedAt"`
@@ -107,6 +108,16 @@ type FetchRun struct {
 	Error     string             `bson:"error,omitempty" json:"error,omitempty"`
 	StartedAt *time.Time         `bson:"startedAt,omitempty" json:"startedAt,omitempty"`
 	EndedAt   *time.Time         `bson:"endedAt,omitempty" json:"endedAt,omitempty"`
+}
+
+// CategorySuggestion records an AI proposal for a category that doesn't exist.
+// Humans review these and, if accepted, add the path to taxonomy.yaml — the AI
+// never mutates the tree itself.
+type CategorySuggestion struct {
+	Path      string    `bson:"path" json:"path"`
+	Count     int       `bson:"count" json:"count"`
+	Example   string    `bson:"example,omitempty" json:"example,omitempty"` // an item that triggered it
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // SnapshotMeta is the metaField of the metric_snapshots time-series collection.

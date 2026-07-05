@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	CollItems      = "tracked_items"
-	CollCategories = "categories"
-	CollUsers      = "users"
-	CollFetchRuns  = "fetch_runs"
-	CollSnapshots  = "metric_snapshots"
+	CollItems       = "tracked_items"
+	CollCategories  = "categories"
+	CollUsers       = "users"
+	CollFetchRuns   = "fetch_runs"
+	CollSnapshots   = "metric_snapshots"
+	CollSuggestions = "category_suggestions"
 )
 
 type Store struct {
@@ -42,11 +43,12 @@ func Connect(ctx context.Context, cfg *config.Config) (*Store, error) {
 	return &Store{Client: client, DB: client.Database(cfg.MongoDB)}, nil
 }
 
-func (s *Store) Items() *mongo.Collection      { return s.DB.Collection(CollItems) }
-func (s *Store) Categories() *mongo.Collection { return s.DB.Collection(CollCategories) }
-func (s *Store) Users() *mongo.Collection      { return s.DB.Collection(CollUsers) }
-func (s *Store) FetchRuns() *mongo.Collection  { return s.DB.Collection(CollFetchRuns) }
-func (s *Store) Snapshots() *mongo.Collection  { return s.DB.Collection(CollSnapshots) }
+func (s *Store) Items() *mongo.Collection       { return s.DB.Collection(CollItems) }
+func (s *Store) Categories() *mongo.Collection  { return s.DB.Collection(CollCategories) }
+func (s *Store) Users() *mongo.Collection       { return s.DB.Collection(CollUsers) }
+func (s *Store) FetchRuns() *mongo.Collection   { return s.DB.Collection(CollFetchRuns) }
+func (s *Store) Snapshots() *mongo.Collection   { return s.DB.Collection(CollSnapshots) }
+func (s *Store) Suggestions() *mongo.Collection { return s.DB.Collection(CollSuggestions) }
 
 // EnsureSchema creates the time-series snapshot collection (if absent) and all
 // indexes. It is idempotent and safe to run on every startup.
@@ -104,6 +106,13 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		Options: options.Index().SetName("category_path"),
 	}); err != nil {
 		return fmt.Errorf("category indexes: %w", err)
+	}
+
+	if _, err := s.Suggestions().Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "path", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("uniq_suggestion_path"),
+	}); err != nil {
+		return fmt.Errorf("suggestion indexes: %w", err)
 	}
 
 	if _, err := s.FetchRuns().Indexes().CreateOne(ctx, mongo.IndexModel{

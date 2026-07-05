@@ -10,7 +10,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/provider"
@@ -35,36 +35,30 @@ func NewAIService(store *repository.Store, p provider.Provider) *AIService {
 }
 
 // AnalyzeBatch categorizes many items in one AI call. It returns a result per
-// item keyed by externalId (items the model omitted are absent, i.e. failed),
-// plus any categories created during the batch so the caller can refresh its
-// cached tree. A non-nil error means the whole call/parse failed.
-func (s *AIService) AnalyzeBatch(ctx context.Context, cats []domain.Category, items []domain.TrackedItem) (map[string]BatchResult, []domain.Category, error) {
+// item keyed by externalId; items the model omitted or proposed a new category
+// for are absent (element-level failure — proposals go to the suggestion
+// queue). A non-nil error means the whole call/parse failed.
+func (s *AIService) AnalyzeBatch(ctx context.Context, cats []domain.Category, items []domain.TrackedItem) (map[string]BatchResult, error) {
 	prompt := buildBatchPrompt(cats, items)
 	raw, err := s.provider.AnalyzeJSON(ctx, aiSystemPrompt, prompt)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	elems, err := parseBatchResponse(raw)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	results := make(map[string]BatchResult, len(items))
-	var created []domain.Category
 	for _, it := range items {
 		el, ok := elems[it.ExternalID]
 		if !ok {
 			continue // omitted by the model -> element-level failure
 		}
 		if el.IsNewCategory {
-			cat, isNew, err := s.ensureCategory(ctx, el.Path)
-			if err != nil {
-				continue
-			}
-			if isNew {
-				created = append(created, *cat)
-			}
-			results[it.ExternalID] = BatchResult{CategoryID: cat.ID.Hex(), Path: cat.Path}
+			// The AI never creates categories: file a suggestion for human
+			// review and leave the item unresolved (counts as a failed attempt).
+			s.SuggestCategory(ctx, el.Path, it.ExternalID)
 			continue
 		}
 		if el.Path == "" && el.CategoryID == "" {
@@ -72,7 +66,24 @@ func (s *AIService) AnalyzeBatch(ctx context.Context, cats []domain.Category, it
 		}
 		results[it.ExternalID] = BatchResult{CategoryID: el.CategoryID, Path: el.Path}
 	}
-	return results, created, nil
+	return results, nil
+}
+
+// SuggestCategory upserts a category proposal, deduplicated by path with an
+// occurrence count so recurring gaps surface to maintainers.
+func (s *AIService) SuggestCategory(ctx context.Context, path, example string) {
+	path = strings.Trim(strings.TrimSpace(path), "/")
+	if path == "" {
+		return
+	}
+	_, _ = s.store.Suggestions().UpdateOne(ctx,
+		bson.M{"path": path},
+		bson.M{
+			"$inc": bson.M{"count": 1},
+			"$set": bson.M{"updatedAt": time.Now().UTC(), "example": example},
+		},
+		options.Update().SetUpsert(true),
+	)
 }
 
 type batchElement struct {
@@ -198,50 +209,4 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return s[:n]
-}
-
-// ensureCategory returns the category for path, creating it (root categories get
-// a nil parent) if absent. Existing paths are reused. The bool reports creation.
-func (s *AIService) ensureCategory(ctx context.Context, path string) (*domain.Category, bool, error) {
-	path = strings.Trim(strings.TrimSpace(path), "/")
-	if path == "" {
-		return nil, false, errors.New("empty category path")
-	}
-
-	var existing domain.Category
-	err := s.store.Categories().FindOne(ctx, bson.M{"path": path}).Decode(&existing)
-	if err == nil {
-		return &existing, false, nil
-	}
-	if !errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, false, err
-	}
-
-	parts := strings.Split(path, "/")
-	name := parts[len(parts)-1]
-	var parentID *primitive.ObjectID
-	if len(parts) > 1 {
-		parentPath := strings.Join(parts[:len(parts)-1], "/")
-		var parent domain.Category
-		if err := s.store.Categories().FindOne(ctx, bson.M{"path": parentPath}).Decode(&parent); err == nil {
-			parentID = &parent.ID
-		}
-	}
-
-	now := time.Now().UTC()
-	cat := domain.Category{
-		Name:      name,
-		ParentID:  parentID,
-		Level:     len(parts),
-		Path:      path,
-		CreatedBy: "ai",
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-	res, err := s.store.Categories().InsertOne(ctx, cat)
-	if err != nil {
-		return nil, false, err
-	}
-	cat.ID = res.InsertedID.(primitive.ObjectID)
-	return &cat, true, nil
 }

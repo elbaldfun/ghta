@@ -12,15 +12,58 @@ import (
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/repository"
 	"github.com/elbaldfun/ghta/internal/service"
+	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
 type fakeProvider struct {
-	resp string
-	err  error
+	resp  string
+	err   error
+	calls int
 }
 
-func (f fakeProvider) AnalyzeJSON(ctx context.Context, sys, user string) (string, error) {
+func (f *fakeProvider) AnalyzeJSON(ctx context.Context, sys, user string) (string, error) {
+	f.calls++
 	return f.resp, f.err
+}
+
+// fakeEmbedder maps known texts to fixed unit vectors so cosine is exact.
+type fakeEmbedder struct{ byNeedle map[string][]float32 }
+
+func (f fakeEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	out := make([][]float32, len(texts))
+	for i, t := range texts {
+		out[i] = []float32{0, 1} // default: orthogonal to everything relevant
+		for needle, vec := range f.byNeedle {
+			if contains(t, needle) {
+				out[i] = vec
+			}
+		}
+	}
+	return out, nil
+}
+
+func contains(s, needle string) bool {
+	return len(needle) > 0 && len(s) >= len(needle) && indexOf(s, needle) >= 0
+}
+
+func indexOf(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}
+
+var testNodes = []taxonomy.Node{
+	{Path: "ai", Name: "AI", Desc: "artificial intelligence"},
+	{Path: "ai/llm", Name: "LLM", Desc: "large language models"},
+	{Path: "web", Name: "Web", Desc: "web development frameworks"},
+}
+
+var testRules = &taxonomy.Rules{
+	Topics:    map[string]string{"llm": "ai/llm"},
+	Languages: map[string]string{},
 }
 
 func jobTestStore(t *testing.T) *repository.Store {
@@ -36,50 +79,124 @@ func jobTestStore(t *testing.T) *repository.Store {
 	if err := store.EnsureSchema(context.Background()); err != nil {
 		t.Fatalf("schema: %v", err)
 	}
-	_, _ = store.Items().DeleteMany(context.Background(), bson.M{})
-	_, _ = store.Categories().DeleteMany(context.Background(), bson.M{})
+	ctx := context.Background()
+	_, _ = store.Items().DeleteMany(ctx, bson.M{})
+	_, _ = store.Categories().DeleteMany(ctx, bson.M{})
+	_, _ = store.Suggestions().DeleteMany(ctx, bson.M{})
+	if err := taxonomy.Sync(ctx, store, testNodes); err != nil {
+		t.Fatalf("taxonomy sync: %v", err)
+	}
 	t.Cleanup(func() { _ = store.Close(context.Background()) })
 	return store
 }
 
-// The categorizer batches pending items, creates the AI-proposed category, marks
-// covered items done, and marks an item the model omitted as a failed attempt.
-func TestCategorizerBatch(t *testing.T) {
+func findItem(t *testing.T, store *repository.Store, externalID string) domain.TrackedItem {
+	t.Helper()
+	var got domain.TrackedItem
+	if err := store.Items().FindOne(context.Background(), bson.M{"externalId": externalID}).Decode(&got); err != nil {
+		t.Fatalf("find %s: %v", externalID, err)
+	}
+	return got
+}
+
+// Tier 1: a topic-map hit classifies without any model call.
+func TestPipelineRuleTier(t *testing.T) {
 	store := jobTestStore(t)
 	ctx := context.Background()
 
-	// two pending items; the model will only answer for o/covered
-	_, _ = store.Items().InsertMany(ctx, []interface{}{
-		bson.M{"source": domain.SourceGitHub, "externalId": "o/covered", "name": "langchain",
-			"description": "LLM framework", "analysisStatus": domain.AnalysisPending},
-		bson.M{"source": domain.SourceGitHub, "externalId": "o/omitted", "name": "mystery",
-			"analysisStatus": domain.AnalysisPending},
+	_, _ = store.Items().InsertOne(ctx, bson.M{
+		"source": domain.SourceGitHub, "externalId": "o/ruled", "name": "vllm",
+		"analysisStatus": domain.AnalysisPending,
+		"sourceData":     bson.M{"topicNames": []string{"LLM"}}, // case-insensitive
 	})
 
-	ai := service.NewAIService(store, fakeProvider{
-		resp: `{"results":[{"id":"o/covered","categoryId":"","path":"ai/llm","isNewCategory":true}]}`,
-	})
-	NewCategorizer(store, ai, 15, slog.Default()).Run(ctx)
+	fp := &fakeProvider{resp: `{"results":[]}`}
+	ai := service.NewAIService(store, fp)
+	embed := service.NewEmbedClassifier(nil, 0.35) // embedding tier disabled
+	NewCategorizer(store, testRules, embed, ai, 15, slog.Default()).Run(ctx)
 
-	var covered domain.TrackedItem
-	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/covered"}).Decode(&covered)
-	if covered.AnalysisStatus != domain.AnalysisDone || covered.CategoryPath != "ai/llm" {
-		t.Errorf("covered = status %q path %q, want done ai/llm", covered.AnalysisStatus, covered.CategoryPath)
+	got := findItem(t, store, "o/ruled")
+	if got.AnalysisStatus != domain.AnalysisDone || got.ClassifiedBy != "rule" || got.CategoryPath != "ai/llm" {
+		t.Errorf("got status=%q by=%q path=%q, want done/rule/ai-llm", got.AnalysisStatus, got.ClassifiedBy, got.CategoryPath)
 	}
-
-	var omitted domain.TrackedItem
-	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/omitted"}).Decode(&omitted)
-	if omitted.AnalysisFailCount != 1 || omitted.AnalysisStatus == domain.AnalysisDone {
-		t.Errorf("omitted = failCount %d status %q, want 1 not-done", omitted.AnalysisFailCount, omitted.AnalysisStatus)
-	}
-
-	// the AI-created category tree exists
-	if err := store.Categories().FindOne(ctx, bson.M{"path": "ai/llm"}).Err(); err != nil {
-		t.Errorf("expected ai/llm category created: %v", err)
+	if fp.calls != 0 {
+		t.Errorf("LLM was called %d times for a rule-classified item", fp.calls)
 	}
 }
 
-// A whole-batch parse failure escalates an item to failed at the threshold.
+// Tier 2: embedding similarity above threshold classifies; LLM not called.
+func TestPipelineEmbeddingTier(t *testing.T) {
+	store := jobTestStore(t)
+	ctx := context.Background()
+
+	_, _ = store.Items().InsertOne(ctx, bson.M{
+		"source": domain.SourceGitHub, "externalId": "o/embedded", "name": "some-webthing",
+		"description": "a fancy web framework", "analysisStatus": domain.AnalysisPending,
+	})
+
+	// category text contains "web development"; item text contains "web framework"
+	emb := fakeEmbedder{byNeedle: map[string][]float32{
+		"web development": {1, 0},
+		"web framework":   {1, 0},
+	}}
+	fp := &fakeProvider{resp: `{"results":[]}`}
+	ai := service.NewAIService(store, fp)
+	embed := service.NewEmbedClassifier(emb, 0.35)
+	NewCategorizer(store, testRules, embed, ai, 15, slog.Default()).Run(ctx)
+
+	got := findItem(t, store, "o/embedded")
+	if got.AnalysisStatus != domain.AnalysisDone || got.ClassifiedBy != "embedding" || got.CategoryPath != "web" {
+		t.Errorf("got status=%q by=%q path=%q, want done/embedding/web", got.AnalysisStatus, got.ClassifiedBy, got.CategoryPath)
+	}
+	if fp.calls != 0 {
+		t.Errorf("LLM was called %d times for an embedding-classified item", fp.calls)
+	}
+}
+
+// Tier 3: unresolved items reach the LLM; isNewCategory files a suggestion (no
+// category is created) and counts as a failed attempt.
+func TestPipelineLLMTierAndSuggestion(t *testing.T) {
+	store := jobTestStore(t)
+	ctx := context.Background()
+
+	_, _ = store.Items().InsertMany(ctx, []interface{}{
+		bson.M{"source": domain.SourceGitHub, "externalId": "o/llm-hit", "name": "mystery-a",
+			"analysisStatus": domain.AnalysisPending},
+		bson.M{"source": domain.SourceGitHub, "externalId": "o/new-cat", "name": "defi-thing",
+			"analysisStatus": domain.AnalysisPending},
+	})
+
+	fp := &fakeProvider{resp: `{"results":[
+		{"id":"o/llm-hit","categoryId":"","path":"ai/llm","isNewCategory":false},
+		{"id":"o/new-cat","categoryId":"","path":"blockchain/defi","isNewCategory":true}
+	]}`}
+	ai := service.NewAIService(store, fp)
+	embed := service.NewEmbedClassifier(nil, 0.35)
+	NewCategorizer(store, testRules, embed, ai, 15, slog.Default()).Run(ctx)
+
+	hit := findItem(t, store, "o/llm-hit")
+	if hit.AnalysisStatus != domain.AnalysisDone || hit.ClassifiedBy != "llm" || hit.CategoryPath != "ai/llm" {
+		t.Errorf("llm-hit = status %q by %q path %q", hit.AnalysisStatus, hit.ClassifiedBy, hit.CategoryPath)
+	}
+
+	sug := findItem(t, store, "o/new-cat")
+	if sug.AnalysisStatus == domain.AnalysisDone || sug.AnalysisFailCount != 1 {
+		t.Errorf("new-cat = status %q failCount %d, want not-done/1", sug.AnalysisStatus, sug.AnalysisFailCount)
+	}
+	// suggestion recorded, category NOT created
+	var s domain.CategorySuggestion
+	if err := store.Suggestions().FindOne(ctx, bson.M{"path": "blockchain/defi"}).Decode(&s); err != nil {
+		t.Fatalf("suggestion not recorded: %v", err)
+	}
+	if s.Count != 1 {
+		t.Errorf("suggestion count = %d, want 1", s.Count)
+	}
+	if err := store.Categories().FindOne(ctx, bson.M{"path": "blockchain/defi"}).Err(); err == nil {
+		t.Errorf("category was created but must not be")
+	}
+}
+
+// Whole-batch parse failure escalates to failed at the threshold.
 func TestCategorizerMarksFailed(t *testing.T) {
 	store := jobTestStore(t)
 	ctx := context.Background()
@@ -89,11 +206,12 @@ func TestCategorizerMarksFailed(t *testing.T) {
 		"analysisStatus": domain.AnalysisPending, "analysisFailCount": maxAnalysisFail - 1,
 	})
 
-	ai := service.NewAIService(store, fakeProvider{resp: "garbage, no json"})
-	NewCategorizer(store, ai, 15, slog.Default()).Run(ctx)
+	fp := &fakeProvider{resp: "garbage, no json"}
+	ai := service.NewAIService(store, fp)
+	embed := service.NewEmbedClassifier(nil, 0.35)
+	NewCategorizer(store, testRules, embed, ai, 15, slog.Default()).Run(ctx)
 
-	var got domain.TrackedItem
-	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/bad"}).Decode(&got)
+	got := findItem(t, store, "o/bad")
 	if got.AnalysisStatus != domain.AnalysisFailed || got.AnalysisFailCount != maxAnalysisFail {
 		t.Errorf("got status %q failCount %d, want failed %d", got.AnalysisStatus, got.AnalysisFailCount, maxAnalysisFail)
 	}
