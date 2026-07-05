@@ -32,6 +32,8 @@ type Config struct {
 	FetchCron       string
 	CategorizeCron  string
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
+
+	CategorizeBatchSize int // items per AI categorization call
 }
 
 // Load reads .env (if present) then the environment, validates, and returns the
@@ -68,6 +70,13 @@ func Load() (*Config, error) {
 		errs = append(errs, "RATE_LIMIT_BUFFER must be a number")
 	}
 	cfg.RateLimitBuffer = buf
+
+	// CATEGORIZE_BATCH_SIZE
+	batch, err := strconv.Atoi(getEnv("CATEGORIZE_BATCH_SIZE", "15"))
+	if err != nil || batch < 1 {
+		errs = append(errs, "CATEGORIZE_BATCH_SIZE must be a positive number")
+	}
+	cfg.CategorizeBatchSize = batch
 
 	// Required
 	if cfg.MongoURI == "" {

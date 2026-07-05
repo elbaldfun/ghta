@@ -14,9 +14,10 @@ import (
 	"github.com/elbaldfun/ghta/internal/config"
 )
 
-// Provider runs a chat completion and returns the raw assistant text.
+// Provider runs a chat completion constrained to JSON output and returns the raw
+// assistant text (a JSON document).
 type Provider interface {
-	Analyze(ctx context.Context, systemPrompt, userPrompt string) (string, error)
+	AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt string) (string, error)
 }
 
 // New builds the configured provider. DeepSeek/LM Studio point the OpenAI client
@@ -40,13 +41,17 @@ type chatProvider struct {
 
 const maxAttempts = 3
 
-func (p *chatProvider) Analyze(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
+// AnalyzeJSON requests a JSON object response, removing the need to scrape prose
+// or code fences from the reply.
+func (p *chatProvider) AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		resp, err := p.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 			Model:       p.model,
 			Temperature: 0.2,
-			MaxTokens:   1000,
+			ResponseFormat: &openai.ChatCompletionResponseFormat{
+				Type: openai.ChatCompletionResponseFormatTypeJSONObject,
+			},
 			Messages: []openai.ChatCompletionMessage{
 				{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 				{Role: openai.ChatMessageRoleUser, Content: userPrompt},

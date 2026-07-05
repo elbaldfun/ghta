@@ -19,7 +19,7 @@ type fakeProvider struct {
 	err  error
 }
 
-func (f fakeProvider) Analyze(ctx context.Context, sys, user string) (string, error) {
+func (f fakeProvider) AnalyzeJSON(ctx context.Context, sys, user string) (string, error) {
 	return f.resp, f.err
 }
 
@@ -42,71 +42,59 @@ func jobTestStore(t *testing.T) *repository.Store {
 	return store
 }
 
-// The categorizer must pick up an item with no categoryId, create the AI-proposed
-// category, and mark the item done.
-func TestCategorizerAssignsNewCategory(t *testing.T) {
+// The categorizer batches pending items, creates the AI-proposed category, marks
+// covered items done, and marks an item the model omitted as a failed attempt.
+func TestCategorizerBatch(t *testing.T) {
 	store := jobTestStore(t)
 	ctx := context.Background()
 
-	// item with categoryId entirely absent (pre-existing document shape)
-	if _, err := store.Items().InsertOne(ctx, bson.M{
-		"source": domain.SourceGitHub, "externalId": "o/r", "name": "langchain",
-		"description": "LLM framework", "language": "Python",
-	}); err != nil {
-		t.Fatalf("seed: %v", err)
-	}
+	// two pending items; the model will only answer for o/covered
+	_, _ = store.Items().InsertMany(ctx, []interface{}{
+		bson.M{"source": domain.SourceGitHub, "externalId": "o/covered", "name": "langchain",
+			"description": "LLM framework", "analysisStatus": domain.AnalysisPending},
+		bson.M{"source": domain.SourceGitHub, "externalId": "o/omitted", "name": "mystery",
+			"analysisStatus": domain.AnalysisPending},
+	})
 
 	ai := service.NewAIService(store, fakeProvider{
-		resp: `{"categoryId":"","path":"ai/llm","isNewCategory":true}`,
+		resp: `{"results":[{"id":"o/covered","categoryId":"","path":"ai/llm","isNewCategory":true}]}`,
 	})
-	NewCategorizer(store, ai, slog.Default()).Run(ctx)
+	NewCategorizer(store, ai, 15, slog.Default()).Run(ctx)
 
-	var got domain.TrackedItem
-	if err := store.Items().FindOne(ctx, bson.M{"externalId": "o/r"}).Decode(&got); err != nil {
-		t.Fatalf("find item: %v", err)
-	}
-	if got.AnalysisStatus != domain.AnalysisDone {
-		t.Errorf("status = %q, want done", got.AnalysisStatus)
-	}
-	if got.CategoryPath != "ai/llm" || len(got.CategoryID) != 1 {
-		t.Errorf("categorization = path %q id %v", got.CategoryPath, got.CategoryID)
+	var covered domain.TrackedItem
+	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/covered"}).Decode(&covered)
+	if covered.AnalysisStatus != domain.AnalysisDone || covered.CategoryPath != "ai/llm" {
+		t.Errorf("covered = status %q path %q, want done ai/llm", covered.AnalysisStatus, covered.CategoryPath)
 	}
 
-	// the new category tree should have been created (root ai + child ai/llm)
-	count, _ := store.Categories().CountDocuments(ctx, bson.M{})
-	if count < 1 {
-		t.Errorf("expected category created, got %d", count)
+	var omitted domain.TrackedItem
+	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/omitted"}).Decode(&omitted)
+	if omitted.AnalysisFailCount != 1 || omitted.AnalysisStatus == domain.AnalysisDone {
+		t.Errorf("omitted = failCount %d status %q, want 1 not-done", omitted.AnalysisFailCount, omitted.AnalysisStatus)
 	}
-	var child domain.Category
-	if err := store.Categories().FindOne(ctx, bson.M{"path": "ai/llm"}).Decode(&child); err != nil {
-		t.Errorf("child category not found: %v", err)
-	} else if child.CreatedBy != "ai" || child.Level != 2 {
-		t.Errorf("child = createdBy %q level %d", child.CreatedBy, child.Level)
+
+	// the AI-created category tree exists
+	if err := store.Categories().FindOne(ctx, bson.M{"path": "ai/llm"}).Err(); err != nil {
+		t.Errorf("expected ai/llm category created: %v", err)
 	}
 }
 
-// A failing provider must increment the fail count and, after the threshold,
-// mark the item failed so it leaves the queue.
+// A whole-batch parse failure escalates an item to failed at the threshold.
 func TestCategorizerMarksFailed(t *testing.T) {
 	store := jobTestStore(t)
 	ctx := context.Background()
 
 	_, _ = store.Items().InsertOne(ctx, bson.M{
-		"source": domain.SourceGitHub, "externalId": "o/bad", "categoryId": []string{},
-		"analysisFailCount": maxAnalysisFail - 1,
+		"source": domain.SourceGitHub, "externalId": "o/bad",
+		"analysisStatus": domain.AnalysisPending, "analysisFailCount": maxAnalysisFail - 1,
 	})
 
 	ai := service.NewAIService(store, fakeProvider{resp: "garbage, no json"})
-	NewCategorizer(store, ai, slog.Default()).Run(ctx)
+	NewCategorizer(store, ai, 15, slog.Default()).Run(ctx)
 
 	var got domain.TrackedItem
-	if err := store.Items().FindOne(ctx, bson.M{"externalId": "o/bad"}).Decode(&got); err != nil {
-		t.Fatalf("find: %v", err)
-	}
-	if got.AnalysisStatus != domain.AnalysisFailed {
-		t.Errorf("status = %q, want failed", got.AnalysisStatus)
-	}
-	if got.AnalysisFailCount != maxAnalysisFail {
-		t.Errorf("failCount = %d, want %d", got.AnalysisFailCount, maxAnalysisFail)
+	_ = store.Items().FindOne(ctx, bson.M{"externalId": "o/bad"}).Decode(&got)
+	if got.AnalysisStatus != domain.AnalysisFailed || got.AnalysisFailCount != maxAnalysisFail {
+		t.Errorf("got status %q failCount %d, want failed %d", got.AnalysisStatus, got.AnalysisFailCount, maxAnalysisFail)
 	}
 }

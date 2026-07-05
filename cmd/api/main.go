@@ -63,7 +63,7 @@ func main() {
 
 	// AI categorization.
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
-	categorizer := job.NewCategorizer(store, aiService, logger)
+	categorizer := job.NewCategorizer(store, aiService, cfg.CategorizeBatchSize, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())

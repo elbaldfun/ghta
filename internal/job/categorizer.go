@@ -13,24 +13,29 @@ import (
 )
 
 const (
-	categorizeBatch = 1000
+	maxItemsPerRun  = 1000
 	maxAnalysisFail = 3
 )
 
-// Categorizer assigns categories to unanalyzed items via the AI service.
+// Categorizer assigns categories to unanalyzed items via the AI service, in
+// batches to amortize the per-call cost.
 type Categorizer struct {
-	store *repository.Store
-	ai    *service.AIService
-	log   *slog.Logger
+	store     *repository.Store
+	ai        *service.AIService
+	batchSize int
+	log       *slog.Logger
 }
 
-func NewCategorizer(store *repository.Store, ai *service.AIService, log *slog.Logger) *Categorizer {
-	return &Categorizer{store: store, ai: ai, log: log}
+func NewCategorizer(store *repository.Store, ai *service.AIService, batchSize int, log *slog.Logger) *Categorizer {
+	if batchSize < 1 {
+		batchSize = 15
+	}
+	return &Categorizer{store: store, ai: ai, batchSize: batchSize, log: log}
 }
 
-// Run categorizes up to categorizeBatch pending items. An item is pending when
-// it has no categoryId field or an empty one — so pre-existing documents that
-// never had the field are still picked up.
+// Run categorizes up to maxItemsPerRun pending items. An item is pending when
+// its analysisStatus is neither done nor failed (missing counts as pending), so
+// pre-existing documents are still picked up.
 func (c *Categorizer) Run(ctx context.Context) {
 	cats, err := c.loadCategories(ctx)
 	if err != nil {
@@ -38,14 +43,8 @@ func (c *Categorizer) Run(ctx context.Context) {
 		return
 	}
 
-	filter := bson.M{
-		"analysisStatus": bson.M{"$ne": domain.AnalysisFailed},
-		"$or": []bson.M{
-			{"categoryId": bson.M{"$exists": false}},
-			{"categoryId": bson.M{"$size": 0}},
-		},
-	}
-	cur, err := c.store.Items().Find(ctx, filter, options.Find().SetLimit(categorizeBatch))
+	filter := bson.M{"analysisStatus": bson.M{"$nin": []string{domain.AnalysisDone, domain.AnalysisFailed}}}
+	cur, err := c.store.Items().Find(ctx, filter, options.Find().SetLimit(maxItemsPerRun))
 	if err != nil {
 		c.log.Error("categorizer: query failed", "err", err)
 		return
@@ -55,24 +54,42 @@ func (c *Categorizer) Run(ctx context.Context) {
 		c.log.Error("categorizer: decode failed", "err", err)
 		return
 	}
-	c.log.Info("categorizer starting", "items", len(items))
+	c.log.Info("categorizer starting", "items", len(items), "batchSize", c.batchSize)
 
 	done := 0
-	for _, item := range items {
+	for start := 0; start < len(items); start += c.batchSize {
 		if ctx.Err() != nil {
 			return
 		}
-		catID, path, err := c.ai.AnalyzeItem(ctx, cats, item)
+		end := start + c.batchSize
+		if end > len(items) {
+			end = len(items)
+		}
+		batch := items[start:end]
+
+		results, created, err := c.ai.AnalyzeBatch(ctx, cats, batch)
 		if err != nil {
-			c.markFailed(ctx, item)
-			c.log.Warn("categorize failed", "item", item.ExternalID, "err", err)
+			// Whole-batch failure: count an attempt against each item.
+			c.log.Warn("categorize batch failed", "err", err, "size", len(batch))
+			for _, item := range batch {
+				c.markFailed(ctx, item)
+			}
 			continue
 		}
-		if err := c.markDone(ctx, item.ID, catID, path); err != nil {
-			c.log.Error("categorize update failed", "item", item.ExternalID, "err", err)
-			continue
+		cats = append(cats, created...) // keep the tree cache fresh within the run
+
+		for _, item := range batch {
+			r, ok := results[item.ExternalID]
+			if !ok {
+				c.markFailed(ctx, item)
+				continue
+			}
+			if err := c.markDone(ctx, item.ID, r.CategoryID, r.Path); err != nil {
+				c.log.Error("categorize update failed", "item", item.ExternalID, "err", err)
+				continue
+			}
+			done++
 		}
-		done++
 	}
 	c.log.Info("categorizer done", "analyzed", done, "of", len(items))
 }

@@ -2,54 +2,46 @@ package service
 
 import "testing"
 
-func TestParseAIResponse(t *testing.T) {
-	tests := []struct {
-		name     string
-		raw      string
-		wantPath string
-		wantNew  bool
-		wantErr  bool
-	}{
-		{
-			name:     "bare json",
-			raw:      `{"categoryId":"c1","path":"ai/llm","isNewCategory":false}`,
-			wantPath: "ai/llm",
-		},
-		{
-			name:     "fenced json",
-			raw:      "here you go:\n```json\n{\"categoryId\":\"\",\"path\":\"blockchain\",\"isNewCategory\":true}\n```",
-			wantPath: "blockchain",
-			wantNew:  true,
-		},
-		{
-			name:     "prose with braces",
-			raw:      `The best fit is: {"categoryId":"c2","path":"web/frameworks"} — hope this helps`,
-			wantPath: "web/frameworks",
-		},
-		{
-			name:    "no json",
-			raw:     "I cannot categorize this repository.",
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			res, err := parseAIResponse(tt.raw)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("expected error, got %+v", res)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if res.Path != tt.wantPath {
-				t.Errorf("path = %q, want %q", res.Path, tt.wantPath)
-			}
-			if res.IsNewCategory != tt.wantNew {
-				t.Errorf("isNewCategory = %v, want %v", res.IsNewCategory, tt.wantNew)
-			}
-		})
-	}
+func TestParseBatchResponse(t *testing.T) {
+	t.Run("well-formed array", func(t *testing.T) {
+		raw := `{"results":[
+			{"id":"a/one","categoryId":"c1","path":"ai/llm","isNewCategory":false},
+			{"id":"b/two","categoryId":"","path":"web","isNewCategory":true}
+		]}`
+		got, err := parseBatchResponse(raw)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(got) != 2 {
+			t.Fatalf("got %d elements, want 2", len(got))
+		}
+		if got["a/one"].Path != "ai/llm" || got["b/two"].IsNewCategory != true {
+			t.Errorf("bad mapping: %+v", got)
+		}
+	})
+
+	t.Run("wrapped in prose still parses", func(t *testing.T) {
+		raw := "Sure! {\"results\":[{\"id\":\"x/y\",\"path\":\"tools\"}]} done"
+		got, err := parseBatchResponse(raw)
+		if err != nil || got["x/y"].Path != "tools" {
+			t.Fatalf("got %+v err %v", got, err)
+		}
+	})
+
+	t.Run("missing element is simply absent", func(t *testing.T) {
+		raw := `{"results":[{"id":"only/one","path":"a"}]}`
+		got, _ := parseBatchResponse(raw)
+		if _, ok := got["missing/item"]; ok {
+			t.Errorf("did not expect missing/item in results")
+		}
+	})
+
+	t.Run("no results errors", func(t *testing.T) {
+		if _, err := parseBatchResponse("no json here"); err == nil {
+			t.Errorf("expected error")
+		}
+		if _, err := parseBatchResponse(`{"results":[]}`); err == nil {
+			t.Errorf("expected error for empty results")
+		}
+	})
 }
