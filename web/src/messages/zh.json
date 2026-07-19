@@ -3,58 +3,11 @@
     "name": "GHTA",
     "tagline": "多源开发者与软件趋势"
   },
-  "nav": {
-    "overview": "总览",
-    "trending": "趋势",
-    "rising": "增长",
-    "categories": "分类"
-  },
-  "common": {
-    "loading": "加载中…",
-    "empty": "暂无数据。",
-    "error": "数据加载失败，后端是否在运行？",
-    "source": "来源",
-    "allSources": "全部来源",
-    "language": "语言",
-    "sortBy": "排序",
-    "stars": "星标",
-    "viewDetail": "查看详情"
-  },
-  "home": {
-    "title": "开发者生态里正在流行什么",
-    "subtitle": "当前为 GitHub 仓库；App Store、Chrome、Microsoft Store 陆续接入。",
-    "topByStars": "星标榜",
-    "fastestRising": "本周增长最快"
-  },
-  "trending": {
-    "title": "趋势",
-    "description": "按来源、语言与热度浏览条目。"
-  },
-  "rising": {
-    "title": "增长",
-    "description": "按星标/指标增量排序的增长最快条目。",
-    "daily": "日",
-    "weekly": "周",
-    "monthly": "月",
-    "increase": "增量"
-  },
-  "categories": {
-    "title": "分类",
-    "description": "按 AI 归类浏览条目。"
-  },
-  "detail": {
-    "history": "指标历史",
-    "noHistory": "暂无历史 —— 快照积累后再来查看。",
-    "topics": "主题",
-    "openIssues": "开放 issue",
-    "forks": "fork"
-  },
   "rank": {
     "homeTitle": "GitHub 高星仓库排行榜",
     "homeSubtitle": "发现全球最受欢迎的开源项目",
     "navRankings": "排行榜",
     "footerTagline": "GitHub 高星仓库排行与增长趋势",
-    "footerClassic": "经典版",
     "footerDataSource": "数据来源：GitHub",
     "searchPlaceholder": "搜索仓库、组织或关键词...",
     "searchResultsFor": "搜索结果:",

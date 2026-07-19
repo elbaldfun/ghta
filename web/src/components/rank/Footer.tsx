@@ -16,9 +16,6 @@ export function RankFooter() {
           <Link href="/" className="hover:text-fg">
             {t('navRankings')}
           </Link>
-          <Link href="/trending" className="hover:text-fg">
-            {t('footerClassic')}
-          </Link>
           <a
             href="https://github.com"
             target="_blank"

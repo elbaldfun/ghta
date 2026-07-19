@@ -3,58 +3,11 @@
     "name": "GHTA",
     "tagline": "Multi-source developer & software trends"
   },
-  "nav": {
-    "overview": "Overview",
-    "trending": "Trending",
-    "rising": "Rising",
-    "categories": "Categories"
-  },
-  "common": {
-    "loading": "Loading…",
-    "empty": "Nothing to show yet.",
-    "error": "Couldn't load data. Is the API running?",
-    "source": "Source",
-    "allSources": "All sources",
-    "language": "Language",
-    "sortBy": "Sort by",
-    "stars": "stars",
-    "viewDetail": "View details"
-  },
-  "home": {
-    "title": "What's trending across developer ecosystems",
-    "subtitle": "GitHub repositories today; App Store, Chrome and Microsoft Store next.",
-    "topByStars": "Top by stars",
-    "fastestRising": "Fastest rising this week"
-  },
-  "trending": {
-    "title": "Trending",
-    "description": "Browse tracked items by source, language and popularity."
-  },
-  "rising": {
-    "title": "Rising",
-    "description": "Items growing the fastest by star/metric increase.",
-    "daily": "Day",
-    "weekly": "Week",
-    "monthly": "Month",
-    "increase": "increase"
-  },
-  "categories": {
-    "title": "Categories",
-    "description": "Browse items by AI-assigned category."
-  },
-  "detail": {
-    "history": "Metric history",
-    "noHistory": "No history yet — check back once snapshots accumulate.",
-    "topics": "Topics",
-    "openIssues": "open issues",
-    "forks": "forks"
-  },
   "rank": {
     "homeTitle": "GitHub Star Rankings",
     "homeSubtitle": "Discover the world's most popular open-source projects",
     "navRankings": "Rankings",
     "footerTagline": "GitHub star rankings & growth trends",
-    "footerClassic": "Classic UI",
     "footerDataSource": "Data from GitHub",
     "searchPlaceholder": "Search repositories, orgs, or keywords...",
     "searchResultsFor": "Search results for",
