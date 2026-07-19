@@ -47,7 +47,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   ];
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <div className="mx-auto max-w-[1000px] px-[26px] py-[22px]">
       <Link
         href="/"
         className="mb-4 flex w-fit items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg"

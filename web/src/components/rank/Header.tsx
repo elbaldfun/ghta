@@ -5,34 +5,36 @@ import { SearchBox } from './SearchBox';
 import { LocalePills } from './LocalePills';
 import { ThemePill } from './ThemePill';
 
-/** Persistent 2a header: brand + nav, search pill, locale pills, theme toggle. */
+/** Persistent 2a header: full-bleed border, content aligned to the site container. */
 export function RankHeader() {
   const t = useTranslations('rank');
 
   return (
-    <header className="flex items-center justify-between gap-5 border-b border-border px-7 py-5">
-      <div className="flex items-center gap-3.5 whitespace-nowrap">
-        <Link href="/" className="flex items-baseline gap-2.5">
-          <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
-          <span className="text-xs text-muted">Explorer</span>
-        </Link>
-        <nav className="flex items-center gap-1">
-          <Link
-            href="/"
-            className="rounded-lg bg-accent px-[13px] py-[7px] text-[12.5px] font-bold text-accent-fg"
-          >
-            {t('navRankings')}
+    <header className="border-b border-border">
+      <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-5 px-7 py-5">
+        <div className="flex items-center gap-3.5 whitespace-nowrap">
+          <Link href="/" className="flex items-baseline gap-2.5">
+            <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
+            <span className="text-xs text-muted">Explorer</span>
           </Link>
-        </nav>
-      </div>
-      <Suspense>
-        <SearchBox />
-      </Suspense>
-      <div className="flex items-center gap-1.5">
+          <nav className="flex items-center gap-1">
+            <Link
+              href="/"
+              className="rounded-lg bg-accent px-[13px] py-[7px] text-[12.5px] font-bold text-accent-fg"
+            >
+              {t('navRankings')}
+            </Link>
+          </nav>
+        </div>
         <Suspense>
-          <LocalePills />
+          <SearchBox />
         </Suspense>
-        <ThemePill />
+        <div className="flex items-center gap-1.5">
+          <Suspense>
+            <LocalePills />
+          </Suspense>
+          <ThemePill />
+        </div>
       </div>
     </header>
   );
