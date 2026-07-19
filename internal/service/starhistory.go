@@ -73,7 +73,12 @@ func (s *StarHistoryService) Ensure(ctx context.Context, source domain.Source, e
 		return nil, true
 	}
 
-	doc = domain.StarHistory{
+	s.save(ctx, source, externalID, points)
+	return points, true
+}
+
+func (s *StarHistoryService) save(ctx context.Context, source domain.Source, externalID string, points []domain.StarPoint) {
+	doc := domain.StarHistory{
 		Source:       source,
 		ExternalID:   externalID,
 		Points:       points,
@@ -86,7 +91,133 @@ func (s *StarHistoryService) Ensure(ctx context.Context, source domain.Source, e
 	); err != nil {
 		s.log.Warn("star history save failed", "externalId", externalID, "err", err)
 	}
-	return points, true
+}
+
+// Warmup backfills the top-N repos by stars. Missing repos are fetched from
+// ClickHouse in batches (one query per ~50 repos — far friendlier to the
+// public playground than per-repo bursts); whatever a batch can't provide
+// falls back to the per-repo path, slowly.
+func (s *StarHistoryService) Warmup(ctx context.Context, top int) {
+	opts := options.Find().
+		SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).
+		SetLimit(int64(top)).
+		SetProjection(bson.M{"externalId": 1})
+	cur, err := s.store.Items().Find(ctx, bson.M{"source": domain.SourceGitHub}, opts)
+	if err != nil {
+		s.log.Error("history warmup: query failed", "err", err)
+		return
+	}
+	var ids []string
+	for cur.Next(ctx) {
+		var it struct {
+			ExternalID string `bson:"externalId"`
+		}
+		if cur.Decode(&it) == nil && repoNameRe.MatchString(it.ExternalID) {
+			ids = append(ids, it.ExternalID)
+		}
+	}
+	cur.Close(ctx)
+
+	// Drop the ones already backfilled.
+	haveCur, err := s.store.StarHistory().Find(ctx,
+		bson.M{"source": domain.SourceGitHub, "externalId": bson.M{"$in": ids}},
+		options.Find().SetProjection(bson.M{"externalId": 1}))
+	if err != nil {
+		s.log.Error("history warmup: existing lookup failed", "err", err)
+		return
+	}
+	have := map[string]bool{}
+	for haveCur.Next(ctx) {
+		var doc struct {
+			ExternalID string `bson:"externalId"`
+		}
+		if haveCur.Decode(&doc) == nil {
+			have[doc.ExternalID] = true
+		}
+	}
+	haveCur.Close(ctx)
+
+	var missing []string
+	for _, id := range ids {
+		if !have[id] {
+			missing = append(missing, id)
+		}
+	}
+	s.log.Info("history warmup starting", "top", top, "missing", len(missing))
+
+	const chunkSize = 50
+	saved := 0
+	for start := 0; start < len(missing); start += chunkSize {
+		chunk := missing[start:min(start+chunkSize, len(missing))]
+		byRepo := s.fetchClickHouseBatch(ctx, chunk)
+		for _, id := range chunk {
+			if points := byRepo[id]; len(points) > 0 {
+				s.save(ctx, domain.SourceGitHub, id, points)
+				saved++
+			}
+		}
+		s.log.Info("history warmup progress", "done", start+len(chunk), "of", len(missing), "saved", saved)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(3 * time.Second):
+		}
+	}
+
+	// Per-repo fallback (OSS Insight) for whatever the batches couldn't cover.
+	recovered := 0
+	for _, id := range missing {
+		if _, fetched := s.Ensure(ctx, domain.SourceGitHub, id); fetched {
+			recovered++
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(2 * time.Second):
+			}
+		}
+	}
+	s.log.Info("history warmup complete", "missing", len(missing), "batchSaved", saved, "fallbackTried", recovered)
+}
+
+// fetchClickHouseBatch pulls the monthly cumulative curves for many repos in
+// one query. Repos with no events simply don't appear in the result.
+func (s *StarHistoryService) fetchClickHouseBatch(ctx context.Context, ids []string) map[string][]domain.StarPoint {
+	quoted := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if repoNameRe.MatchString(id) {
+			quoted = append(quoted, "'"+id+"'")
+		}
+	}
+	if len(quoted) == 0 {
+		return nil
+	}
+	sql := fmt.Sprintf(
+		"SELECT repo_name, toStartOfMonth(created_at) AS m, count() AS c FROM github_events"+
+			" WHERE repo_name IN (%s) AND event_type = 'WatchEvent'"+
+			" GROUP BY repo_name, m ORDER BY repo_name, m FORMAT JSONCompact",
+		strings.Join(quoted, ","))
+
+	body := s.clickhouseQuery(ctx, sql, "batch:"+strconv.Itoa(len(quoted)))
+	if body == nil {
+		return nil
+	}
+
+	out := map[string][]domain.StarPoint{}
+	totals := map[string]float64{}
+	for _, row := range body {
+		if len(row) != 3 {
+			continue
+		}
+		repo, _ := row[0].(string)
+		month, _ := row[1].(string)
+		t, err := time.Parse("2006-01-02", month)
+		if err != nil {
+			continue
+		}
+		totals[repo] += toFloat(row[2])
+		out[repo] = append(out[repo], domain.StarPoint{T: t, V: totals[repo]})
+	}
+	return out
 }
 
 // fetchClickHouse queries the public github_events dataset (GH Archive mirror,
@@ -98,8 +229,27 @@ func (s *StarHistoryService) fetchClickHouse(ctx context.Context, externalID str
 			" WHERE repo_name = '%s' AND event_type = 'WatchEvent'"+
 			" GROUP BY m ORDER BY m FORMAT JSONCompact", externalID)
 
-	// The public playground throttles sustained load; one backoff retry rides
-	// out transient 5xx without giving up on the repo.
+	body := s.clickhouseQuery(ctx, sql, externalID)
+	var points []domain.StarPoint
+	total := 0.0
+	for _, row := range body {
+		if len(row) != 2 {
+			continue
+		}
+		month, _ := row[0].(string)
+		t, err := time.Parse("2006-01-02", month)
+		if err != nil {
+			continue
+		}
+		total += toFloat(row[1])
+		points = append(points, domain.StarPoint{T: t, V: total})
+	}
+	return points
+}
+
+// clickhouseQuery runs one SQL statement against the public playground with a
+// single backoff retry (it throttles sustained load with transient 5xx).
+func (s *StarHistoryService) clickhouseQuery(ctx context.Context, sql, label string) [][]any {
 	var res *http.Response
 	for attempt := 0; ; attempt++ {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost,
@@ -114,10 +264,10 @@ func (s *StarHistoryService) fetchClickHouse(ctx context.Context, externalID str
 			break
 		}
 		if err != nil {
-			s.log.Warn("clickhouse query failed", "externalId", externalID, "err", err)
+			s.log.Warn("clickhouse query failed", "label", label, "err", err)
 		} else {
 			res.Body.Close()
-			s.log.Warn("clickhouse query failed", "externalId", externalID, "status", res.StatusCode)
+			s.log.Warn("clickhouse query failed", "label", label, "status", res.StatusCode)
 		}
 		if attempt >= 1 {
 			return nil
@@ -133,26 +283,11 @@ func (s *StarHistoryService) fetchClickHouse(ctx context.Context, externalID str
 	var body struct {
 		Data [][]any `json:"data"`
 	}
-	if err := json.NewDecoder(io.LimitReader(res.Body, 4<<20)).Decode(&body); err != nil {
-		s.log.Warn("clickhouse decode failed", "externalId", externalID, "err", err)
+	if err := json.NewDecoder(io.LimitReader(res.Body, 16<<20)).Decode(&body); err != nil {
+		s.log.Warn("clickhouse decode failed", "label", label, "err", err)
 		return nil
 	}
-
-	var points []domain.StarPoint
-	total := 0.0
-	for _, row := range body.Data {
-		if len(row) != 2 {
-			continue
-		}
-		month, _ := row[0].(string)
-		t, err := time.Parse("2006-01-02", month)
-		if err != nil {
-			continue
-		}
-		total += toFloat(row[1])
-		points = append(points, domain.StarPoint{T: t, V: total})
-	}
-	return points
+	return body.Data
 }
 
 // fetchOSSInsight is the fallback: OSS Insight already serves the cumulative

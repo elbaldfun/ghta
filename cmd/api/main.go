@@ -16,8 +16,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/elbaldfun/ghta/internal/config"
 	"github.com/elbaldfun/ghta/internal/domain"
@@ -189,7 +187,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 			}
 			top = n
 		}
-		go warmupStarHistory(jobCtx, store, starHistory, top)
+		go starHistory.Warmup(jobCtx, top)
 		c.JSON(http.StatusAccepted, gin.H{"status": "backfill started", "top": top})
 	})
 
@@ -203,49 +201,6 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	})
 
 	return r
-}
-
-// warmupStarHistory backfills the top-N repos by stars sequentially, sleeping
-// between remote fetches so the free public datasets aren't hammered.
-func warmupStarHistory(ctx context.Context, store *repository.Store, svc *service.StarHistoryService, top int) {
-	opts := options.Find().
-		SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).
-		SetLimit(int64(top)).
-		SetProjection(bson.M{"source": 1, "externalId": 1})
-	cur, err := store.Items().Find(ctx, bson.M{"source": domain.SourceGitHub}, opts)
-	if err != nil {
-		slog.Error("history warmup: query failed", "err", err)
-		return
-	}
-	defer cur.Close(ctx)
-
-	done, fetchedCount := 0, 0
-	for cur.Next(ctx) {
-		var it struct {
-			Source     domain.Source `bson:"source"`
-			ExternalID string        `bson:"externalId"`
-		}
-		if err := cur.Decode(&it); err != nil {
-			continue
-		}
-		points, fetched := svc.Ensure(ctx, it.Source, it.ExternalID)
-		done++
-		if fetched {
-			fetchedCount++
-			if len(points) == 0 {
-				slog.Warn("history warmup: no data", "externalId", it.ExternalID)
-			}
-			select { // pace remote queries gently — the playground throttles bursts
-			case <-ctx.Done():
-				return
-			case <-time.After(500 * time.Millisecond):
-			}
-		}
-		if done%100 == 0 {
-			slog.Info("history warmup progress", "done", done, "fetched", fetchedCount)
-		}
-	}
-	slog.Info("history warmup complete", "done", done, "fetched", fetchedCount)
 }
 
 func newLogger(level string) *slog.Logger {
