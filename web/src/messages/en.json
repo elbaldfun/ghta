@@ -73,6 +73,7 @@
     "watchers": "Watchers",
     "issues": "Issues",
     "growth": "Star Growth",
+    "keyMetrics": "Key Metrics",
     "createdIn": "Created",
     "artifacts": "Artifacts",
     "artifactTip": "Publishes installable build artifacts",

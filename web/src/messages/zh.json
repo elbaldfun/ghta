@@ -73,6 +73,7 @@
     "watchers": "关注者",
     "issues": "Issues",
     "growth": "Star 增长趋势",
+    "keyMetrics": "关键指标",
     "createdIn": "创建于",
     "artifacts": "制品库",
     "artifactTip": "已发布可直接安装的构建制品",

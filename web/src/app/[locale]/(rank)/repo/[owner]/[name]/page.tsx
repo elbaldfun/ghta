@@ -46,7 +46,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
     { label: t('issues'), value: formatCompact(repo.openIssues) },
   ];
   const statTiles = stats.map((s) => (
-    <div key={s.label} className="rounded-card border border-border bg-surface p-3.5">
+    <div key={s.label} className="flex flex-col justify-center rounded-card border border-border bg-surface p-3.5">
       <div className="text-[11px] font-semibold text-muted">{s.label}</div>
       <div className={`text-[19px] font-extrabold ${s.accent ? 'text-accent' : ''}`}>{s.value}</div>
     </div>
@@ -102,14 +102,17 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
 
       {history.length >= 2 ? (
         // Numbers on the left, growth trend filling the right.
-        <div className="mb-6 grid gap-3 md:grid-cols-[220px_1fr]">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-1">{statTiles}</div>
-          <div className="flex flex-col">
-            <div className="mb-2.5 text-xs font-bold uppercase tracking-wider text-muted">
-              {t('growth')} · {t('createdIn')} {createdYear}
-            </div>
-            <GrowthChart points={history} className="min-h-[170px] flex-1" />
+        <div className="mb-6 grid gap-x-3 gap-y-2.5 md:grid-cols-[220px_1fr] md:grid-rows-[auto_1fr]">
+          <div className="hidden text-xs font-bold uppercase tracking-wider text-muted md:block">
+            {t('keyMetrics')}
           </div>
+          <div className="order-2 text-xs font-bold uppercase tracking-wider text-muted md:order-none">
+            {t('growth')} · {t('createdIn')} {createdYear}
+          </div>
+          <div className="order-1 grid grid-cols-2 gap-3 md:order-none md:h-full md:grid-cols-1 md:grid-rows-4">
+            {statTiles}
+          </div>
+          <GrowthChart points={history} className="order-3 min-h-[170px] md:order-none md:h-full" />
         </div>
       ) : (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{statTiles}</div>
