@@ -21,6 +21,7 @@ const (
 	CollFetchRuns   = "fetch_runs"
 	CollSnapshots   = "metric_snapshots"
 	CollSuggestions = "category_suggestions"
+	CollStarHistory = "star_history"
 )
 
 type Store struct {
@@ -49,6 +50,7 @@ func (s *Store) Users() *mongo.Collection       { return s.DB.Collection(CollUse
 func (s *Store) FetchRuns() *mongo.Collection   { return s.DB.Collection(CollFetchRuns) }
 func (s *Store) Snapshots() *mongo.Collection   { return s.DB.Collection(CollSnapshots) }
 func (s *Store) Suggestions() *mongo.Collection { return s.DB.Collection(CollSuggestions) }
+func (s *Store) StarHistory() *mongo.Collection { return s.DB.Collection(CollStarHistory) }
 
 // EnsureSchema creates the time-series snapshot collection (if absent) and all
 // indexes. It is idempotent and safe to run on every startup.
@@ -121,6 +123,13 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		Options: options.Index().SetUnique(true).SetName("uniq_source_date_shard"),
 	}); err != nil {
 		return fmt.Errorf("fetchrun indexes: %w", err)
+	}
+
+	if _, err := s.StarHistory().Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "source", Value: 1}, {Key: "externalId", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("uniq_history_source_externalId"),
+	}); err != nil {
+		return fmt.Errorf("star history indexes: %w", err)
 	}
 	return nil
 }

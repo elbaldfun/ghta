@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -55,11 +56,12 @@ type TrendQuery struct {
 }
 
 type TrendService struct {
-	store *repository.Store
+	store   *repository.Store
+	history *StarHistoryService // optional lazy star-history backfill
 }
 
-func NewTrendService(store *repository.Store) *TrendService {
-	return &TrendService{store: store}
+func NewTrendService(store *repository.Store, history *StarHistoryService) *TrendService {
+	return &TrendService{store: store, history: history}
 }
 
 // List returns tracked items matching the query. Invalid filters/sort/limit
@@ -163,19 +165,70 @@ func (s *TrendService) Item(ctx context.Context, source, externalID string) (*do
 		return nil, nil, err
 	}
 
-	from := time.Now().UTC().AddDate(0, 0, -90)
 	cur, err := s.store.Snapshots().Find(ctx,
-		bson.M{"meta.source": source, "meta.externalId": externalID, "capturedAt": bson.M{"$gte": from}},
+		bson.M{"meta.source": source, "meta.externalId": externalID},
 		options.Find().SetSort(bson.D{{Key: "capturedAt", Value: 1}}),
 	)
 	if err != nil {
 		return nil, nil, err
 	}
-	history := []domain.MetricSnapshot{}
-	if err := cur.All(ctx, &history); err != nil {
+	snapshots := []domain.MetricSnapshot{}
+	if err := cur.All(ctx, &snapshots); err != nil {
 		return nil, nil, err
 	}
-	return &item, history, nil
+
+	// Prepend the backfilled long-term curve (lazy; nil on failure) so the
+	// chart covers the repo's full life, not just our own snapshot window.
+	var backfill []domain.StarPoint
+	if s.history != nil {
+		backfill, _ = s.history.Ensure(ctx, item.Source, item.ExternalID)
+	}
+	return &item, mergeHistory(&item, backfill, snapshots), nil
+}
+
+// mergeHistory splices the backfilled monthly curve onto our daily snapshots.
+// GH Archive counts star events but never unstars, so the backfill tail
+// overshoots reality — scale the whole curve so its last point matches the
+// first real observation, keeping the seam continuous.
+func mergeHistory(item *domain.TrackedItem, backfill []domain.StarPoint, snapshots []domain.MetricSnapshot) []domain.MetricSnapshot {
+	if len(backfill) == 0 {
+		return snapshots
+	}
+
+	anchorV := item.Metrics["stars"]
+	cutoff := time.Now().UTC()
+	if len(snapshots) > 0 {
+		if v, ok := snapshots[0].Metrics["stars"]; ok {
+			anchorV = v
+		}
+		cutoff = snapshots[0].CapturedAt
+	}
+
+	kept := backfill[:0:0]
+	for _, p := range backfill {
+		if p.T.Before(cutoff) {
+			kept = append(kept, p)
+		}
+	}
+	if len(kept) == 0 {
+		return snapshots
+	}
+
+	factor := 1.0
+	if last := kept[len(kept)-1].V; last > 0 && anchorV > 0 {
+		factor = anchorV / last
+	}
+
+	meta := domain.SnapshotMeta{Source: item.Source, ExternalID: item.ExternalID}
+	merged := make([]domain.MetricSnapshot, 0, len(kept)+len(snapshots))
+	for _, p := range kept {
+		merged = append(merged, domain.MetricSnapshot{
+			Meta:       meta,
+			Metrics:    map[string]float64{"stars": math.Round(p.V * factor)},
+			CapturedAt: p.T,
+		})
+	}
+	return append(merged, snapshots...)
 }
 
 // risingWindows maps a window name to the stored increase field.

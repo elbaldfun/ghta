@@ -16,6 +16,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/elbaldfun/ghta/internal/config"
 	"github.com/elbaldfun/ghta/internal/domain"
@@ -102,7 +104,9 @@ func main() {
 	scheduler.Start()
 	defer scheduler.Stop()
 
-	router := newRouter(store, fetcher, categorizer, metrics, rootCtx)
+	starHistory := service.NewStarHistoryService(store, logger)
+
+	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -132,7 +136,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, jobCtx context.Context) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -141,7 +145,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	trending := handler.NewTrendingHandler(service.NewTrendService(store))
+	trending := handler.NewTrendingHandler(service.NewTrendService(store, starHistory))
 	r.GET("/trending", trending.List)
 	r.GET("/trending/rising", trending.Rising)
 	r.GET("/trending/item", trending.Item)
@@ -172,6 +176,23 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started"})
 	})
 
+	// Internal: warm up the star-history cache for the top-N repos by stars,
+	// in the background. Already-backfilled repos are skipped; remote queries
+	// are paced to stay polite to the public datasets.
+	r.POST("/internal/backfill-history", func(c *gin.Context) {
+		top := 1000
+		if v := c.Query("top"); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 1 || n > 10000 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "top must be 1..10000"})
+				return
+			}
+			top = n
+		}
+		go warmupStarHistory(jobCtx, store, starHistory, top)
+		c.JSON(http.StatusAccepted, gin.H{"status": "backfill started", "top": top})
+	})
+
 	// Internal: recompute growth metrics (synchronous, so callers can read fresh data).
 	r.POST("/internal/metrics", func(c *gin.Context) {
 		if err := metrics.Run(c.Request.Context()); err != nil {
@@ -182,6 +203,49 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	})
 
 	return r
+}
+
+// warmupStarHistory backfills the top-N repos by stars sequentially, sleeping
+// between remote fetches so the free public datasets aren't hammered.
+func warmupStarHistory(ctx context.Context, store *repository.Store, svc *service.StarHistoryService, top int) {
+	opts := options.Find().
+		SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).
+		SetLimit(int64(top)).
+		SetProjection(bson.M{"source": 1, "externalId": 1})
+	cur, err := store.Items().Find(ctx, bson.M{"source": domain.SourceGitHub}, opts)
+	if err != nil {
+		slog.Error("history warmup: query failed", "err", err)
+		return
+	}
+	defer cur.Close(ctx)
+
+	done, fetchedCount := 0, 0
+	for cur.Next(ctx) {
+		var it struct {
+			Source     domain.Source `bson:"source"`
+			ExternalID string        `bson:"externalId"`
+		}
+		if err := cur.Decode(&it); err != nil {
+			continue
+		}
+		points, fetched := svc.Ensure(ctx, it.Source, it.ExternalID)
+		done++
+		if fetched {
+			fetchedCount++
+			if len(points) == 0 {
+				slog.Warn("history warmup: no data", "externalId", it.ExternalID)
+			}
+			select { // pace remote queries
+			case <-ctx.Done():
+				return
+			case <-time.After(150 * time.Millisecond):
+			}
+		}
+		if done%100 == 0 {
+			slog.Info("history warmup progress", "done", done, "fetched", fetchedCount)
+		}
+	}
+	slog.Info("history warmup complete", "done", done, "fetched", fetchedCount)
 }
 
 func newLogger(level string) *slog.Logger {

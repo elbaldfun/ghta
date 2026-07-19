@@ -120,6 +120,22 @@ type CategorySuggestion struct {
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
+// StarPoint is one point of a backfilled star-history curve.
+type StarPoint struct {
+	T time.Time `bson:"t" json:"t"`
+	V float64   `bson:"v" json:"v"`
+}
+
+// StarHistory holds the once-backfilled long-term star curve for one repo
+// (monthly granularity, sourced from GH Archive mirrors). Unlike
+// metric_snapshots it has no TTL: history is written once and kept forever.
+type StarHistory struct {
+	Source       Source      `bson:"source" json:"source"`
+	ExternalID   string      `bson:"externalId" json:"externalId"`
+	Points       []StarPoint `bson:"points" json:"points"`
+	BackfilledAt time.Time   `bson:"backfilledAt" json:"backfilledAt"`
+}
+
 // SnapshotMeta is the metaField of the metric_snapshots time-series collection.
 type SnapshotMeta struct {
 	Source     Source `bson:"source" json:"source"`

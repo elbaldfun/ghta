@@ -106,7 +106,7 @@ func TestMetricsAndRising(t *testing.T) {
 	}
 
 	// Rising weekly: o/r included, new/one excluded (null weekly increase).
-	svc := NewTrendService(store)
+	svc := NewTrendService(store, nil)
 	rising, err := svc.Rising(ctx, RisingQuery{Window: "weekly"})
 	if err != nil {
 		t.Fatalf("rising: %v", err)
