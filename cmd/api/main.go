@@ -235,10 +235,10 @@ func warmupStarHistory(ctx context.Context, store *repository.Store, svc *servic
 			if len(points) == 0 {
 				slog.Warn("history warmup: no data", "externalId", it.ExternalID)
 			}
-			select { // pace remote queries
+			select { // pace remote queries gently — the playground throttles bursts
 			case <-ctx.Done():
 				return
-			case <-time.After(150 * time.Millisecond):
+			case <-time.After(500 * time.Millisecond):
 			}
 		}
 		if done%100 == 0 {

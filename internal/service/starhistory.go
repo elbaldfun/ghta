@@ -98,23 +98,37 @@ func (s *StarHistoryService) fetchClickHouse(ctx context.Context, externalID str
 			" WHERE repo_name = '%s' AND event_type = 'WatchEvent'"+
 			" GROUP BY m ORDER BY m FORMAT JSONCompact", externalID)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://play.clickhouse.com/?user=play", strings.NewReader(sql))
-	if err != nil {
-		return nil
-	}
-	req.Header.Set("User-Agent", "ghta-star-history/1.0")
+	// The public playground throttles sustained load; one backoff retry rides
+	// out transient 5xx without giving up on the repo.
+	var res *http.Response
+	for attempt := 0; ; attempt++ {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+			"https://play.clickhouse.com/?user=play", strings.NewReader(sql))
+		if err != nil {
+			return nil
+		}
+		req.Header.Set("User-Agent", "ghta-star-history/1.0")
 
-	res, err := s.http.Do(req)
-	if err != nil {
-		s.log.Warn("clickhouse query failed", "externalId", externalID, "err", err)
-		return nil
+		res, err = s.http.Do(req)
+		if err == nil && res.StatusCode == http.StatusOK {
+			break
+		}
+		if err != nil {
+			s.log.Warn("clickhouse query failed", "externalId", externalID, "err", err)
+		} else {
+			res.Body.Close()
+			s.log.Warn("clickhouse query failed", "externalId", externalID, "status", res.StatusCode)
+		}
+		if attempt >= 1 {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(2 * time.Second):
+		}
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		s.log.Warn("clickhouse query failed", "externalId", externalID, "status", res.StatusCode)
-		return nil
-	}
 
 	var body struct {
 		Data [][]any `json:"data"`
