@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <title>GitHub 高星仓库排名网站</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #e4e4ea; }
+    a { color: #4f46e5; }
+    a:hover { color: #3730a3; }
+    input::placeholder { opacity: 0.7; }
+    .rel-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+    .rel-scroll::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="padding:40px 48px 0 48px;font-family:'Manrope',sans-serif;">
+  <div style="font-size:13px;color:#6b6f7a;letter-spacing:0.02em;">GitHub 高星仓库排名 · 搜索网站 · <a href="#2a">2a</a> 树状导航 + 卡片网格（最新）&nbsp;&nbsp;|&nbsp;&nbsp;早期探索：<a href="#1a">1a</a> 极客终端风 · <a href="#1b">1b</a> 简洁开发者工具风 · <a href="#1c">1c</a> 数据仪表盘风</div>
+</div>
+
+<!-- ============ TURN 2 — TREE NAV + CARD GRID ============ -->
+<div style="padding:24px 48px 8px 48px;">
+<div id="2a" style="width:1280px;">
+  <div style="display:inline-block;background:{{d.c.accent}};color:{{d.c.contrastOn}};font-size:11px;font-weight:700;letter-spacing:0.02em;padding:4px 12px;border-radius:999px;margin-bottom:8px;font-family:'Manrope',sans-serif;">2A · 树状导航 + 卡片网格</div>
+  <section data-screen-label="2a-tree-cards" style="position:relative;width:1280px;border-radius:16px;overflow:hidden;border:1px solid {{d.c.border}};box-shadow:0 30px 70px rgba(20,20,40,0.18);font-family:'Manrope',sans-serif;background:{{d.c.bg}};color:{{d.c.text}};">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 28px;border-bottom:1px solid {{d.c.border}};">
+      <div style="display:flex;align-items:center;gap:14px;white-space:nowrap;">
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <span style="font-size:21px;font-weight:800;color:{{d.c.accent}};">StarRank</span>
+          <span style="font-size:12px;color:{{d.c.muted}};">Explorer</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <sc-for list="{{d.navItems}}" as="nv" hint-placeholder-count="2">
+            <button onClick="{{nv.onClick}}" style="background:{{nv.bg}};color:{{nv.fg}};border:none;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;">{{nv.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:{{d.c.panel2}};border:1px solid {{d.c.border}};border-radius:999px;padding:9px 16px;flex:1;max-width:460px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{d.c.muted}}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input value="{{d.search}}" onChange="{{d.onSearchChange}}" placeholder="{{d.t.searchPlaceholder}}" style="background:transparent;border:none;outline:none;color:{{d.c.text}};font-family:inherit;font-size:13px;width:100%;" />
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <sc-for list="{{d.uiLangs}}" as="ul" hint-placeholder-count="3">
+          <button onClick="{{ul.onClick}}" style="background:{{ul.bg}};color:{{ul.fg}};border:1px solid {{d.c.border}};border-radius:999px;padding:6px 12px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{ul.label}}</button>
+        </sc-for>
+        <button onClick="{{d.onToggleTheme}}" style="background:{{d.c.panel2}};border:1px solid {{d.c.border}};border-radius:999px;padding:8px;color:{{d.c.text}};cursor:pointer;display:flex;margin-left:6px;">
+          <sc-if value="{{d.isDark}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg></sc-if>
+          <sc-if value="{{d.isLight}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg></sc-if>
+        </button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:250px 1fr;min-height:620px;">
+
+      <!-- TREE SIDEBAR -->
+      <div style="padding:20px 16px;border-right:1px solid {{d.c.border}};background:{{d.c.panel}};">
+        <div onClick="{{d.allNode.onClick}}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;background:{{d.allNode.bg}};margin-bottom:8px;">
+          <span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:{{d.allNode.weight}};color:{{d.allNode.fg}};">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+            {{d.allNode.label}}
+          </span>
+          <span style="font-size:11px;color:{{d.c.muted}};background:{{d.c.panel2}};padding:1px 8px;border-radius:999px;">{{d.allNode.count}}</span>
+        </div>
+
+        <sc-for list="{{d.groups}}" as="grp" hint-placeholder-count="6">
+          <div style="margin-top:2px;">
+            <div onClick="{{grp.onClick}}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-radius:8px;cursor:pointer;background:{{grp.headerBg}};">
+              <span style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:{{grp.weight}};color:{{grp.headerFg}};">
+                <span style="width:10px;display:inline-block;font-size:9px;color:{{d.c.muted}};">{{grp.chevron}}</span>
+                {{grp.title}}
+              </span>
+              <span style="font-size:11px;color:{{d.c.muted}};">{{grp.count}}</span>
+            </div>
+            <sc-if value="{{grp.expanded}}" hint-placeholder-val="{{true}}">
+            <div style="display:flex;flex-direction:column;gap:2px;padding-left:6px;border-left:1px solid {{d.c.border}};margin-left:16px;margin-top:2px;">
+              <sc-for list="{{grp.subs}}" as="node" hint-placeholder-count="3">
+                <div onClick="{{node.onClick}}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;cursor:pointer;background:{{node.bg}};">
+                  <span style="font-size:12.5px;font-weight:{{node.weight}};color:{{node.fg}};">{{node.label}}</span>
+                  <span style="font-size:11px;color:{{d.c.muted}};">{{node.count}}</span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- MAIN: CARD GRID -->
+      <sc-if value="{{d.isHome}}" hint-placeholder-val="{{true}}">
+      <div style="padding:22px 26px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px 20px;margin-bottom:18px;flex-wrap:wrap;">
+          <div>
+            <sc-if value="{{d.hasBreadcrumb}}" hint-placeholder-val="{{false}}">
+            <div style="font-size:11px;color:{{d.c.muted}};margin-bottom:5px;letter-spacing:0.02em;font-weight:600;">{{d.breadcrumb}}</div>
+            </sc-if>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <span style="font-size:18px;font-weight:800;">{{d.heading}}</span>
+              <span style="font-size:12px;color:{{d.c.muted}};">
+                <sc-if value="{{d.isSearching}}">{{d.t.searchResultsFor}} "{{d.search}}" · </sc-if>{{d.resultCount}} {{d.t.results}}
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <sc-if value="{{d.showFineFilter}}" hint-placeholder-val="{{false}}">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:{{d.c.muted}};font-weight:600;white-space:nowrap;">{{d.fineLabel}}</span>
+              <select value="{{d.fineValue}}" onChange="{{d.onFineChange}}" style="background:{{d.c.panel}};color:{{d.c.text}};border:1px solid {{d.c.border}};border-radius:8px;padding:6px 30px 6px 11px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;background-size:10px;">
+                <sc-for list="{{d.fineOptions}}" as="o" hint-placeholder-count="3"><option value="{{o.value}}">{{o.label}}</option></sc-for>
+              </select>
+            </div>
+            </sc-if>
+            <sc-if value="{{d.showLicenseFilter}}" hint-placeholder-val="{{false}}">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:{{d.c.muted}};font-weight:600;white-space:nowrap;">{{d.licenseLabel}}</span>
+              <select value="{{d.licenseValue}}" onChange="{{d.onLicenseChange}}" style="background:{{d.c.panel}};color:{{d.c.text}};border:1px solid {{d.c.border}};border-radius:8px;padding:6px 30px 6px 11px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;background-size:10px;">
+                <sc-for list="{{d.licenseOptions}}" as="o" hint-placeholder-count="3"><option value="{{o.value}}">{{o.label}}</option></sc-for>
+              </select>
+            </div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:{{d.c.muted}};font-weight:600;white-space:nowrap;">{{d.sortByLabel}}</span>
+              <select value="{{d.sortValue}}" onChange="{{d.onSortChange}}" style="background:{{d.c.panel}};color:{{d.c.text}};border:1px solid {{d.c.border}};border-radius:8px;padding:6px 30px 6px 11px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;background-size:10px;">
+                <sc-for list="{{d.sortOptions}}" as="o" hint-placeholder-count="3"><option value="{{o.value}}">{{o.label}}</option></sc-for>
+              </select>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{d.noResults}}" hint-placeholder-val="{{false}}"><div style="padding:40px 0;text-align:center;color:{{d.c.muted}};font-size:13px;">{{d.t.noResults}}</div></sc-if>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:14px;">
+          <sc-for list="{{d.cards}}" as="repo" hint-placeholder-count="9">
+            <div onClick="{{repo.onClick}}" style="display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid {{d.c.border}};border-radius:12px;cursor:pointer;background:{{d.c.panel}};" style-hover="box-shadow:0 8px 22px rgba(20,20,40,0.12);border-color:{{d.c.accent}};">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                  <span style="width:9px;height:9px;border-radius:50%;background:{{repo.colorDot}};display:inline-block;flex-shrink:0;"></span>
+                  <span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{repo.owner}}/{{repo.name}}</span>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:{{d.c.accent2}};white-space:nowrap;">▲ {{repo.deltaFmt}}</span>
+              </div>
+              <div style="font-size:12.5px;line-height:1.5;color:{{d.c.muted}};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:37px;">{{repo.desc}}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:600;background:{{repo.colorDot}};color:#ffffff;padding:2px 9px;border-radius:999px;opacity:0.9;">{{repo.language}}</span>
+                <sc-if value="{{repo.hasArtifact}}" hint-placeholder-val="{{false}}">
+                <span title="{{repo.artifactTip}}" style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;background:{{d.c.panel2}};color:{{d.c.accent}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.accent}};">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+                  {{repo.artifactRegistry}}
+                </span>
+                </sc-if>
+                <span style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.border}};">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z"></path></svg>
+                  {{repo.license}}
+                </span>
+                <sc-for list="{{repo.topicLabels}}" as="tl" hint-placeholder-count="2">
+                  <span style="font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;">{{tl}}</span>
+                </sc-for>
+              </div>
+              <sc-if value="{{repo.hasHomepage}}" hint-placeholder-val="{{false}}">
+              <a href="https://{{repo.homepage}}" target="_blank" rel="noopener" onClick="{{repo.onWebsite}}" style="display:flex;align-items:center;gap:5px;font-size:11px;color:{{d.c.accent}};text-decoration:none;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15 15 0 010 20 15 15 0 010-20z"></path></svg>
+                {{repo.homepage}}
+              </a>
+              </sc-if>
+              <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid {{d.c.border}};padding-top:10px;margin-top:2px;">
+                <div style="display:flex;gap:14px;">
+                  <span style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="{{d.c.accent2}}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01z"></path></svg>
+                    {{repo.starsFmt}}
+                  </span>
+                  <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:{{d.c.muted}};">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="9" r="3"></circle><path d="M18 12v0a6 6 0 01-6 6H9"></path><path d="M6 9v6"></path></svg>
+                    {{repo.forksFmt}}
+                  </span>
+                </div>
+                <sc-if value="{{repo.showUpdated}}" hint-placeholder-val="{{false}}">
+                <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:{{d.c.accent}};">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+                  {{repo.updatedFmt}}
+                </span>
+                </sc-if>
+                <sc-if value="{{repo.showUpdated}}" hint-placeholder-val="{{true}}">
+                <svg width="76" height="26" viewBox="0 0 76 26">
+                  <path d="{{repo.sparkArea}}" fill="{{d.c.accent}}" opacity="0.16"></path>
+                  <polyline points="{{repo.sparkLine}}" fill="none" stroke="{{d.c.accent}}" stroke-width="1.5"></polyline>
+                </svg>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{d.showPagination}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:{{d.c.muted}};">{{d.rangeText}}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onClick="{{d.onPrev}}" disabled="{{d.prevDisabled}}" style="display:flex;align-items:center;gap:4px;background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;font-family:inherit;color:{{d.c.text}};cursor:pointer;opacity:{{d.prevOpacity}};">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <sc-for list="{{d.pageButtons}}" as="pb" hint-placeholder-count="3">
+              <button onClick="{{pb.onClick}}" style="min-width:32px;background:{{pb.bg}};color:{{pb.fg}};border:1px solid {{pb.bd}};border-radius:8px;padding:6px 0;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">{{pb.num}}</button>
+            </sc-for>
+            <button onClick="{{d.onNext}}" disabled="{{d.nextDisabled}}" style="display:flex;align-items:center;gap:4px;background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;font-family:inherit;color:{{d.c.text}};cursor:pointer;opacity:{{d.nextOpacity}};">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+      <sc-if value="{{d.isDetail}}" hint-placeholder-val="{{false}}">
+      <div style="padding:22px 26px;">
+        <button onClick="{{d.onBack}}" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:{{d.c.muted}};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:16px;padding:0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          {{d.t.back}}
+        </button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="width:10px;height:10px;border-radius:50%;background:{{d.selected.colorDot}};display:inline-block;"></span>
+          <span style="font-size:23px;font-weight:800;">{{d.selected.owner}}/{{d.selected.name}}</span>
+          <span style="font-size:11px;background:{{d.selected.colorDot}};color:#ffffff;padding:3px 10px;border-radius:999px;">{{d.selected.language}}</span>
+          <sc-if value="{{d.selected.hasHomepage}}" hint-placeholder-val="{{false}}">
+          <a href="https://{{d.selected.homepage}}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:5px;font-size:12px;color:{{d.c.accent}};text-decoration:none;font-weight:600;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15 15 0 010 20 15 15 0 010-20z"></path></svg>
+            {{d.selected.homepage}}
+          </a>
+          </sc-if>
+        </div>
+        <div style="font-size:13px;color:{{d.c.muted}};margin-bottom:22px;max-width:640px;">{{d.selected.desc}}</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+          <div style="background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:12px;padding:14px;">
+            <div style="font-size:11px;color:{{d.c.muted}};font-weight:600;">{{d.t.stars}}</div>
+            <div style="font-size:19px;font-weight:800;color:{{d.c.accent}};">{{d.selected.starsFmt}}</div>
+          </div>
+          <div style="background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:12px;padding:14px;">
+            <div style="font-size:11px;color:{{d.c.muted}};font-weight:600;">{{d.t.forks}}</div>
+            <div style="font-size:19px;font-weight:800;">{{d.selected.forksFmt}}</div>
+          </div>
+          <div style="background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:12px;padding:14px;">
+            <div style="font-size:11px;color:{{d.c.muted}};font-weight:600;">{{d.t.watchers}}</div>
+            <div style="font-size:19px;font-weight:800;">{{d.selected.watchersFmt}}</div>
+          </div>
+          <div style="background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:12px;padding:14px;">
+            <div style="font-size:11px;color:{{d.c.muted}};font-weight:600;">{{d.t.issues}}</div>
+            <div style="font-size:19px;font-weight:800;">{{d.selected.issuesFmt}}</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:{{d.c.muted}};text-transform:uppercase;letter-spacing:0.04em;">{{d.t.growth}} · {{d.t.createdIn}} {{d.selected.year}}</div>
+        <svg width="540" height="170" viewBox="0 0 540 170" style="background:{{d.c.panel}};border:1px solid {{d.c.border}};border-radius:12px;">
+          <path d="{{d.selected.sparkArea}}" fill="{{d.c.accent}}" opacity="0.14"></path>
+          <polyline points="{{d.selected.sparkLine}}" fill="none" stroke="{{d.c.accent}}" stroke-width="2.5"></polyline>
+        </svg>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+          <sc-for list="{{d.selected.topicLabels}}" as="tl" hint-placeholder-count="2">
+            <span style="font-size:11px;font-weight:600;background:{{d.c.panel2}};padding:5px 12px;border-radius:999px;color:{{d.c.text}};">{{tl}}</span>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{d.selected.hasArtifact}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;align-items:center;gap:14px;margin-top:16px;padding:13px 16px;border:1px solid {{d.c.accent}};border-radius:12px;background:{{d.c.panel}};flex-wrap:wrap;">
+          <span style="display:flex;align-items:center;gap:7px;color:{{d.c.accent}};font-weight:700;font-size:13px;white-space:nowrap;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+            {{d.t.artifacts}}
+          </span>
+          <span style="font-size:12px;font-weight:700;background:{{d.c.panel2}};color:{{d.c.text}};padding:3px 11px;border-radius:999px;border:1px solid {{d.c.border}};">{{d.selected.artifactRegistry}}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{d.c.muted}};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{d.selected.artifactCmd}}</span>
+        </div>
+        </sc-if>
+
+        <div style="margin-top:24px;border:1px solid {{d.c.border}};border-radius:12px;overflow:hidden;background:{{d.c.panel}};">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px 9px 16px;border-bottom:1px solid {{d.c.border}};background:{{d.c.panel2}};">
+            <span style="display:flex;align-items:center;gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{d.c.muted}}" stroke-width="2"><path d="M4 4h11l5 5v11a0 0 0 010 0H4z"></path><polyline points="14 4 14 9 19 9"></polyline></svg>
+              <span style="font-size:12px;font-weight:700;letter-spacing:0.03em;color:{{d.c.text}};">{{d.t.readme}}</span>
+            </span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <sc-if value="{{d.selected.readmeCollapsible}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{d.selected.onReadmeToggle}}" style="display:flex;align-items:center;gap:4px;background:{{d.c.panel}};color:{{d.c.accent}};border:1px solid {{d.c.border}};border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;">{{d.selected.readmeToggleLabel}}</button>
+              </sc-if>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <sc-for list="{{d.selected.readmeLangOptions}}" as="rl" hint-placeholder-count="2">
+                  <button onClick="{{rl.onClick}}" style="background:{{rl.bg}};color:{{rl.fg}};border:1px solid {{rl.bd}};border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{rl.label}}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="{{d.selected.readmeBodyWrap}}">
+            <div style="padding:18px 20px;">
+              <sc-for list="{{d.selected.readmeBlocks}}" as="blk" hint-placeholder-count="7">
+                <div style="{{blk.style}}">{{blk.text}}</div>
+              </sc-for>
+            </div>
+            <sc-if value="{{d.selected.readmeCapped}}" hint-placeholder-val="{{false}}">
+            <div onClick="{{d.selected.onReadmeToggle}}" style="{{d.selected.readmeFade}}"></div>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{d.selected.hasRelatedRepos}}" hint-placeholder-val="{{true}}">
+        <div style="margin-top:26px;">
+          <div style="font-size:12px;font-weight:700;color:{{d.c.muted}};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">{{d.t.relatedRepos}}</div>
+          <div style="position:relative;">
+            <button onClick="{{d.selected.onRelReposPrev}}" style="position:absolute;top:50%;left:-6px;transform:translateY(-50%);z-index:5;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid {{d.c.border}};background:{{d.c.panel}};color:{{d.c.text}};cursor:pointer;box-shadow:0 4px 14px rgba(20,20,40,0.16);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div id="d-relrepos-row" class="rel-scroll" style="display:flex;gap:14px;overflow-x:auto;padding:3px 1px 6px;scroll-behavior:smooth;">
+            <sc-for list="{{d.selected.relatedRepos}}" as="rr" hint-placeholder-count="4">
+              <div onClick="{{rr.onClick}}" style="width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid {{d.c.border}};border-radius:12px;cursor:pointer;background:{{d.c.panel}};" style-hover="box-shadow:0 8px 22px rgba(20,20,40,0.12);border-color:{{d.c.accent}};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:{{rr.colorDot}};display:inline-block;flex-shrink:0;"></span>
+                    <span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{rr.owner}}/{{rr.name}}</span>
+                  </div>
+                  <span style="font-size:11px;font-weight:700;color:{{d.c.accent2}};white-space:nowrap;">▲ {{rr.deltaFmt}}</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;color:{{d.c.muted}};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:37px;">{{rr.desc}}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <span style="font-size:10px;font-weight:600;background:{{rr.colorDot}};color:#ffffff;padding:2px 9px;border-radius:999px;opacity:0.9;">{{rr.language}}</span>
+                  <sc-if value="{{rr.hasArtifact}}" hint-placeholder-val="{{false}}">
+                  <span title="{{rr.artifactTip}}" style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;background:{{d.c.panel2}};color:{{d.c.accent}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.accent}};">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+                    {{rr.artifactRegistry}}
+                  </span>
+                  </sc-if>
+                  <span style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.border}};">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z"></path></svg>
+                    {{rr.license}}
+                  </span>
+                  <sc-for list="{{rr.topicLabels}}" as="tl" hint-placeholder-count="2">
+                    <span style="font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;">{{tl}}</span>
+                  </sc-for>
+                </div>
+                <sc-if value="{{rr.hasHomepage}}" hint-placeholder-val="{{false}}">
+                <a href="https://{{rr.homepage}}" target="_blank" rel="noopener" onClick="{{rr.onWebsite}}" style="display:flex;align-items:center;gap:5px;font-size:11px;color:{{d.c.accent}};text-decoration:none;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15 15 0 010 20 15 15 0 010-20z"></path></svg>
+                  {{rr.homepage}}
+                </a>
+                </sc-if>
+                <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid {{d.c.border}};padding-top:10px;margin-top:2px;">
+                  <div style="display:flex;gap:14px;">
+                    <span style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="{{d.c.accent2}}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01z"></path></svg>
+                      {{rr.starsFmt}}
+                    </span>
+                    <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:{{d.c.muted}};">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="9" r="3"></circle><path d="M18 12v0a6 6 0 01-6 6H9"></path><path d="M6 9v6"></path></svg>
+                      {{rr.forksFmt}}
+                    </span>
+                  </div>
+                  <sc-if value="{{rr.showUpdated}}" hint-placeholder-val="{{false}}">
+                  <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:{{d.c.accent}};">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+                    {{rr.updatedFmt}}
+                  </span>
+                  </sc-if>
+                  <sc-if value="{{rr.showUpdated}}" hint-placeholder-val="{{true}}">
+                  <svg width="76" height="26" viewBox="0 0 76 26">
+                    <path d="{{rr.sparkArea}}" fill="{{d.c.accent}}" opacity="0.16"></path>
+                    <polyline points="{{rr.sparkLine}}" fill="none" stroke="{{d.c.accent}}" stroke-width="1.5"></polyline>
+                  </svg>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+            </div>
+            <button onClick="{{d.selected.onRelReposNext}}" style="position:absolute;top:50%;right:-6px;transform:translateY(-50%);z-index:5;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid {{d.c.border}};background:{{d.c.panel}};color:{{d.c.text}};cursor:pointer;box-shadow:0 4px 14px rgba(20,20,40,0.16);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{d.selected.hasRelatedArticles}}" hint-placeholder-val="{{false}}">
+        <div style="margin-top:24px;">
+          <div style="font-size:12px;font-weight:700;color:{{d.c.muted}};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">{{d.t.relatedArticles}}</div>
+          <div style="position:relative;">
+            <button onClick="{{d.selected.onRelArtsPrev}}" style="position:absolute;top:50%;left:-6px;transform:translateY(-50%);z-index:5;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid {{d.c.border}};background:{{d.c.panel}};color:{{d.c.text}};cursor:pointer;box-shadow:0 4px 14px rgba(20,20,40,0.16);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div id="d-relarts-row" class="rel-scroll" style="display:flex;gap:10px;overflow-x:auto;padding:3px 1px 6px;scroll-behavior:smooth;">
+            <sc-for list="{{d.selected.relatedArticles}}" as="ra" hint-placeholder-count="2">
+              <div onClick="{{ra.onClick}}" style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid {{d.c.border}};border-radius:10px;cursor:pointer;background:{{d.c.panel}};" style-hover="border-color:{{ra.catColor}};">
+                <span style="align-self:flex-start;font-size:10px;font-weight:700;color:#fff;background:{{ra.catColor}};padding:3px 9px;border-radius:999px;white-space:nowrap;">{{ra.catLabel}}</span>
+                <span style="font-size:13px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ra.title}}</span>
+                <span style="font-size:11px;color:{{d.c.muted}};white-space:nowrap;">{{ra.readFmt}}</span>
+              </div>
+            </sc-for>
+            </div>
+            <button onClick="{{d.selected.onRelArtsNext}}" style="position:absolute;top:50%;right:-6px;transform:translateY(-50%);z-index:5;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid {{d.c.border}};background:{{d.c.panel}};color:{{d.c.text}};cursor:pointer;box-shadow:0 4px 14px rgba(20,20,40,0.16);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{d.isBlog}}" hint-placeholder-val="{{false}}">
+      <div style="padding:22px 26px;">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:18px;font-weight:800;">{{d.t.blogTitle}}</div>
+          <div style="font-size:12px;color:{{d.c.muted}};margin-top:4px;">{{d.t.blogSubtitle}}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+          <sc-for list="{{d.blogCards}}" as="art" hint-placeholder-count="6">
+            <div onClick="{{art.onClick}}" style="display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid {{d.c.border}};border-radius:12px;cursor:pointer;background:{{d.c.panel}};" style-hover="box-shadow:0 8px 22px rgba(20,20,40,0.12);border-color:{{art.catColor}};">
+              <span style="align-self:flex-start;font-size:10px;font-weight:700;color:#fff;background:{{art.catColor}};padding:3px 10px;border-radius:999px;">{{art.catLabel}}</span>
+              <div style="font-size:15.5px;font-weight:800;line-height:1.35;">{{art.title}}</div>
+              <div style="font-size:12.5px;line-height:1.55;color:{{d.c.muted}};display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{art.excerpt}}</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:{{d.c.muted}};margin-top:2px;">
+                <span>{{art.dateFmt}}</span><span>·</span><span>{{art.readFmt}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{d.isArticle}}" hint-placeholder-val="{{false}}">
+      <div style="padding:22px 26px;max-width:760px;">
+        <button onClick="{{d.onBlogBack}}" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:{{d.c.muted}};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:16px;padding:0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          {{d.t.backToBlog}}
+        </button>
+        <span style="display:inline-block;font-size:10px;font-weight:700;color:#fff;background:{{d.article.catColor}};padding:3px 10px;border-radius:999px;">{{d.article.catLabel}}</span>
+        <div style="font-size:26px;font-weight:800;line-height:1.25;margin:12px 0 8px;">{{d.article.title}}</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:{{d.c.muted}};">
+          <span>{{d.article.dateFmt}}</span><span>·</span><span>{{d.article.readFmt}}</span>
+        </div>
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:14px;">
+          <sc-for list="{{d.article.bodyBlocks}}" as="p" hint-placeholder-count="4">
+            <div style="{{p.style}}">{{p.text}}</div>
+          </sc-for>
+        </div>
+        <div style="margin-top:28px;">
+          <div style="font-size:12px;font-weight:700;color:{{d.c.muted}};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">{{d.t.relatedRepos}}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:14px;">
+            <sc-for list="{{d.article.relRepos}}" as="rr" hint-placeholder-count="4">
+              <div onClick="{{rr.onClick}}" style="display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid {{d.c.border}};border-radius:12px;cursor:pointer;background:{{d.c.panel}};" style-hover="box-shadow:0 8px 22px rgba(20,20,40,0.12);border-color:{{d.c.accent}};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:{{rr.colorDot}};display:inline-block;flex-shrink:0;"></span>
+                    <span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{rr.owner}}/{{rr.name}}</span>
+                  </div>
+                  <span style="font-size:11px;font-weight:700;color:{{d.c.accent2}};white-space:nowrap;">▲ {{rr.deltaFmt}}</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;color:{{d.c.muted}};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:37px;">{{rr.desc}}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <span style="font-size:10px;font-weight:600;background:{{rr.colorDot}};color:#ffffff;padding:2px 9px;border-radius:999px;opacity:0.9;">{{rr.language}}</span>
+                  <sc-if value="{{rr.hasArtifact}}" hint-placeholder-val="{{false}}">
+                  <span title="{{rr.artifactTip}}" style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;background:{{d.c.panel2}};color:{{d.c.accent}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.accent}};">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+                    {{rr.artifactRegistry}}
+                  </span>
+                  </sc-if>
+                  <span style="display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;border:1px solid {{d.c.border}};">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z"></path></svg>
+                    {{rr.license}}
+                  </span>
+                  <sc-for list="{{rr.topicLabels}}" as="tl" hint-placeholder-count="2">
+                    <span style="font-size:10px;font-weight:600;background:{{d.c.panel2}};color:{{d.c.muted}};padding:2px 9px;border-radius:999px;">{{tl}}</span>
+                  </sc-for>
+                </div>
+                <sc-if value="{{rr.hasHomepage}}" hint-placeholder-val="{{false}}">
+                <a href="https://{{rr.homepage}}" target="_blank" rel="noopener" onClick="{{rr.onWebsite}}" style="display:flex;align-items:center;gap:5px;font-size:11px;color:{{d.c.accent}};text-decoration:none;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15 15 0 010 20 15 15 0 010-20z"></path></svg>
+                  {{rr.homepage}}
+                </a>
+                </sc-if>
+                <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid {{d.c.border}};padding-top:10px;margin-top:2px;">
+                  <div style="display:flex;gap:14px;">
+                    <span style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="{{d.c.accent2}}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01z"></path></svg>
+                      {{rr.starsFmt}}
+                    </span>
+                    <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:{{d.c.muted}};">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="9" r="3"></circle><path d="M18 12v0a6 6 0 01-6 6H9"></path><path d="M6 9v6"></path></svg>
+                      {{rr.forksFmt}}
+                    </span>
+                  </div>
+                  <sc-if value="{{rr.showUpdated}}" hint-placeholder-val="{{false}}">
+                  <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:{{d.c.accent}};">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+                    {{rr.updatedFmt}}
+                  </span>
+                  </sc-if>
+                  <sc-if value="{{rr.showUpdated}}" hint-placeholder-val="{{true}}">
+                  <svg width="76" height="26" viewBox="0 0 76 26">
+                    <path d="{{rr.sparkArea}}" fill="{{d.c.accent}}" opacity="0.16"></path>
+                    <polyline points="{{rr.sparkLine}}" fill="none" stroke="{{d.c.accent}}" stroke-width="1.5"></polyline>
+                  </svg>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </section>
+</div>
+</div>
+
+<div style="display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start;padding:24px 48px 80px 48px;">
+
+<!-- ============ OPTION A: TERMINAL / GEEK ============ -->
+<div id="1a" style="width:1280px;">
+  <div style="display:inline-block;background:{{a.c.accent}};color:#04140a;font-size:11px;font-weight:700;letter-spacing:0.06em;padding:3px 10px;border-radius:3px;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">1A · TERMINAL</div>
+<section data-screen-label="1a-terminal" style="position:relative;width:1280px;border-radius:6px;overflow:hidden;border:1px solid {{a.c.border}};box-shadow:0 30px 70px rgba(0,0,0,0.35);font-family:'IBM Plex Mono',monospace;background:{{a.c.bg}};color:{{a.c.text}};">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 26px;border-bottom:1px solid {{a.c.border}};background:{{a.c.panel}};">
+    <div style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;">
+      <span style="font-size:19px;font-weight:700;color:{{a.c.accent}};">$ starrank</span>
+      <span style="font-size:11px;color:{{a.c.muted}};">// gh star rankings</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;padding:7px 12px;flex:1;max-width:420px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{a.c.muted}}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input value="{{a.search}}" onChange="{{a.onSearchChange}}" placeholder="{{a.t.searchPlaceholder}}" style="background:transparent;border:none;outline:none;color:{{a.c.text}};font-family:inherit;font-size:12px;width:100%;" />
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;">
+      <sc-for list="{{a.uiLangs}}" as="ul" hint-placeholder-count="3">
+        <button onClick="{{ul.onClick}}" style="background:{{ul.bg}};color:{{ul.fg}};border:1px solid {{a.c.border}};border-radius:3px;padding:5px 8px;font-size:10px;font-family:inherit;cursor:pointer;">{{ul.label}}</button>
+      </sc-for>
+      <button onClick="{{a.onToggleTheme}}" style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:3px;padding:6px;color:{{a.c.text}};cursor:pointer;display:flex;margin-left:4px;">
+        <sc-if value="{{a.isDark}}" hint-placeholder-val="{{true}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg></sc-if>
+        <sc-if value="{{a.isLight}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:200px 1fr;min-height:580px;">
+    <div style="padding:20px 18px;border-right:1px solid {{a.c.border}};background:{{a.c.panel2}};">
+      <div style="font-size:10px;color:{{a.c.muted}};letter-spacing:0.06em;margin-bottom:8px;">// {{a.t.filterLanguage}}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:20px;max-height:220px;overflow:auto;">
+        <sc-for list="{{a.langOptions}}" as="lo" hint-placeholder-count="6">
+          <button onClick="{{lo.onClick}}" style="text-align:left;background:{{lo.bg}};color:{{lo.fg}};border:1px solid {{lo.bd}};border-radius:3px;padding:5px 8px;font-size:11px;font-family:inherit;cursor:pointer;">{{lo.label}}</button>
+        </sc-for>
+      </div>
+      <div style="font-size:10px;color:{{a.c.muted}};letter-spacing:0.06em;margin-bottom:8px;">// {{a.t.filterTopic}}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <sc-for list="{{a.topicOptions}}" as="to" hint-placeholder-count="6">
+          <button onClick="{{to.onClick}}" style="text-align:left;background:{{to.bg}};color:{{to.fg}};border:1px solid {{to.bd}};border-radius:3px;padding:5px 8px;font-size:11px;font-family:inherit;cursor:pointer;">{{to.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{a.isHome}}" hint-placeholder-val="{{true}}">
+    <div style="padding:22px 26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:12px;color:{{a.c.muted}};">
+          <sc-if value="{{a.isSearching}}">{{a.t.searchResultsFor}} "{{a.search}}" · {{a.resultCount}} {{a.t.results}}</sc-if>
+          <sc-if value="{{a.isSearching}}" hint-placeholder-val="{{false}}">{{a.t.homeTitle}} · {{a.resultCount}} {{a.t.results}}</sc-if>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <sc-for list="{{a.sortTabs}}" as="st" hint-placeholder-count="4">
+            <button onClick="{{st.onClick}}" style="background:{{st.bg}};color:{{st.fg}};border:1px solid {{a.c.border}};border-radius:3px;padding:5px 11px;font-size:11px;font-family:inherit;cursor:pointer;">{{st.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <sc-if value="{{a.noResults}}" hint-placeholder-val="{{false}}"><div style="padding:32px 0;text-align:center;color:{{a.c.muted}};font-size:12px;">{{a.t.noResults}}</div></sc-if>
+      <div style="display:flex;flex-direction:column;">
+        <sc-for list="{{a.list}}" as="repo" hint-placeholder-count="8">
+          <div onClick="{{repo.onClick}}" style="display:grid;grid-template-columns:30px 1fr 80px 80px;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid {{a.c.border}};cursor:pointer;">
+            <div style="color:{{a.c.muted}};font-size:11px;">{{repo.rank}}</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{repo.colorDot}};display:inline-block;flex-shrink:0;"></span>
+                <span style="font-size:13px;font-weight:600;">{{repo.owner}}/{{repo.name}}</span>
+              </div>
+              <div style="font-size:11px;color:{{a.c.muted}};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{repo.desc}}</div>
+            </div>
+            <div style="text-align:right;font-size:12px;font-weight:600;">{{repo.starsFmt}}</div>
+            <div style="text-align:right;font-size:11px;color:{{a.c.accent}};">{{repo.deltaFmt}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{a.isDetail}}" hint-placeholder-val="{{false}}">
+    <div style="padding:22px 26px;">
+      <button onClick="{{a.onBack}}" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:{{a.c.muted}};font-family:inherit;font-size:11px;cursor:pointer;margin-bottom:14px;padding:0;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        {{a.t.back}}
+      </button>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:{{a.selected.colorDot}};display:inline-block;"></span>
+        <span style="font-size:20px;font-weight:700;">{{a.selected.owner}}/{{a.selected.name}}</span>
+      </div>
+      <div style="font-size:12px;color:{{a.c.muted}};margin-bottom:18px;max-width:600px;">{{a.selected.desc}}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+        <div style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;padding:11px;">
+          <div style="font-size:10px;color:{{a.c.muted}};">{{a.t.stars}}</div>
+          <div style="font-size:17px;font-weight:700;">{{a.selected.starsFmt}}</div>
+        </div>
+        <div style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;padding:11px;">
+          <div style="font-size:10px;color:{{a.c.muted}};">{{a.t.forks}}</div>
+          <div style="font-size:17px;font-weight:700;">{{a.selected.forksFmt}}</div>
+        </div>
+        <div style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;padding:11px;">
+          <div style="font-size:10px;color:{{a.c.muted}};">{{a.t.watchers}}</div>
+          <div style="font-size:17px;font-weight:700;">{{a.selected.watchersFmt}}</div>
+        </div>
+        <div style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;padding:11px;">
+          <div style="font-size:10px;color:{{a.c.muted}};">{{a.t.issues}}</div>
+          <div style="font-size:17px;font-weight:700;">{{a.selected.issuesFmt}}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:8px;font-size:11px;color:{{a.c.muted}};">// {{a.t.growth}} ({{a.t.createdIn}} {{a.selected.year}})</div>
+      <svg width="540" height="170" viewBox="0 0 540 170" style="background:{{a.c.panel2}};border:1px solid {{a.c.border}};border-radius:4px;">
+        <path d="{{a.selected.sparkArea}}" fill="{{a.c.accent}}" opacity="0.15"></path>
+        <polyline points="{{a.selected.sparkLine}}" fill="none" stroke="{{a.c.accent}}" stroke-width="2"></polyline>
+      </svg>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+        <sc-for list="{{a.selected.topicLabels}}" as="tl" hint-placeholder-count="2">
+          <span style="font-size:10px;background:{{a.c.panel2}};border:1px solid {{a.c.border}};padding:4px 9px;border-radius:3px;color:{{a.c.muted}};">{{tl}}</span>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+</section>
+</div>
+
+<!-- ============ OPTION B: CLEAN DEV TOOL ============ -->
+<div id="1b" style="width:1280px;">
+  <div style="display:inline-block;background:{{b.c.accent2}};color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.02em;padding:4px 12px;border-radius:999px;margin-bottom:8px;font-family:'Manrope',sans-serif;">1B · CLEAN</div>
+<section data-screen-label="1b-clean" style="position:relative;width:1280px;border-radius:16px;overflow:hidden;border:1px solid {{b.c.border}};box-shadow:0 30px 70px rgba(20,20,40,0.18);font-family:'Manrope',sans-serif;background:{{b.c.bg}};color:{{b.c.text}};">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 30px;border-bottom:1px solid {{b.c.border}};">
+    <div style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;">
+      <span style="font-size:21px;font-weight:800;color:{{b.c.text}};">StarRank</span>
+      <span style="font-size:12px;color:{{b.c.muted}};">Developer Tool</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:999px;padding:9px 16px;flex:1;max-width:440px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{b.c.muted}}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input value="{{b.search}}" onChange="{{b.onSearchChange}}" placeholder="{{b.t.searchPlaceholder}}" style="background:transparent;border:none;outline:none;color:{{b.c.text}};font-family:inherit;font-size:13px;width:100%;" />
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <sc-for list="{{b.uiLangs}}" as="ul" hint-placeholder-count="3">
+        <button onClick="{{ul.onClick}}" style="background:{{ul.bg}};color:{{ul.fg}};border:none;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{ul.label}}</button>
+      </sc-for>
+      <button onClick="{{b.onToggleTheme}}" style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:999px;padding:8px;color:{{b.c.text}};cursor:pointer;display:flex;margin-left:6px;">
+        <sc-if value="{{b.isDark}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg></sc-if>
+        <sc-if value="{{b.isLight}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:220px 1fr;min-height:580px;">
+    <div style="padding:24px 20px;border-right:1px solid {{b.c.border}};">
+      <div style="font-size:11px;font-weight:700;color:{{b.c.muted}};letter-spacing:0.04em;margin-bottom:10px;text-transform:uppercase;">{{b.t.filterLanguage}}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;">
+        <sc-for list="{{b.langOptions}}" as="lo" hint-placeholder-count="6">
+          <button onClick="{{lo.onClick}}" style="background:{{lo.bg}};color:{{lo.fg}};border:1px solid {{lo.bd}};border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">{{lo.label}}</button>
+        </sc-for>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:{{b.c.muted}};letter-spacing:0.04em;margin-bottom:10px;text-transform:uppercase;">{{b.t.filterTopic}}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <sc-for list="{{b.topicOptions}}" as="to" hint-placeholder-count="6">
+          <button onClick="{{to.onClick}}" style="background:{{to.bg}};color:{{to.fg}};border:1px solid {{to.bd}};border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">{{to.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{b.isHome}}" hint-placeholder-val="{{true}}">
+    <div style="padding:24px 30px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="font-size:13px;color:{{b.c.muted}};">
+          <sc-if value="{{b.isSearching}}">{{b.t.searchResultsFor}} "{{b.search}}" · {{b.resultCount}} {{b.t.results}}</sc-if>
+          <sc-if value="{{b.isSearching}}" hint-placeholder-val="{{false}}">{{b.resultCount}} {{b.t.results}}</sc-if>
+        </div>
+        <div style="display:flex;gap:6px;background:{{b.c.panel}};border-radius:10px;padding:4px;">
+          <sc-for list="{{b.sortTabs}}" as="st" hint-placeholder-count="4">
+            <button onClick="{{st.onClick}}" style="background:{{st.bg}};color:{{st.fg}};border:none;border-radius:8px;padding:6px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">{{st.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <sc-if value="{{b.noResults}}" hint-placeholder-val="{{false}}"><div style="padding:32px 0;text-align:center;color:{{b.c.muted}};font-size:13px;">{{b.t.noResults}}</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <sc-for list="{{b.list}}" as="repo" hint-placeholder-count="8">
+          <div onClick="{{repo.onClick}}" style="display:grid;grid-template-columns:28px 1fr auto auto;align-items:center;gap:14px;padding:14px 16px;border:1px solid {{b.c.border}};border-radius:12px;cursor:pointer;background:{{b.c.panel}};" style-hover="box-shadow:0 6px 18px rgba(20,20,40,0.12);">
+            <div style="color:{{b.c.muted}};font-size:12px;font-weight:600;">{{repo.rank}}</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:14px;font-weight:700;">{{repo.owner}}/{{repo.name}}</span>
+                <span style="font-size:10px;background:{{repo.colorDot}};color:#ffffff;padding:2px 8px;border-radius:999px;opacity:0.85;">{{repo.language}}</span>
+              </div>
+              <div style="font-size:12px;color:{{b.c.muted}};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px;">{{repo.desc}}</div>
+            </div>
+            <div style="text-align:right;font-size:14px;font-weight:700;">★ {{repo.starsFmt}}</div>
+            <div style="text-align:right;font-size:12px;font-weight:700;color:{{b.c.accent}};background:{{b.c.panel2}};padding:4px 9px;border-radius:999px;">{{repo.deltaFmt}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{b.isDetail}}" hint-placeholder-val="{{false}}">
+    <div style="padding:24px 30px;">
+      <button onClick="{{b.onBack}}" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:{{b.c.muted}};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:16px;padding:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        {{b.t.back}}
+      </button>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:23px;font-weight:800;">{{b.selected.owner}}/{{b.selected.name}}</span>
+        <span style="font-size:11px;background:{{b.selected.colorDot}};color:#ffffff;padding:3px 10px;border-radius:999px;">{{b.selected.language}}</span>
+      </div>
+      <div style="font-size:13px;color:{{b.c.muted}};margin-bottom:22px;max-width:640px;">{{b.selected.desc}}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+        <div style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:{{b.c.muted}};font-weight:600;">{{b.t.stars}}</div>
+          <div style="font-size:19px;font-weight:800;">{{b.selected.starsFmt}}</div>
+        </div>
+        <div style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:{{b.c.muted}};font-weight:600;">{{b.t.forks}}</div>
+          <div style="font-size:19px;font-weight:800;">{{b.selected.forksFmt}}</div>
+        </div>
+        <div style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:{{b.c.muted}};font-weight:600;">{{b.t.watchers}}</div>
+          <div style="font-size:19px;font-weight:800;">{{b.selected.watchersFmt}}</div>
+        </div>
+        <div style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:{{b.c.muted}};font-weight:600;">{{b.t.issues}}</div>
+          <div style="font-size:19px;font-weight:800;">{{b.selected.issuesFmt}}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:{{b.c.muted}};text-transform:uppercase;letter-spacing:0.04em;">{{b.t.growth}} · {{b.t.createdIn}} {{b.selected.year}}</div>
+      <svg width="540" height="170" viewBox="0 0 540 170" style="background:{{b.c.panel}};border:1px solid {{b.c.border}};border-radius:12px;">
+        <path d="{{b.selected.sparkArea}}" fill="{{b.c.accent2}}" opacity="0.14"></path>
+        <polyline points="{{b.selected.sparkLine}}" fill="none" stroke="{{b.c.accent2}}" stroke-width="2.5"></polyline>
+      </svg>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+        <sc-for list="{{b.selected.topicLabels}}" as="tl" hint-placeholder-count="2">
+          <span style="font-size:11px;font-weight:600;background:{{b.c.panel2}};padding:5px 12px;border-radius:999px;color:{{b.c.text}};">{{tl}}</span>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+</section>
+</div>
+
+<!-- ============ OPTION C: DATA DASHBOARD ============ -->
+<div id="1c" style="width:1280px;">
+  <div style="display:inline-block;background:linear-gradient(135deg,{{c.c.accent}},{{c.c.accent2}});color:#04070f;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:8px;font-family:'Sora',sans-serif;">1C · DASHBOARD</div>
+<section data-screen-label="1c-dashboard" style="position:relative;width:1280px;border-radius:14px;overflow:hidden;border:1px solid {{c.c.border}};box-shadow:0 30px 70px rgba(10,10,30,0.3);font-family:'Sora',sans-serif;background:{{c.c.bg}};color:{{c.c.text}};">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 28px;border-bottom:1px solid {{c.c.border}};">
+    <div style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;">
+      <span style="font-size:20px;font-weight:800;background:linear-gradient(135deg,{{c.c.accent}},{{c.c.accent2}});-webkit-background-clip:text;background-clip:text;color:transparent;">StarRank</span>
+      <span style="font-size:12px;color:{{c.c.muted}};">Insights</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:{{c.c.panel2}};border:1px solid {{c.c.border}};border-radius:10px;padding:9px 14px;flex:1;max-width:420px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{c.c.muted}}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input value="{{c.search}}" onChange="{{c.onSearchChange}}" placeholder="{{c.t.searchPlaceholder}}" style="background:transparent;border:none;outline:none;color:{{c.c.text}};font-family:inherit;font-size:12px;width:100%;" />
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;">
+      <sc-for list="{{c.uiLangs}}" as="ul" hint-placeholder-count="3">
+        <button onClick="{{ul.onClick}}" style="background:{{ul.bg}};color:{{ul.fg}};border:1px solid {{c.c.border}};border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{ul.label}}</button>
+      </sc-for>
+      <button onClick="{{c.onToggleTheme}}" style="background:{{c.c.panel2}};border:1px solid {{c.c.border}};border-radius:6px;padding:7px;color:{{c.c.text}};cursor:pointer;display:flex;margin-left:5px;">
+        <sc-if value="{{c.isDark}}" hint-placeholder-val="{{true}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg></sc-if>
+        <sc-if value="{{c.isLight}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 28px;border-bottom:1px solid {{c.c.border}};">
+    <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px 14px;">
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{{c.t.statRepos}}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:4px;">{{c.stats.repoCount}}</div>
+    </div>
+    <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px 14px;">
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{{c.t.statStars}}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:4px;color:{{c.c.accent}};">{{c.stats.totalStars}}</div>
+    </div>
+    <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px 14px;">
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{{c.t.statTopLang}}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:4px;">{{c.stats.topLang}}</div>
+    </div>
+    <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px 14px;">
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{{c.t.statTrending}}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:4px;color:{{c.c.accent2}};">{{c.stats.trending}}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:200px 1fr;min-height:480px;">
+    <div style="padding:20px 18px;border-right:1px solid {{c.c.border}};">
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">{{c.t.filterLanguage}}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px;">
+        <sc-for list="{{c.langOptions}}" as="lo" hint-placeholder-count="6">
+          <button onClick="{{lo.onClick}}" style="background:{{lo.bg}};color:{{lo.fg}};border:1px solid {{lo.bd}};border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{lo.label}}</button>
+        </sc-for>
+      </div>
+      <div style="font-size:10px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">{{c.t.filterTopic}}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        <sc-for list="{{c.topicOptions}}" as="to" hint-placeholder-count="6">
+          <button onClick="{{to.onClick}}" style="background:{{to.bg}};color:{{to.fg}};border:1px solid {{to.bd}};border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{to.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{c.isHome}}" hint-placeholder-val="{{true}}">
+    <div style="padding:20px 26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:12px;color:{{c.c.muted}};">
+          <sc-if value="{{c.isSearching}}">{{c.t.searchResultsFor}} "{{c.search}}" · {{c.resultCount}} {{c.t.results}}</sc-if>
+          <sc-if value="{{c.isSearching}}" hint-placeholder-val="{{false}}">{{c.resultCount}} {{c.t.results}}</sc-if>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <sc-for list="{{c.sortTabs}}" as="st" hint-placeholder-count="4">
+            <button onClick="{{st.onClick}}" style="background:{{st.bg}};color:{{st.fg}};border:1px solid {{c.c.border}};border-radius:6px;padding:5px 11px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">{{st.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <sc-if value="{{c.noResults}}" hint-placeholder-val="{{false}}"><div style="padding:32px 0;text-align:center;color:{{c.c.muted}};font-size:12px;">{{c.t.noResults}}</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <sc-for list="{{c.list}}" as="repo" hint-placeholder-count="8">
+          <div onClick="{{repo.onClick}}" style="display:grid;grid-template-columns:26px 1fr 70px 76px 70px;align-items:center;gap:12px;padding:10px 12px;border:1px solid {{c.c.border}};border-radius:8px;cursor:pointer;background:{{c.c.panel}};">
+            <div style="color:{{c.c.muted}};font-size:11px;font-weight:700;">{{repo.rank}}</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{repo.colorDot}};display:inline-block;flex-shrink:0;"></span>
+                <span style="font-size:13px;font-weight:700;">{{repo.owner}}/{{repo.name}}</span>
+              </div>
+              <div style="font-size:11px;color:{{c.c.muted}};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;">{{repo.desc}}</div>
+            </div>
+            <svg width="64" height="22" viewBox="0 0 64 22">
+              <path d="{{repo.sparkArea}}" fill="{{c.c.accent}}" opacity="0.18"></path>
+              <polyline points="{{repo.sparkLine}}" fill="none" stroke="{{c.c.accent}}" stroke-width="1.5"></polyline>
+            </svg>
+            <div style="text-align:right;font-size:13px;font-weight:700;">{{repo.starsFmt}}</div>
+            <div style="text-align:right;font-size:11px;font-weight:700;color:{{c.c.accent2}};">{{repo.deltaFmt}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{c.isDetail}}" hint-placeholder-val="{{false}}">
+    <div style="padding:20px 26px;">
+      <button onClick="{{c.onBack}}" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:{{c.c.muted}};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        {{c.t.back}}
+      </button>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:{{c.selected.colorDot}};display:inline-block;"></span>
+        <span style="font-size:21px;font-weight:800;">{{c.selected.owner}}/{{c.selected.name}}</span>
+      </div>
+      <div style="font-size:12px;color:{{c.c.muted}};margin-bottom:18px;max-width:620px;">{{c.selected.desc}}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+        <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px;">
+          <div style="font-size:10px;color:{{c.c.muted}};">{{c.t.stars}}</div>
+          <div style="font-size:18px;font-weight:800;color:{{c.c.accent}};">{{c.selected.starsFmt}}</div>
+        </div>
+        <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px;">
+          <div style="font-size:10px;color:{{c.c.muted}};">{{c.t.forks}}</div>
+          <div style="font-size:18px;font-weight:800;">{{c.selected.forksFmt}}</div>
+        </div>
+        <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px;">
+          <div style="font-size:10px;color:{{c.c.muted}};">{{c.t.watchers}}</div>
+          <div style="font-size:18px;font-weight:800;">{{c.selected.watchersFmt}}</div>
+        </div>
+        <div style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;padding:12px;">
+          <div style="font-size:10px;color:{{c.c.muted}};">{{c.t.issues}}</div>
+          <div style="font-size:18px;font-weight:800;">{{c.selected.issuesFmt}}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:8px;font-size:11px;color:{{c.c.muted}};font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{{c.t.growth}} · {{c.t.createdIn}} {{c.selected.year}}</div>
+      <svg width="540" height="170" viewBox="0 0 540 170" style="background:{{c.c.panel}};border:1px solid {{c.c.border}};border-radius:10px;">
+        <path d="{{c.selected.sparkArea}}" fill="{{c.c.accent}}" opacity="0.18"></path>
+        <polyline points="{{c.selected.sparkLine}}" fill="none" stroke="{{c.c.accent}}" stroke-width="2.5"></polyline>
+      </svg>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <sc-for list="{{c.selected.topicLabels}}" as="tl" hint-placeholder-count="2">
+          <span style="font-size:11px;font-weight:600;background:{{c.c.panel2}};border:1px solid {{c.c.border}};padding:4px 10px;border-radius:6px;color:{{c.c.text}};">{{tl}}</span>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+</section>
+</div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const LANG_COLORS = {
+  JavaScript: '#f1c40f', TypeScript: '#3178c6', Python: '#3572A5', Go: '#00ADD8',
+  Rust: '#dea584', C: '#7d7d7d', 'C++': '#f34b7d', Java: '#b07219', Ruby: '#cc342d',
+  PHP: '#6f7cba', CSS: '#663399'
+};
+
+const REPO_SEED = [
+  { owner:'facebook', name:'react', language:'JavaScript', topics:['frontend'], stars:230000, momentum:1.0, year:2013, desc:'A declarative, efficient, and flexible JavaScript library for building user interfaces.' },
+  { owner:'vuejs', name:'vue', language:'JavaScript', topics:['frontend','framework'], stars:208000, momentum:0.7, year:2014, desc:'An approachable, performant and versatile framework for building web user interfaces.' },
+  { owner:'vercel', name:'next.js', language:'JavaScript', topics:['frontend','framework'], stars:128000, momentum:1.8, year:2016, desc:'The React Framework for the Web.' },
+  { owner:'microsoft', name:'vscode', language:'TypeScript', topics:[], stars:168000, momentum:0.9, year:2015, desc:'Code editing. Redefined.' },
+  { owner:'microsoft', name:'TypeScript', language:'TypeScript', topics:['compiler'], stars:101000, momentum:0.8, year:2012, desc:'TypeScript is a superset of JavaScript that compiles to clean JavaScript output.' },
+  { owner:'angular', name:'angular', language:'TypeScript', topics:['frontend','framework'], stars:95000, momentum:0.4, year:2014, desc:'Deliver web apps with confidence.' },
+  { owner:'denoland', name:'deno', language:'Rust', topics:['cli'], stars:98000, momentum:1.6, year:2018, desc:'A modern runtime for JavaScript and TypeScript.' },
+  { owner:'tensorflow', name:'tensorflow', language:'Python', topics:['machine-learning','deep-learning'], stars:187000, momentum:0.5, year:2015, desc:'An Open Source Machine Learning Framework for Everyone.' },
+  { owner:'pytorch', name:'pytorch', language:'Python', topics:['machine-learning','deep-learning'], stars:84000, momentum:1.4, year:2016, desc:'Tensors and dynamic neural networks in Python with strong GPU acceleration.' },
+  { owner:'huggingface', name:'transformers', language:'Python', topics:['machine-learning'], stars:135000, momentum:2.2, year:2018, desc:'State-of-the-art Machine Learning for PyTorch, TensorFlow, and JAX.' },
+  { owner:'django', name:'django', language:'Python', topics:['backend','framework'], stars:82000, momentum:0.3, year:2012, desc:'The Web framework for perfectionists with deadlines.' },
+  { owner:'kubernetes', name:'kubernetes', language:'Go', topics:['devops'], stars:111000, momentum:0.6, year:2014, desc:'Production-Grade Container Orchestration.' },
+  { owner:'gin-gonic', name:'gin', language:'Go', topics:['backend','framework'], stars:79000, momentum:0.5, year:2014, desc:'A HTTP web framework written in Go.' },
+  { owner:'gohugoio', name:'hugo', language:'Go', topics:['cli'], stars:76000, momentum:0.4, year:2013, desc:"The world's fastest framework for building websites." },
+  { owner:'rust-lang', name:'rust', language:'Rust', topics:['compiler'], stars:98000, momentum:0.6, year:2010, desc:'Empowering everyone to build reliable and efficient software.' },
+  { owner:'tokio-rs', name:'tokio', language:'Rust', topics:['backend'], stars:27000, momentum:1.9, year:2016, desc:'A runtime for writing reliable asynchronous applications with Rust.' },
+  { owner:'redis', name:'redis', language:'C', topics:['database'], stars:68000, momentum:0.4, year:2009, desc:'An in-memory database that persists on disk.' },
+  { owner:'opencv', name:'opencv', language:'C++', topics:['machine-learning'], stars:79000, momentum:0.3, year:2012, desc:'Open Source Computer Vision Library.' },
+  { owner:'spring-projects', name:'spring-boot', language:'Java', topics:['backend','framework'], stars:75000, momentum:0.4, year:2012, desc:'Helps you create Spring-powered, production-grade applications.' },
+  { owner:'rails', name:'rails', language:'Ruby', topics:['backend','framework'], stars:56000, momentum:0.2, year:2008, desc:'Ruby on Rails.' },
+  { owner:'laravel', name:'laravel', language:'PHP', topics:['backend','framework'], stars:79000, momentum:0.5, year:2011, desc:'A PHP framework for web artisans.' },
+  { owner:'sveltejs', name:'svelte', language:'JavaScript', topics:['frontend','compiler'], stars:82000, momentum:1.3, year:2016, desc:'Cybernetically enhanced web apps.' },
+  { owner:'tailwindlabs', name:'tailwindcss', language:'CSS', topics:['frontend'], stars:84000, momentum:1.1, year:2017, desc:'A utility-first CSS framework for rapid UI development.' },
+  { owner:'torvalds', name:'linux', language:'C', topics:['os'], stars:183000, momentum:0.2, year:2011, desc:'Linux kernel source tree.' }
+];
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+function computeTrend(stars, momentum, seed) {
+  const monthDelta = Math.max(1, Math.round(stars * 0.006 * momentum));
+  const weekDelta = Math.max(1, Math.round(monthDelta / 4.3));
+  const todayDelta = Math.max(1, Math.round(weekDelta / 7));
+  const history = [];
+  for (let k = 0; k < 8; k++) {
+    const back = 7 - k;
+    const wobble = 1 + 0.06 * Math.sin(seed * 1.7 + k * 1.3);
+    history.push(Math.max(0, Math.round(stars - monthDelta * back * wobble)));
+  }
+  return { todayDelta, weekDelta, monthDelta, history };
+}
+
+const HOMEPAGES = {
+  react:'react.dev', vue:'vuejs.org', 'next.js':'nextjs.org', vscode:'code.visualstudio.com',
+  TypeScript:'typescriptlang.org', angular:'angular.dev', deno:'deno.com', tensorflow:'tensorflow.org',
+  pytorch:'pytorch.org', transformers:'huggingface.co', django:'djangoproject.com', kubernetes:'kubernetes.io',
+  hugo:'gohugo.io', rust:'rust-lang.org', redis:'redis.io', 'spring-boot':'spring.io',
+  rails:'rubyonrails.org', laravel:'laravel.com', svelte:'svelte.dev', tailwindcss:'tailwindcss.com', linux:'kernel.org'
+};
+const LICENSES = {
+  linux:'GPL-2.0', redis:'BSD-3-Clause', django:'BSD-3-Clause', tensorflow:'Apache-2.0', pytorch:'Apache-2.0',
+  kubernetes:'Apache-2.0', angular:'Apache-2.0', rust:'Apache-2.0', 'spring-boot':'Apache-2.0', opencv:'Apache-2.0'
+};
+
+// 制品库 / build-artifact registry per repo
+const REGISTRY_BY_LANG = {
+  JavaScript:'npm', TypeScript:'npm', CSS:'npm',
+  Python:'PyPI', Go:'Go Modules', Rust:'crates.io',
+  Ruby:'RubyGems', PHP:'Packagist', Java:'Maven'
+};
+const ARTIFACT_OVERRIDE = {
+  kubernetes:{ registry:'Docker Hub' }, redis:{ registry:'Docker Hub' },
+  vscode:{ registry:'Releases' }, deno:{ registry:'Releases' },
+  opencv:{ has:false }, linux:{ has:false }
+};
+function artifactOf(r) {
+  const ov = ARTIFACT_OVERRIDE[r.name] || {};
+  if (ov.has === false) return { has:false, registry:null };
+  const registry = ov.registry || REGISTRY_BY_LANG[r.language] || null;
+  return { has: !!registry, registry };
+}
+
+// Localized README descriptions. English always available (repo.desc);
+// a language appears in the README switcher only when a translation exists here.
+const README_LANG_LABELS = { zh:'中文', en:'English', ja:'日本語' };
+const README_I18N = {
+  react:{ zh:'用于构建用户界面的声明式、高效且灵活的 JavaScript 库。', ja:'ユーザーインターフェースを構築するための宣言的で効率的かつ柔軟な JavaScript ライブラリ。' },
+  vue:{ zh:'一套易学易用、性能出色、用途广泛的 Web 用户界面构建框架。' },
+  'next.js':{ zh:'面向 Web 的 React 框架。', ja:'Web のための React フレームワーク。' },
+  vscode:{ zh:'代码编辑，重新定义。', ja:'コード編集を、再定義する。' },
+  TypeScript:{ zh:'TypeScript 是 JavaScript 的超集，可编译为干净的 JavaScript 输出。' },
+  deno:{ ja:'JavaScript と TypeScript のためのモダンなランタイム。' },
+  tensorflow:{ zh:'面向所有人的开源机器学习框架。', ja:'すべての人のためのオープンソース機械学習フレームワーク。' },
+  pytorch:{ zh:'在 Python 中提供张量计算与动态神经网络，并具备强大的 GPU 加速能力。' },
+  transformers:{ zh:'面向 PyTorch、TensorFlow 和 JAX 的先进机器学习工具。', ja:'PyTorch、TensorFlow、JAX のための最先端の機械学習。' },
+  django:{ zh:'为有截止期限的完美主义者打造的 Web 框架。' },
+  kubernetes:{ zh:'生产级别的容器编排系统。', ja:'プロダクショングレードのコンテナオーケストレーション。' },
+  rust:{ zh:'让每个人都能构建可靠且高效的软件。', ja:'信頼性が高く効率的なソフトウェアを誰もが構築できるように。' },
+  redis:{ zh:'一个可持久化到磁盘的内存数据库。' },
+  opencv:{ zh:'开源计算机视觉库。' },
+  svelte:{ zh:'赋予 Web 应用以控制论般的增强能力。' },
+  tailwindcss:{ zh:'一个用于快速构建界面的实用优先 CSS 框架。', ja:'迅速な UI 開発のためのユーティリティファースト CSS フレームワーク。' },
+  linux:{ zh:'Linux 内核源码树。', ja:'Linux カーネルのソースツリー。' }
+};
+function readmeLangsFor(name) {
+  return ['zh','en','ja'].filter(L => L === 'en' || (README_I18N[name] && README_I18N[name][L]));
+}
+
+// Blog / 博客 — sample引流 articles. Each links to related repos to feed clicks back into the ranking.
+const BLOG_CAT_COLOR = { frontend:'#4f46e5', backend:'#0891b2', ai:'#db2777', infra:'#0d9f6e', tools:'#a35c00', lang:'#7c3aed' };
+const BLOG_SEED = [
+  { id:'b1', cat:'frontend', repos:['react','next.js','vue','svelte'], date:'2026-06-28', read:8,
+    title:{ zh:'2026 前端框架选型指南', en:'Choosing a Frontend Framework in 2026', ja:'2026年フロントエンドフレームワーク選定ガイド' },
+    excerpt:{ zh:'React、Vue、Svelte 与 Next.js 各有侧重。本文从性能、生态与团队适配三个维度给出可落地的取舍建议。', en:'React, Vue, Svelte and Next.js each pull in a different direction — compared here on performance, ecosystem and team fit.', ja:'React・Vue・Svelte・Next.js を性能・エコシステム・チーム適性の3軸で比較し、実践的な選び方を示します。' } },
+  { id:'b2', cat:'ai', repos:['transformers','pytorch','tensorflow'], date:'2026-06-15', read:11,
+    title:{ zh:'从 PyTorch 到 Transformers：机器学习技术栈全景', en:'From PyTorch to Transformers: the ML Stack in 2026', ja:'PyTorchからTransformersへ：2026年のML技術スタック全景' },
+    excerpt:{ zh:'训练框架、模型库与推理工具如何组合？我们梳理了当下最主流的开源机器学习技术栈。', en:'How training frameworks, model hubs and inference tooling fit together in a modern open-source ML stack.', ja:'学習フレームワーク・モデルハブ・推論ツールの組み合わせ方を、主流のOSS MLスタックとして整理します。' } },
+  { id:'b3', cat:'infra', repos:['kubernetes','deno','rust'], date:'2026-05-30', read:9,
+    title:{ zh:'云原生基础设施的三个上升趋势', en:'Three Rising Trends in Cloud-Native Infrastructure', ja:'クラウドネイティブ基盤の3つの上昇トレンド' },
+    excerpt:{ zh:'从容器编排到新一代运行时，基础设施层正在快速演进。哪些项目值得长期押注？', en:'From orchestration to next-gen runtimes, the infra layer is moving fast. Which projects are worth a long bet?', ja:'コンテナオーケストレーションから次世代ランタイムまで、基盤層は急速に進化。長期的に賭ける価値のあるプロジェクトは？' } },
+  { id:'b4', cat:'backend', repos:['django','redis','spring-boot'], date:'2026-05-18', read:7,
+    title:{ zh:'后端框架与数据层的经典组合', en:'Backend Frameworks & the Data Layer: Proven Pairings', ja:'バックエンドフレームワークとデータ層の定番構成' },
+    excerpt:{ zh:'Django、Spring Boot 与 Redis 的搭配为何长盛不衰？我们从工程实践角度做了拆解。', en:'Why pairings like Django, Spring Boot and Redis keep standing the test of time — broken down from an engineering view.', ja:'Django・Spring Boot・Redis の組み合わせがなぜ長く選ばれるのか、エンジニアリング視点で分解します。' } },
+  { id:'b5', cat:'tools', repos:['vscode','hugo'], date:'2026-05-04', read:6,
+    title:{ zh:'提效工具盘点：编辑器与静态站点生成器', en:'Productivity Roundup: Editors and Static Site Generators', ja:'効率化ツール総まとめ：エディタと静的サイトジェネレータ' },
+    excerpt:{ zh:'从 VS Code 到 Hugo，趁手的工具能显著提升日常开发与内容发布效率。', en:'From VS Code to Hugo — the right tooling meaningfully speeds up day-to-day dev and publishing.', ja:'VS CodeからHugoまで、手に馴染むツールは日々の開発と発信の効率を大きく高めます。' } },
+  { id:'b6', cat:'frontend', repos:['tailwindcss','react'], date:'2026-04-22', read:5,
+    title:{ zh:'为什么 Tailwind CSS 成了默认选择', en:'Why Tailwind CSS Became the Default Choice', ja:'なぜTailwind CSSがデフォルトの選択肢になったのか' },
+    excerpt:{ zh:'实用优先的理念如何改变了团队的样式编写方式？以及它与组件库如何协作。', en:'How a utility-first mindset changed the way teams write styles — and how it plays with component libraries.', ja:'ユーティリティファーストの思想はチームのスタイル記述をどう変えたか。コンポーネントライブラリとの相性も解説。' } }
+];
+function relatedReposForArticle(a) {
+  let list = REPOS.filter(r => a.repos.includes(r.name));
+  if (list.length < 4) REPOS.filter(r => r.cat === a.cat && !a.repos.includes(r.name)).forEach(r => { if (list.length < 4) list.push(r); });
+  return list.slice(0, 4);
+}
+function articleBody(lang) {
+  const B = {
+    zh: ['社区在过去一年里持续向头部项目聚拢。本文结合 Star 增长曲线、Issue 活跃度与生产落地案例，帮你快速抓住重点。', '选型没有银弹：团队规模、既有技术栈与长期维护成本，往往比“谁更火”更重要。建议先明确约束，再看榜单。', '下方整理了与本文强相关的仓库，点击即可查看它们的实时排名、增长趋势与 README。'],
+    en: ['Over the past year the community has kept consolidating around the leading projects. This piece weighs star-growth curves, issue activity and real production usage so you can get to the point fast.', 'There is no silver bullet: team size, your existing stack and long-term maintenance cost usually matter more than raw popularity. Pin down your constraints first, then read the rankings.', 'Below are the repositories most relevant to this article — click through for live rankings, growth trends and READMEs.'],
+    ja: ['この1年でコミュニティは主要プロジェクトへの集約を続けています。本記事ではスター増加曲線・Issueの活発さ・実運用事例を踏まえて要点を整理します。', '銀の弾丸はありません。チーム規模・既存スタック・長期的な保守コストは「話題性」よりも重要です。まず制約を固めてからランキングを見ましょう。', '記事に強く関連するリポジトリを下にまとめました。クリックすると最新ランキング・成長トレンド・READMEを確認できます。']
+  };
+  return B[lang] || B.en;
+}
+
+// Two-level taxonomy: primary category (一级大类) -> subcategory (二级子类)
+const CAT_MAP = {
+  react:['frontend','fe-ui'], vue:['frontend','fe-framework'], 'next.js':['frontend','fe-framework'],
+  vscode:['tools','tools-editor'], TypeScript:['lang','lang-compiler'], angular:['frontend','fe-framework'],
+  deno:['infra','infra-rt'], tensorflow:['ai','ai-dl'], pytorch:['ai','ai-dl'], transformers:['ai','ai-nlp'],
+  django:['backend','be-web'], kubernetes:['infra','infra-orch'], gin:['backend','be-web'], hugo:['tools','tools-ssg'],
+  rust:['lang','lang-compiler'], tokio:['backend','be-async'], redis:['backend','be-db'], opencv:['ai','ai-cv'],
+  'spring-boot':['backend','be-web'], rails:['backend','be-web'], laravel:['backend','be-web'],
+  svelte:['frontend','fe-framework'], tailwindcss:['frontend','fe-css'], linux:['infra','infra-os']
+};
+
+const TAXONOMY = [
+  { id:'frontend', subs:['fe-framework','fe-ui','fe-css'] },
+  { id:'backend',  subs:['be-web','be-db','be-async'] },
+  { id:'ai',       subs:['ai-dl','ai-nlp','ai-cv'] },
+  { id:'infra',    subs:['infra-orch','infra-rt','infra-os'] },
+  { id:'tools',    subs:['tools-editor','tools-ssg'] },
+  { id:'lang',     subs:['lang-compiler'] }
+];
+
+const CAT_LABELS = {
+  zh: { frontend:'前端开发', backend:'后端开发', ai:'人工智能', infra:'系统与基础设施', tools:'开发工具', lang:'语言与编译器' },
+  en: { frontend:'Frontend', backend:'Backend', ai:'AI & ML', infra:'Systems & Infra', tools:'Dev Tools', lang:'Languages' },
+  ja: { frontend:'フロントエンド', backend:'バックエンド', ai:'AI・機械学習', infra:'システム・インフラ', tools:'開発ツール', lang:'言語・コンパイラ' }
+};
+const SUB_LABELS = {
+  zh: { 'fe-framework':'前端框架', 'fe-ui':'UI 库', 'fe-css':'CSS 工具', 'be-web':'Web 框架', 'be-db':'数据库', 'be-async':'异步运行时', 'ai-dl':'深度学习', 'ai-nlp':'自然语言处理', 'ai-cv':'计算机视觉', 'infra-orch':'容器编排', 'infra-rt':'运行时', 'infra-os':'操作系统', 'tools-editor':'编辑器', 'tools-ssg':'静态站点', 'lang-compiler':'编译器' },
+  en: { 'fe-framework':'Frameworks', 'fe-ui':'UI Libraries', 'fe-css':'CSS Tooling', 'be-web':'Web Frameworks', 'be-db':'Databases', 'be-async':'Async Runtime', 'ai-dl':'Deep Learning', 'ai-nlp':'NLP', 'ai-cv':'Computer Vision', 'infra-orch':'Orchestration', 'infra-rt':'Runtimes', 'infra-os':'Operating Systems', 'tools-editor':'Editors', 'tools-ssg':'Static Site', 'lang-compiler':'Compilers' },
+  ja: { 'fe-framework':'フレームワーク', 'fe-ui':'UIライブラリ', 'fe-css':'CSSツール', 'be-web':'Webフレームワーク', 'be-db':'データベース', 'be-async':'非同期ランタイム', 'ai-dl':'ディープラーニング', 'ai-nlp':'自然言語処理', 'ai-cv':'コンピュータビジョン', 'infra-orch':'オーケストレーション', 'infra-rt':'ランタイム', 'infra-os':'OS', 'tools-editor':'エディタ', 'tools-ssg':'静的サイト', 'lang-compiler':'コンパイラ' }
+};
+
+const REPOS = REPO_SEED.map((r, i) => {
+  const wob = Math.abs(Math.sin(i * 2.3 + 1));
+  return {
+    id: i + 1, ...r, ...computeTrend(r.stars, r.momentum, i),
+    cat: (CAT_MAP[r.name] || ['tools','tools-editor'])[0],
+    sub: (CAT_MAP[r.name] || ['tools','tools-editor'])[1],
+    forksNum: Math.round(r.stars * (0.07 + 0.16 * wob)),
+    updatedDays: Math.max(1, Math.round(1 + (1 / (r.momentum + 0.25)) * (4 + 22 * wob))),
+    homepage: HOMEPAGES[r.name] || null,
+    license: LICENSES[r.name] || 'MIT',
+    artifact: artifactOf(r)
+  };
+});
+
+function updatedFmt(days, lang) {
+  if (days >= 30) {
+    const m = Math.round(days / 30);
+    return lang === 'zh' ? m + '\u4e2a\u6708\u524d' : lang === 'ja' ? m + '\u30f6\u6708\u524d' : m + 'mo ago';
+  }
+  return lang === 'zh' ? days + '\u5929\u524d' : lang === 'ja' ? days + '\u65e5\u524d' : days + 'd ago';
+}
+
+function installCmd(r) {
+  const n = r.name;
+  switch (r.language) {
+    case 'JavaScript': case 'TypeScript': case 'CSS': return 'npm install ' + n;
+    case 'Python': return 'pip install ' + n;
+    case 'Go': return 'go get github.com/' + r.owner + '/' + n;
+    case 'Rust': return 'cargo add ' + n;
+    case 'Ruby': return 'gem install ' + n;
+    case 'PHP': return 'composer require ' + r.owner + '/' + n;
+    default: return 'git clone https://github.com/' + r.owner + '/' + n + '.git';
+  }
+}
+
+const TOPIC_OPTIONS = ['frontend', 'framework', 'backend', 'machine-learning', 'deep-learning', 'devops', 'database', 'cli', 'compiler', 'os'];
+const LANGS = Object.keys(LANG_COLORS);
+
+const langFreqTmp = {};
+REPOS.forEach(r => { langFreqTmp[r.language] = (langFreqTmp[r.language] || 0) + 1; });
+const topLangTmp = Object.keys(langFreqTmp).reduce((best, l) => langFreqTmp[l] > langFreqTmp[best] ? l : best, Object.keys(langFreqTmp)[0]);
+const GLOBAL_STATS = {
+  repoCount: REPOS.length,
+  totalStars: fmtNum(REPOS.reduce((a, r) => a + r.stars, 0)),
+  topLang: topLangTmp,
+  trending: REPOS.filter(r => r.momentum > 1.2).length
+};
+
+function sparkline(history, w, h, pad) {
+  pad = pad || 2;
+  const min = Math.min(...history), max = Math.max(...history);
+  const range = (max - min) || 1;
+  const pts = history.map((v, i) => {
+    const x = (i / (history.length - 1)) * (w - pad * 2) + pad;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  const line = pts.join(' ');
+  const area = 'M' + pts[0] + ' L' + pts.join(' L') + ' L' + (w - pad) + ',' + (h - pad) + ' L' + pad + ',' + (h - pad) + ' Z';
+  return { line, area };
+}
+
+const TOPIC_LABELS = {
+  zh: { frontend:'前端', framework:'框架', backend:'后端', 'machine-learning':'机器学习', 'deep-learning':'深度学习', devops:'运维', database:'数据库', cli:'命令行工具', compiler:'编译器', os:'操作系统' },
+  en: { frontend:'Frontend', framework:'Framework', backend:'Backend', 'machine-learning':'Machine Learning', 'deep-learning':'Deep Learning', devops:'DevOps', database:'Database', cli:'CLI', compiler:'Compiler', os:'OS' },
+  ja: { frontend:'フロントエンド', framework:'フレームワーク', backend:'バックエンド', 'machine-learning':'機械学習', 'deep-learning':'ディープラーニング', devops:'DevOps', database:'データベース', cli:'CLI', compiler:'コンパイラ', os:'OS' }
+};
+
+const T = {
+  zh: { uiLangLabel:'界面语言', searchPlaceholder:'搜索仓库、组织或关键词...', sortTotal:'总星数', sortToday:'今日', sortWeek:'本周', sortMonth:'本月', filterLanguage:'编程语言', filterTopic:'主题分类', filterFine:'按语言细分：', browseAll:'全部分类', sortBy:'排序', sortStars:'Stars', sortForks:'Forks', sortUpdated:'最近更新', updated:'更新', filterLicense:'开源协议：', license:'许可证', all:'全部', results:'个结果', rank:'排名', repository:'仓库', stars:'Star', language:'语言', trend:'趋势', back:'返回排行榜', watchers:'关注者', forks:'Forks', issues:'Issues', topics:'主题标签', growth:'Star 增长趋势', createdIn:'创建于', homeTitle:'GitHub 高星仓库排行榜', homeSubtitle:'发现全球最受欢迎的开源项目', searchResultsFor:'搜索结果:', noResults:'未找到匹配的仓库', darkMode:'深色', lightMode:'浅色', statRepos:'收录仓库', statStars:'星标总数', statTopLang:'热门语言', statTrending:'本周上升', readme:'README', about:'简介', installation:'安装', documentation:'文档', website:'官网', license:'许可证', readmeNoSite:'完整文档请参阅仓库 Wiki 与源码。', artifacts:'制品库', artifactTip:'已发布可直接安装的构建制品', noArtifact:'暂无制品库', navRankings:'排行榜', navBlog:'博客', blogTitle:'开发者博客', blogSubtitle:'趋势解读 · 选型指南 · 深度评测', relatedArticles:'相关文章', relatedRepos:'相关仓库', readArticle:'阅读全文', minRead:'分钟阅读', backToBlog:'返回博客', readmeExpand:'展开全部', readmeCollapse:'收起', topicLabels: TOPIC_LABELS.zh },
+  en: { uiLangLabel:'UI Language', searchPlaceholder:'Search repositories, orgs, or keywords...', sortTotal:'Total Stars', sortToday:'Today', sortWeek:'This Week', sortMonth:'This Month', filterLanguage:'Language', filterTopic:'Topic', filterFine:'By language:', browseAll:'All categories', sortBy:'Sort', sortStars:'Stars', sortForks:'Forks', sortUpdated:'Recently updated', updated:'updated', filterLicense:'License:', license:'License', all:'All', results:'results', rank:'Rank', repository:'Repository', stars:'Stars', language:'Language', trend:'Trend', back:'Back to rankings', watchers:'Watchers', forks:'Forks', issues:'Issues', topics:'Topics', growth:'Star Growth', createdIn:'Created', homeTitle:'GitHub Star Rankings', homeSubtitle:"Discover the world's most popular open-source projects", searchResultsFor:'Search results for', noResults:'No repositories found', darkMode:'Dark', lightMode:'Light', statRepos:'Repos Tracked', statStars:'Total Stars', statTopLang:'Top Language', statTrending:'Rising This Week', readme:'README', about:'About', installation:'Installation', documentation:'Documentation', website:'Website', license:'License', readmeNoSite:'See the repository wiki and source for full documentation.', artifacts:'Artifacts', artifactTip:'Publishes installable build artifacts', noArtifact:'No published artifacts', navRankings:'Rankings', navBlog:'Blog', blogTitle:'Developer Blog', blogSubtitle:'Trends · selection guides · deep dives', relatedArticles:'Related articles', relatedRepos:'Related repositories', readArticle:'Read more', minRead:'min read', backToBlog:'Back to blog', readmeExpand:'Expand all', readmeCollapse:'Collapse', topicLabels: TOPIC_LABELS.en },
+  ja: { uiLangLabel:'表示言語', searchPlaceholder:'リポジトリ、組織、キーワードを検索...', sortTotal:'合計スター数', sortToday:'今日', sortWeek:'今週', sortMonth:'今月', filterLanguage:'言語', filterTopic:'トピック', filterFine:'言語で絞り込み：', browseAll:'すべてのカテゴリ', sortBy:'並べ替え', sortStars:'Stars', sortForks:'Forks', sortUpdated:'最近の更新', updated:'更新', filterLicense:'ライセンス：', license:'ライセンス', all:'すべて', results:'件の結果', rank:'順位', repository:'リポジトリ', stars:'スター', language:'言語', trend:'トレンド', back:'ランキングに戻る', watchers:'ウォッチャー', forks:'フォーク', issues:'Issue', topics:'トピック', growth:'スター増加数', createdIn:'作成年', homeTitle:'GitHub スターランキング', homeSubtitle:'世界で最も人気のあるオープンソースプロジェクトを発見', searchResultsFor:'検索結果:', noResults:'該当するリポジトリが見つかりません', darkMode:'ダーク', lightMode:'ライト', statRepos:'収録リポジトリ数', statStars:'総スター数', statTopLang:'人気言語', statTrending:'今週急上昇', readme:'README', about:'概要', installation:'インストール', documentation:'ドキュメント', website:'公式サイト', license:'ライセンス', readmeNoSite:'詳細はリポジトリの Wiki とソースを参照してください。', artifacts:'成果物', artifactTip:'インストール可能なビルド成果物を公開', noArtifact:'成果物なし', navRankings:'ランキング', navBlog:'ブログ', blogTitle:'開発者ブログ', blogSubtitle:'トレンド解説 · 選定ガイド · 詳細レビュー', relatedArticles:'関連記事', relatedRepos:'関連リポジトリ', readArticle:'続きを読む', minRead:'分で読める', backToBlog:'ブログに戻る', readmeExpand:'すべて表示', readmeCollapse:'折りたたむ', topicLabels: TOPIC_LABELS.ja }
+};
+
+const THEMES = {
+  a: {
+    dark:  { bg:'#0a0e0c', panel:'#101512', panel2:'#141a16', border:'#1f2b23', text:'#d6e8d9', muted:'#7c8f80', accent:'#39d353', accent2:'#ffb454', contrastOn:'#04140a' },
+    light: { bg:'#f4f7f4', panel:'#ffffff', panel2:'#eef3ee', border:'#d3e0d6', text:'#132016', muted:'#5c6d60', accent:'#1e8e3e', accent2:'#a35c00', contrastOn:'#ffffff' }
+  },
+  b: {
+    dark:  { bg:'#0f1115', panel:'#161a20', panel2:'#1b2028', border:'#2a2f3a', text:'#e6edf3', muted:'#8b93a1', accent:'#a89bff', accent2:'#6d5efc', contrastOn:'#0f1115' },
+    light: { bg:'#ffffff', panel:'#f6f8fa', panel2:'#eef1f4', border:'#d0d7de', text:'#1f2328', muted:'#656d76', accent:'#4f46e5', accent2:'#6d5efc', contrastOn:'#ffffff' }
+  },
+  c: {
+    dark:  { bg:'#0b0f19', panel:'#131826', panel2:'#171d2e', border:'#232a3d', text:'#e8ecf7', muted:'#8891ab', accent:'#22d3ee', accent2:'#f472b6', contrastOn:'#04070f' },
+    light: { bg:'#f5f6fb', panel:'#ffffff', panel2:'#eef0f9', border:'#e2e5f0', text:'#14172b', muted:'#6b7290', accent:'#0891b2', accent2:'#db2777', contrastOn:'#ffffff' }
+  },
+  d: {
+    dark:  { bg:'#0d1017', panel:'#151a23', panel2:'#1b212c', border:'#262d3a', text:'#e7ecf3', muted:'#8792a5', accent:'#6d8bff', accent2:'#34d399', contrastOn:'#0d1017' },
+    light: { bg:'#f7f8fb', panel:'#ffffff', panel2:'#f0f2f7', border:'#e3e7ef', text:'#1a1f2b', muted:'#6a7286', accent:'#4f5bd5', accent2:'#0d9f6e', contrastOn:'#ffffff' }
+  }
+};
+
+class Component extends DCLogic {
+  state = {
+    a: { lang: 'zh', theme: 'dark', sort: 'total', langFilter: 'all', topicFilter: 'all', search: '', view: 'home', selectedId: null },
+    b: { lang: 'en', theme: 'light', sort: 'total', langFilter: 'all', topicFilter: 'all', search: '', view: 'home', selectedId: null },
+    c: { lang: 'zh', theme: 'dark', sort: 'week', langFilter: 'all', topicFilter: 'all', search: '', view: 'home', selectedId: null },
+    d: { lang: 'zh', theme: 'light', search: '', view: 'home', selectedId: null, articleId: null, expanded: { frontend: true, ai: true }, cat: 'all', sub: null, fineLang: 'all', sort: 'stars', licenseFilter: 'all', page: 1, readmeLang: null }
+  };
+
+  patch(key, partial) {
+    this.setState(s => ({ ...s, [key]: { ...s[key], ...partial } }));
+  }
+
+  openRepo(key, id) { this.patch(key, { view: 'detail', selectedId: id, readmeLang: null, readmeExpanded: false }); }
+
+  scrollRow(id, dir) {
+    const el = document.getElementById(id);
+    if (el) el.scrollBy({ left: dir * Math.max(260, Math.round(el.clientWidth * 0.85)), behavior: 'smooth' });
+  }
+  goBack(key) { this.patch(key, { view: 'home' }); }
+  openBlog(key) { this.patch(key, { view: 'blog' }); }
+  openArticle(key, id) { this.patch(key, { view: 'article', articleId: id }); }
+
+  repoCard(r, key, s, t) {
+    const spark = sparkline(r.history, 76, 26, 3);
+    return {
+      ...r, starsFmt: fmtNum(r.stars), forksFmt: fmtNum(r.forksNum),
+      deltaFmt: '+' + fmtNum(r.weekDelta), colorDot: LANG_COLORS[r.language],
+      updatedFmt: updatedFmt(r.updatedDays, s.lang),
+      showUpdated: s.sort === 'updated',
+      sparkLine: spark.line, sparkArea: spark.area,
+      topicLabels: r.topics.map(tp => t.topicLabels[tp] || tp),
+      hasHomepage: !!r.homepage,
+      hasArtifact: r.artifact.has,
+      artifactRegistry: r.artifact.registry,
+      artifactTip: r.artifact.has ? (t.artifacts + ' · ' + r.artifact.registry + ' — ' + t.artifactTip) : '',
+      onWebsite: (e) => { e.stopPropagation(); },
+      onClick: () => this.openRepo(key, r.id)
+    };
+  }
+
+  computeOption(key) {
+    const s = this.state[key];
+    const t = T[s.lang];
+    const c = THEMES[key][s.theme];
+
+    const filtered = REPOS.filter(r =>
+      (s.langFilter === 'all' || r.language === s.langFilter) &&
+      (s.topicFilter === 'all' || r.topics.includes(s.topicFilter)) &&
+      (s.search.trim() === '' ||
+        (r.owner + '/' + r.name).toLowerCase().includes(s.search.trim().toLowerCase()) ||
+        r.desc.toLowerCase().includes(s.search.trim().toLowerCase()))
+    );
+
+    const deltaKey = s.sort === 'total' ? 'monthDelta' : s.sort + 'Delta';
+    const sorted = [...filtered].sort((x, y) => s.sort === 'total' ? y.stars - x.stars : y[deltaKey] - x[deltaKey]);
+
+    const list = sorted.map((r, i) => {
+      const spark = sparkline(r.history, 64, 22, 2);
+      return {
+        ...r,
+        rank: i + 1,
+        starsFmt: fmtNum(r.stars),
+        deltaFmt: '+' + fmtNum(r[deltaKey]),
+        colorDot: LANG_COLORS[r.language],
+        sparkLine: spark.line,
+        sparkArea: spark.area,
+        onClick: () => this.openRepo(key, r.id)
+      };
+    });
+
+    const mkOption = (code, label, active, extraBg) => ({
+      code, label, active,
+      bg: active ? (extraBg || c.accent) : 'transparent',
+      fg: active ? c.contrastOn : c.text,
+      bd: active ? (extraBg || c.accent) : c.border
+    });
+
+    const langOptions = [mkOption('all', t.all, s.langFilter === 'all')]
+      .concat(LANGS.map(l => mkOption(l, l, s.langFilter === l)));
+    langOptions[0].onClick = () => this.patch(key, { langFilter: 'all' });
+    for (let i = 1; i < langOptions.length; i++) langOptions[i].onClick = () => this.patch(key, { langFilter: LANGS[i - 1] });
+
+    const topicOptions = [mkOption('all', t.all, s.topicFilter === 'all')]
+      .concat(TOPIC_OPTIONS.map(tp => mkOption(tp, t.topicLabels[tp], s.topicFilter === tp)));
+    topicOptions[0].onClick = () => this.patch(key, { topicFilter: 'all' });
+    for (let i = 1; i < topicOptions.length; i++) topicOptions[i].onClick = () => this.patch(key, { topicFilter: TOPIC_OPTIONS[i - 1] });
+
+    const sortKeys = ['total', 'today', 'week', 'month'];
+    const sortTabs = sortKeys.map(sk => {
+      const o = mkOption(sk, t['sort' + sk.charAt(0).toUpperCase() + sk.slice(1)], s.sort === sk);
+      o.onClick = () => this.patch(key, { sort: sk });
+      return o;
+    });
+
+    const uiLangs = [{ code: 'zh', label: '中文' }, { code: 'en', label: 'English' }, { code: 'ja', label: '日本語' }].map(l => {
+      const o = mkOption(l.code, l.label, s.lang === l.code);
+      o.onClick = () => this.patch(key, { lang: l.code });
+      return o;
+    });
+
+    let selected = null;
+    if (s.selectedId) {
+      const r = REPOS.find(rr => rr.id === s.selectedId);
+      if (r) {
+        const spark = sparkline(r.history, 540, 170, 8);
+        selected = {
+          ...r,
+          starsFmt: fmtNum(r.stars),
+          forksFmt: fmtNum(Math.round(r.stars * 0.12)),
+          watchersFmt: fmtNum(Math.round(r.stars * 0.03) + 500),
+          issuesFmt: fmtNum(Math.round(r.stars * 0.005) + 20),
+          colorDot: LANG_COLORS[r.language],
+          sparkLine: spark.line,
+          sparkArea: spark.area,
+          topicLabels: r.topics.map(tp => t.topicLabels[tp] || tp)
+        };
+      }
+    }
+
+    return {
+      lang: s.lang, theme: s.theme, isDark: s.theme === 'dark', isLight: s.theme === 'light',
+      search: s.search, t, c, stats: GLOBAL_STATS,
+      list, resultCount: list.length, noResults: list.length === 0,
+      isHome: s.view === 'home', isDetail: s.view === 'detail' && !!selected,
+      isSearching: s.search.trim() !== '',
+      langOptions, topicOptions, sortTabs, uiLangs,
+      selected,
+      onSearchChange: (e) => this.patch(key, { search: e.target.value }),
+      onToggleTheme: () => this.patch(key, { theme: s.theme === 'dark' ? 'light' : 'dark' }),
+      onBack: () => this.goBack(key)
+    };
+  }
+
+  computeTree(key) {
+    const s = this.state[key];
+    const t = T[s.lang];
+    const c = THEMES[key][s.theme];
+    const catL = CAT_LABELS[s.lang], subL = SUB_LABELS[s.lang];
+
+    const allNode = {
+      label: t.browseAll, count: REPOS.length,
+      active: s.cat === 'all',
+      fg: s.cat === 'all' ? c.accent : c.text,
+      bg: s.cat === 'all' ? c.panel2 : 'transparent',
+      weight: s.cat === 'all' ? 700 : 600,
+      onClick: () => this.patch(key, { cat: 'all', sub: null, fineLang: 'all', licenseFilter: 'all', view: 'home', page: 1 })
+    };
+
+    const groups = TAXONOMY.map(cat => {
+      const catCount = REPOS.filter(r => r.cat === cat.id).length;
+      const expanded = !!s.expanded[cat.id];
+      const catActive = s.cat === cat.id && !s.sub;
+      const subs = cat.subs.map(sid => {
+        const cnt = REPOS.filter(r => r.sub === sid).length;
+        const sActive = s.cat === cat.id && s.sub === sid;
+        return {
+          label: subL[sid], count: cnt, active: sActive,
+          fg: sActive ? c.accent : c.text,
+          bg: sActive ? c.panel2 : 'transparent',
+          weight: sActive ? 700 : 500,
+          onClick: () => this.patch(key, { cat: cat.id, sub: sid, fineLang: 'all', licenseFilter: 'all', view: 'home', page: 1, expanded: { ...s.expanded, [cat.id]: true } })
+        };
+      }).filter(n => n.count > 0);
+      return {
+        id: cat.id, title: catL[cat.id], count: catCount,
+        expanded, chevron: expanded ? '\u25be' : '\u25b8',
+        weight: catActive ? 800 : 700,
+        headerFg: catActive ? c.accent : c.text,
+        headerBg: catActive ? c.panel2 : 'transparent',
+        subs,
+        onClick: () => {
+          if (s.cat === cat.id && !s.sub) this.patch(key, { expanded: { ...s.expanded, [cat.id]: !expanded } });
+          else this.patch(key, { cat: cat.id, sub: null, fineLang: 'all', licenseFilter: 'all', view: 'home', page: 1, expanded: { ...s.expanded, [cat.id]: true } });
+        }
+      };
+    });
+
+    const q = s.search.trim().toLowerCase();
+    const passSearch = r => q === '' || (r.owner + '/' + r.name).toLowerCase().includes(q) || r.desc.toLowerCase().includes(q);
+    const inScope = r => (s.cat === 'all' || r.cat === s.cat) && (!s.sub || r.sub === s.sub) && passSearch(r);
+
+    // Repos in the current category/subcategory scope (before the finer language filter)
+    const scoped = REPOS.filter(inScope);
+
+    // ----- Finer filters: language + license, presented as dropdowns -----
+    const afterLic = scoped.filter(r => s.licenseFilter === 'all' || r.license === s.licenseFilter);
+    const afterLang = scoped.filter(r => s.fineLang === 'all' || r.language === s.fineLang);
+
+    const langsPresent = [...new Set(scoped.map(r => r.language))]
+      .sort((a, b) => scoped.filter(r => r.language === b).length - scoped.filter(r => r.language === a).length);
+    const fineOptions = [{ value: 'all', label: t.all + ' (' + afterLic.length + ')' }]
+      .concat(langsPresent.map(l => ({ value: l, label: l + ' (' + afterLic.filter(r => r.language === l).length + ')' })));
+    const showFineFilter = langsPresent.length > 1;
+
+    const licensesPresent = [...new Set(scoped.map(r => r.license))]
+      .sort((a, b) => scoped.filter(r => r.license === b).length - scoped.filter(r => r.license === a).length);
+    const licenseOptions = [{ value: 'all', label: t.all + ' (' + afterLang.length + ')' }]
+      .concat(licensesPresent.map(l => ({ value: l, label: l + ' (' + afterLang.filter(r => r.license === l).length + ')' })));
+    const showLicenseFilter = licensesPresent.length > 1;
+
+    const sortOptions = ['stars', 'forks', 'updated'].map(sk => ({
+      value: sk, label: t['sort' + sk.charAt(0).toUpperCase() + sk.slice(1)]
+    }));
+
+    const finalRepos = scoped.filter(r =>
+      (s.fineLang === 'all' || r.language === s.fineLang) &&
+      (s.licenseFilter === 'all' || r.license === s.licenseFilter)
+    );
+    const sortCmp = {
+      stars: (x, y) => y.stars - x.stars,
+      forks: (x, y) => y.forksNum - x.forksNum,
+      updated: (x, y) => x.updatedDays - y.updatedDays
+    }[s.sort] || ((x, y) => y.stars - x.stars);
+    finalRepos.sort(sortCmp);
+
+    // ----- Pagination -----
+    const PAGE_SIZE = 9;
+    const pageCount = Math.max(1, Math.ceil(finalRepos.length / PAGE_SIZE));
+    const page = Math.min(Math.max(1, s.page), pageCount);
+    const pageStart = (page - 1) * PAGE_SIZE;
+    const pageRepos = finalRepos.slice(pageStart, pageStart + PAGE_SIZE);
+    const pageButtons = [];
+    for (let p = 1; p <= pageCount; p++) {
+      pageButtons.push({
+        num: p, active: p === page,
+        bg: p === page ? c.accent : 'transparent', fg: p === page ? c.contrastOn : c.text, bd: p === page ? c.accent : c.border,
+        onClick: () => this.patch(key, { page: p })
+      });
+    }
+    const showPagination = pageCount > 1;
+    const rangeStart = finalRepos.length === 0 ? 0 : pageStart + 1;
+    const rangeEnd = Math.min(pageStart + PAGE_SIZE, finalRepos.length);
+    const rangeText = rangeStart + '\u2013' + rangeEnd + ' / ' + finalRepos.length;
+    const prevDisabled = page <= 1;
+    const nextDisabled = page >= pageCount;
+    const onPrev = () => { if (page > 1) this.patch(key, { page: page - 1 }); };
+    const onNext = () => { if (page < pageCount) this.patch(key, { page: page + 1 }); };
+
+    const cards = pageRepos.map(r => this.repoCard(r, key, s, t));
+
+    const heading = s.cat === 'all' ? t.homeTitle : (s.sub ? subL[s.sub] : catL[s.cat]);
+    const hasBreadcrumb = s.cat !== 'all';
+    const breadcrumb = hasBreadcrumb ? (catL[s.cat] + (s.sub ? '  \u203a  ' + subL[s.sub] : '')) : '';
+
+    const uiLangs = [{ code: 'zh', label: '中文' }, { code: 'en', label: 'English' }, { code: 'ja', label: '日本語' }].map(l => ({
+      ...l, active: s.lang === l.code,
+      bg: s.lang === l.code ? c.accent : 'transparent',
+      fg: s.lang === l.code ? c.contrastOn : c.muted,
+      onClick: () => this.patch(key, { lang: l.code, readmeLang: null })
+    }));
+
+    let selected = null;
+    if (s.selectedId) {
+      const r = REPOS.find(rr => rr.id === s.selectedId);
+      if (r) {
+        const spark = sparkline(r.history, 540, 170, 8);
+        const rlAvail = readmeLangsFor(r.name);
+        const effRl = (s.readmeLang && rlAvail.includes(s.readmeLang)) ? s.readmeLang
+          : (rlAvail.includes(s.lang) ? s.lang : 'en');
+        const tr = T[effRl];
+        const localizedDesc = effRl === 'en' ? r.desc : ((README_I18N[r.name] && README_I18N[r.name][effRl]) || r.desc);
+        const readmeLangOptions = rlAvail.map(L => ({
+          code: L, label: README_LANG_LABELS[L], active: L === effRl,
+          bg: L === effRl ? c.accent : 'transparent',
+          fg: L === effRl ? c.contrastOn : c.muted,
+          bd: L === effRl ? c.accent : c.border,
+          onClick: () => this.patch(key, { readmeLang: L })
+        }));
+        const rawBlocks = [
+          { type:'meta', text:'\u2605 ' + fmtNum(r.stars) + '  \u00b7  ' + r.license + ' ' + tr.license + '  \u00b7  ' + r.language },
+          { type:'h2', text: tr.about },
+          { type:'p', text: localizedDesc },
+          { type:'h2', text: tr.installation },
+          { type:'code', text: installCmd(r) },
+          { type:'h2', text: tr.documentation },
+          { type:'p', text: r.homepage ? (tr.website + ': https://' + r.homepage) : tr.readmeNoSite }
+        ];
+        const readmeBlocks = rawBlocks.map(b => {
+          let st;
+          if (b.type === 'meta') st = 'font-size:12px;color:' + c.muted + ';margin:0 0 4px 0;';
+          else if (b.type === 'h2') st = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:' + c.muted + ';margin:16px 0 6px 0;';
+          else if (b.type === 'code') st = "font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;word-break:break-all;background:" + c.bg + ';border:1px solid ' + c.border + ';border-radius:8px;padding:10px 12px;color:' + c.accent + ';margin:0;';
+          else st = 'font-size:13px;line-height:1.6;color:' + c.text + ';margin:0;';
+          return { text: b.text, style: st };
+        });
+        const readmeChars = rawBlocks.reduce((n, b) => n + (b.text ? b.text.length : 0), 0);
+        const readmeCollapsible = readmeChars > 650;
+        const readmeExpanded = !!s.readmeExpanded;
+        const readmeCapped = readmeCollapsible && !readmeExpanded;
+        const relRepos = REPOS.filter(rr => rr.id !== r.id && (rr.sub === r.sub || rr.cat === r.cat))
+          .sort((x, y) => y.stars - x.stars).slice(0, 12)
+          .map(rr => this.repoCard(rr, key, s, t));
+        const relArticles = BLOG_SEED.filter(a => a.repos.includes(r.name) || a.cat === r.cat).slice(0, 8)
+          .map(a => ({ id: a.id, title: (a.title[s.lang] || a.title.en), catLabel: (CAT_LABELS[s.lang][a.cat] || a.cat), catColor: BLOG_CAT_COLOR[a.cat] || c.accent, readFmt: a.read + ' ' + t.minRead, onClick: () => this.openArticle(key, a.id) }));
+        selected = {
+          ...r, starsFmt: fmtNum(r.stars),
+          forksFmt: fmtNum(Math.round(r.stars * 0.12)),
+          watchersFmt: fmtNum(Math.round(r.stars * 0.03) + 500),
+          issuesFmt: fmtNum(Math.round(r.stars * 0.005) + 20),
+          colorDot: LANG_COLORS[r.language],
+          sparkLine: spark.line, sparkArea: spark.area,
+          hasHomepage: !!r.homepage,
+          hasArtifact: r.artifact.has,
+          artifactRegistry: r.artifact.registry,
+          artifactCmd: installCmd(r),
+          topicLabels: r.topics.map(tp => t.topicLabels[tp] || tp),
+          readmeLangOptions,
+          readmeBlocks,
+          readmeCollapsible,
+          readmeCapped,
+          readmeExpanded,
+          readmeBodyWrap: 'position:relative;overflow:hidden;' + (readmeCapped ? 'max-height:440px;' : ''),
+          readmeFade: 'position:absolute;left:0;right:0;bottom:0;height:70px;cursor:pointer;background:linear-gradient(to bottom, transparent, ' + c.panel + ');',
+          readmeToggleLabel: readmeExpanded ? t.readmeCollapse : t.readmeExpand,
+          onReadmeToggle: () => this.patch(key, { readmeExpanded: !readmeExpanded }),
+          relatedRepos: relRepos, hasRelatedRepos: relRepos.length > 0,
+          relatedArticles: relArticles, hasRelatedArticles: relArticles.length > 0
+        };
+      }
+    }
+
+    const navItems = [
+      { view: 'home', label: t.navRankings, active: (s.view === 'home' || s.view === 'detail') },
+      { view: 'blog', label: t.navBlog, active: (s.view === 'blog' || s.view === 'article') }
+    ].map(n => ({ label: n.label, bg: n.active ? c.panel2 : 'transparent', fg: n.active ? c.accent : c.muted, onClick: () => (n.view === 'blog' ? this.openBlog(key) : this.patch(key, { view: 'home' })) }));
+
+    const blogCards = BLOG_SEED.map(a => ({
+      id: a.id, catLabel: (catL[a.cat] || a.cat), catColor: BLOG_CAT_COLOR[a.cat] || c.accent,
+      title: (a.title[s.lang] || a.title.en), excerpt: (a.excerpt[s.lang] || a.excerpt.en),
+      dateFmt: a.date, readFmt: a.read + ' ' + t.minRead,
+      onClick: () => this.openArticle(key, a.id)
+    }));
+
+    let article = null;
+    if (s.articleId) {
+      const a = BLOG_SEED.find(x => x.id === s.articleId);
+      if (a) {
+        const lead = (a.excerpt[s.lang] || a.excerpt.en);
+        const bodyBlocks = [{ text: lead, style: 'font-size:15px;line-height:1.7;font-weight:600;color:' + c.text + ';margin:0;' }]
+          .concat(articleBody(s.lang).map(p => ({ text: p, style: 'font-size:14px;line-height:1.75;color:' + c.text + ';margin:0;' })));
+        const relRepos = relatedReposForArticle(a).map(rr => this.repoCard(rr, key, s, t));
+        article = { title: (a.title[s.lang] || a.title.en), catLabel: (catL[a.cat] || a.cat), catColor: BLOG_CAT_COLOR[a.cat] || c.accent, dateFmt: a.date, readFmt: a.read + ' ' + t.minRead, bodyBlocks, relRepos };
+      }
+    }
+
+    return {
+      lang: s.lang, theme: s.theme, isDark: s.theme === 'dark', isLight: s.theme === 'light',
+      search: s.search, t, c,
+      navItems, blogCards, article, onBlogBack: () => this.openBlog(key),
+      isBlog: s.view === 'blog', isArticle: s.view === 'article' && !!article,
+      allNode, groups, cards, resultCount: finalRepos.length, noResults: finalRepos.length === 0,
+      heading, hasBreadcrumb, breadcrumb,
+      fineOptions, showFineFilter, fineValue: s.fineLang, fineLabel: t.filterLanguage,
+      licenseOptions, showLicenseFilter, licenseValue: s.licenseFilter, licenseLabel: t.license,
+      sortOptions, sortValue: s.sort, sortByLabel: t.sortBy,
+      showFilterBar: showFineFilter || showLicenseFilter,
+      pageButtons, showPagination, rangeText, prevDisabled, nextDisabled, onPrev, onNext,
+      prevOpacity: prevDisabled ? 0.4 : 1, nextOpacity: nextDisabled ? 0.4 : 1,
+      onFineChange: (e) => this.patch(key, { fineLang: e.target.value, page: 1 }),
+      onLicenseChange: (e) => this.patch(key, { licenseFilter: e.target.value, page: 1 }),
+      onSortChange: (e) => this.patch(key, { sort: e.target.value, page: 1 }),
+      uiLangs,
+      isHome: s.view === 'home', isDetail: s.view === 'detail' && !!selected,
+      isSearching: s.search.trim() !== '',
+      selected,
+      onSearchChange: (e) => this.patch(key, { search: e.target.value, page: 1 }),
+      onToggleTheme: () => this.patch(key, { theme: s.theme === 'dark' ? 'light' : 'dark' }),
+      onBack: () => this.goBack(key),
+      onRelReposPrev: () => this.scrollRow('d-relrepos-row', -1),
+      onRelReposNext: () => this.scrollRow('d-relrepos-row', 1),
+      onRelArtsPrev: () => this.scrollRow('d-relarts-row', -1),
+      onRelArtsNext: () => this.scrollRow('d-relarts-row', 1)
+    };
+  }
+
+  renderVals() {
+    return { a: this.computeOption('a'), b: this.computeOption('b'), c: this.computeOption('c'), d: this.computeTree('d') };
+  }
+}
+</script>
+</body>
+</html>

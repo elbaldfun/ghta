@@ -2,9 +2,13 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Sora, Manrope, IBM_Plex_Mono } from 'next/font/google';
 import { routing } from '@/i18n/routing';
-import { Nav } from '@/components/Nav';
 import '../globals.css';
+
+const sora = Sora({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-sora' });
+const manrope = Manrope({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-manrope' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '600', '700'], variable: '--font-plex-mono' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
 
@@ -46,15 +50,16 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${sora.variable} ${manrope.variable} ${plexMono.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashTheme }} />
       </head>
       <body>
-        <NextIntlClientProvider messages={messages}>
-          <Nav />
-          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-        </NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
       </body>
     </html>
   );
