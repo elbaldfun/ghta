@@ -4,74 +4,71 @@
 
 export interface TaxonomyNode {
   id: string;
-  /** GitHub search qualifiers for this node (combined with the base query). */
-  query: string;
+  /** Topic tags a repo must carry (matched against sourceData.topicNames). */
+  topics: string[];
   subs?: TaxonomyNode[];
 }
-
-/** Quality floor applied to every taxonomy listing. */
-export const BASE_QUALIFIER = 'stars:>1000';
 
 export const TAXONOMY: TaxonomyNode[] = [
   {
     id: 'frontend',
-    query: 'topic:frontend',
+    topics: ['frontend'],
     subs: [
-      { id: 'fe-framework', query: 'topic:frontend topic:framework' },
-      { id: 'fe-ui', query: 'topic:ui topic:components' },
-      { id: 'fe-css', query: 'topic:css-framework' },
+      { id: 'fe-framework', topics: ['frontend', 'framework'] },
+      { id: 'fe-ui', topics: ['ui', 'components'] },
+      { id: 'fe-css', topics: ['css-framework'] },
     ],
   },
   {
     id: 'backend',
-    query: 'topic:backend',
+    topics: ['backend'],
     subs: [
-      { id: 'be-web', query: 'topic:web-framework' },
-      { id: 'be-db', query: 'topic:database' },
-      { id: 'be-async', query: 'topic:async topic:runtime' },
+      { id: 'be-web', topics: ['web-framework'] },
+      { id: 'be-db', topics: ['database'] },
+      { id: 'be-async', topics: ['async', 'runtime'] },
     ],
   },
   {
     id: 'ai',
-    query: 'topic:machine-learning',
+    topics: ['machine-learning'],
     subs: [
-      { id: 'ai-dl', query: 'topic:deep-learning' },
-      { id: 'ai-nlp', query: 'topic:nlp' },
-      { id: 'ai-cv', query: 'topic:computer-vision' },
+      { id: 'ai-dl', topics: ['deep-learning'] },
+      { id: 'ai-nlp', topics: ['nlp'] },
+      { id: 'ai-cv', topics: ['computer-vision'] },
     ],
   },
   {
     id: 'infra',
-    query: 'topic:devops',
+    topics: ['devops'],
     subs: [
-      { id: 'infra-orch', query: 'topic:kubernetes' },
-      { id: 'infra-rt', query: 'topic:container topic:runtime' },
-      { id: 'infra-os', query: 'topic:operating-system' },
+      { id: 'infra-orch', topics: ['kubernetes'] },
+      { id: 'infra-rt', topics: ['container', 'runtime'] },
+      { id: 'infra-os', topics: ['operating-system'] },
     ],
   },
   {
     id: 'tools',
-    query: 'topic:developer-tools',
+    topics: ['developer-tools'],
     subs: [
-      { id: 'tools-editor', query: 'topic:editor' },
-      { id: 'tools-ssg', query: 'topic:static-site-generator' },
+      { id: 'tools-editor', topics: ['editor'] },
+      { id: 'tools-ssg', topics: ['static-site-generator'] },
     ],
   },
   {
     id: 'lang',
-    query: 'topic:programming-language',
-    subs: [{ id: 'lang-compiler', query: 'topic:compiler' }],
+    topics: ['programming-language'],
+    subs: [{ id: 'lang-compiler', topics: ['compiler'] }],
   },
 ];
 
-export function taxonomyQuery(cat?: string | null, sub?: string | null): string {
+export function taxonomyTopics(cat?: string | null, sub?: string | null): string[] {
   const group = TAXONOMY.find((g) => g.id === cat);
-  if (!group) return '';
+  if (!group) return [];
   if (sub) {
     const node = group.subs?.find((s) => s.id === sub);
-    if (node) return node.query;
+    if (node) return node.topics;
   }
-  return group.query;
+  return group.topics;
 }
 
 /** Canonical GitHub language colors (subset + fallback). */
@@ -124,7 +121,15 @@ export const FILTER_LANGS = [
   'CSS',
 ] as const;
 
-/** SPDX ids offered in the license filter dropdown (value = GitHub qualifier). */
+/** License filter options: SPDX-ish id -> the exact name stored in the database. */
+export const LICENSE_NAMES: Record<string, string> = {
+  mit: 'MIT License',
+  'apache-2.0': 'Apache License 2.0',
+  'gpl-3.0': 'GNU General Public License v3.0',
+  'gpl-2.0': 'GNU General Public License v2.0',
+  'bsd-3-clause': 'BSD 3-Clause "New" or "Revised" License',
+  'mpl-2.0': 'Mozilla Public License 2.0',
+};
 export const FILTER_LICENSES = ['mit', 'apache-2.0', 'gpl-3.0', 'gpl-2.0', 'bsd-3-clause', 'mpl-2.0'] as const;
 
 export const SORT_OPTIONS = ['stars', 'forks', 'updated'] as const;

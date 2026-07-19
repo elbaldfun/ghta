@@ -1,6 +1,6 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { RepoSummary } from '@/lib/github';
+import type { RepoSummary } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, langColor } from '@/lib/rank-data';
 import { BoxIcon, ClockIcon, ForkIcon, GlobeIcon, ShieldIcon, StarIcon } from './icons';
 

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { TAXONOMY, formatCompact } from '@/lib/rank-data';
-import type { CategoryCounts } from '@/lib/github';
+import type { CategoryCounts } from '@/lib/data';
 import { GridIcon } from './icons';
 
 /**

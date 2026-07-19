@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getReadmeHtml, getRelatedRepos, getRepo, getStarHistory } from '@/lib/github';
+import { getReadmeHtml, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
 import { Carousel } from '@/components/rank/Carousel';
 import { GrowthChart } from '@/components/rank/GrowthChart';
@@ -29,7 +29,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   const repo = repoRes.data;
 
   const [history, readmeHtml, related] = await Promise.all([
-    getStarHistory(repo.owner, repo.name, repo.stars),
+    getStarHistory(repo.owner, repo.name),
     getReadmeHtml(repo.owner, repo.name),
     getRelatedRepos(repo),
   ]);
@@ -37,12 +37,14 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   const dot = langColor(repo.language);
   const artifact = artifactOf(repo.language);
   const host = homepageHost(repo.homepage);
-  const createdYear = new Date(repo.createdAt).getFullYear();
 
   const stats: { label: string; value: string; accent?: boolean }[] = [
     { label: t('stars'), value: formatCompact(repo.stars), accent: true },
     { label: t('forks'), value: formatCompact(repo.forks) },
-    { label: t('watchers'), value: formatCompact(repo.subscribers) },
+    {
+      label: t('weeklyIncrease'),
+      value: repo.weeklyIncrease === null ? '—' : `+${formatCompact(repo.weeklyIncrease)}`,
+    },
     { label: t('issues'), value: formatCompact(repo.openIssues) },
   ];
   const statTiles = stats.map((s) => (
@@ -107,7 +109,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
             {t('keyMetrics')}
           </div>
           <div className="order-2 text-xs font-bold uppercase tracking-wider text-muted md:order-none">
-            {t('growth')} · {t('createdIn')} {createdYear}
+            {t('growth')}
           </div>
           <div className="order-1 grid grid-cols-2 gap-3 md:order-none md:h-full md:grid-cols-1 md:grid-rows-4">
             {statTiles}

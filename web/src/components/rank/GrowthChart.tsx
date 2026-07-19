@@ -1,4 +1,4 @@
-import type { StarPoint } from '@/lib/github';
+import type { StarPoint } from '@/lib/data';
 
 /**
  * Star-growth area chart from the 2a detail view (accent fill 0.14 + 2.5 stroke).

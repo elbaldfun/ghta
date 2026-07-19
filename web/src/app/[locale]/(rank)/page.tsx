@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { getCategoryCounts, searchRepos } from '@/lib/github';
+import { getCategoryCounts, searchRepos } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
 import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';

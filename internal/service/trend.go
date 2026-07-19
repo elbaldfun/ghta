@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -35,6 +37,7 @@ var sortFields = map[string]string{
 	"forks":     "metrics.forks",
 	"issues":    "metrics.openIssues",
 	"fetchedAt": "fetchedAt",
+	"updated":   "fetchedAt",
 }
 
 type TrendQuery struct {
@@ -42,9 +45,13 @@ type TrendQuery struct {
 	Stars    string
 	Issues   string
 	Language string
-	Category string // categoryId
-	Sort     string // "field:order"
+	Category string   // categoryId
+	Q        string   // case-insensitive match on externalId/name/description
+	Topics   []string // every topic must be present in sourceData.topicNames
+	License  string   // exact sourceData.license
+	Sort     string   // "field:order"
 	Limit    int
+	Page     int // 1-based; combined with Limit for offset pagination
 }
 
 type TrendService struct {
@@ -56,8 +63,9 @@ func NewTrendService(store *repository.Store) *TrendService {
 }
 
 // List returns tracked items matching the query. Invalid filters/sort/limit
-// return an InputError.
-func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.TrackedItem, error) {
+// return an InputError. The returned total is the full match count (for
+// pagination), independent of limit/page.
+func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.TrackedItem, int64, error) {
 	filter := bson.M{}
 	if q.Source != "" {
 		filter["source"] = q.Source
@@ -68,24 +76,38 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 	if q.Category != "" {
 		filter["categoryId"] = q.Category
 	}
+	if q.License != "" {
+		filter["sourceData.license"] = q.License
+	}
+	if len(q.Topics) > 0 {
+		filter["sourceData.topicNames"] = bson.M{"$all": q.Topics}
+	}
+	if q.Q != "" {
+		re := primitive.Regex{Pattern: regexp.QuoteMeta(q.Q), Options: "i"}
+		filter["$or"] = []bson.M{
+			{"externalId": re},
+			{"name": re},
+			{"description": re},
+		}
+	}
 	if q.Stars != "" {
 		cond, err := query.ParseRange(q.Stars)
 		if err != nil {
-			return nil, badInput("stars: %v", err)
+			return nil, 0, badInput("stars: %v", err)
 		}
 		filter["metrics.stars"] = cond
 	}
 	if q.Issues != "" {
 		cond, err := query.ParseRange(q.Issues)
 		if err != nil {
-			return nil, badInput("issues: %v", err)
+			return nil, 0, badInput("issues: %v", err)
 		}
 		filter["metrics.openIssues"] = cond
 	}
 
 	sortField, sortOrder, err := parseSort(q.Sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	limit := q.Limit
@@ -93,22 +115,37 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		limit = defaultLimit
 	}
 	if limit < 0 || limit > maxLimit {
-		return nil, badInput("limit must be between 1 and %d", maxLimit)
+		return nil, 0, badInput("limit must be between 1 and %d", maxLimit)
+	}
+	page := q.Page
+	if page == 0 {
+		page = 1
+	}
+	if page < 1 {
+		return nil, 0, badInput("page must be >= 1")
+	}
+
+	total, err := s.store.Items().CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	opts := options.Find().
 		SetSort(bson.D{{Key: sortField, Value: sortOrder}}).
-		SetLimit(int64(limit))
+		SetSkip(int64(page-1) * int64(limit)).
+		SetLimit(int64(limit)).
+		// The list view never needs the heavyweight sourceData blobs.
+		SetProjection(bson.M{"sourceData.readme": 0, "sourceData.releases": 0})
 
 	cur, err := s.store.Items().Find(ctx, filter, opts)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	items := []domain.TrackedItem{}
 	if err := cur.All(ctx, &items); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return items, nil
+	return items, total, nil
 }
 
 // Item returns a single tracked item and its recent snapshot history (for the
