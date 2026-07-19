@@ -1,7 +1,11 @@
 import type { StarPoint } from '@/lib/github';
 
-/** 540×170 star-growth area chart from the 2a detail view (accent fill 0.14 + 2.5 stroke). */
-export function GrowthChart({ points }: { points: StarPoint[] }) {
+/**
+ * Star-growth area chart from the 2a detail view (accent fill 0.14 + 2.5 stroke).
+ * The 540×170 viewBox stretches to fill its container; the stroke width stays
+ * constant via vector-effect.
+ */
+export function GrowthChart({ points, className }: { points: StarPoint[]; className?: string }) {
   const W = 540;
   const H = 170;
   const pad = 10;
@@ -26,15 +30,20 @@ export function GrowthChart({ points }: { points: StarPoint[] }) {
 
   return (
     <svg
-      width={W}
-      height={H}
       viewBox={`0 0 ${W} ${H}`}
-      className="max-w-full rounded-card border border-border bg-surface text-accent"
+      preserveAspectRatio="none"
+      className={`w-full rounded-card border border-border bg-surface text-accent ${className ?? 'h-[170px]'}`}
       role="img"
       aria-label="Star growth chart"
     >
       <path d={area} fill="currentColor" opacity={0.14} />
-      <polyline points={line} fill="none" stroke="currentColor" strokeWidth={2.5} />
+      <polyline
+        points={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.5}
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }

@@ -45,6 +45,12 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
     { label: t('watchers'), value: formatCompact(repo.subscribers) },
     { label: t('issues'), value: formatCompact(repo.openIssues) },
   ];
+  const statTiles = stats.map((s) => (
+    <div key={s.label} className="rounded-card border border-border bg-surface p-3.5">
+      <div className="text-[11px] font-semibold text-muted">{s.label}</div>
+      <div className={`text-[19px] font-extrabold ${s.accent ? 'text-accent' : ''}`}>{s.value}</div>
+    </div>
+  ));
 
   return (
     <div className="mx-auto max-w-[1000px] px-[26px] py-[22px]">
@@ -81,34 +87,32 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
           </a>
         )}
       </div>
-      {repo.description && <p className="mb-[22px] max-w-[640px] text-[13px] text-muted">{repo.description}</p>}
-
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-card border border-border bg-surface p-3.5">
-            <div className="text-[11px] font-semibold text-muted">{s.label}</div>
-            <div className={`text-[19px] font-extrabold ${s.accent ? 'text-accent' : ''}`}>{s.value}</div>
+      <div className="mb-[22px]">
+        {repo.description && <p className="max-w-[640px] text-[13px] text-muted">{repo.description}</p>}
+        {repo.topics.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {repo.topics.slice(0, 12).map((topic) => (
+              <span key={topic} className="rounded-full bg-surface2 px-3 py-[5px] text-[11px] font-semibold">
+                {topic}
+              </span>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
-      {history.length >= 2 && (
-        <>
-          <div className="mb-2.5 text-xs font-bold uppercase tracking-wider text-muted">
-            {t('growth')} · {t('createdIn')} {createdYear}
+      {history.length >= 2 ? (
+        // Numbers on the left, growth trend filling the right.
+        <div className="mb-6 grid gap-3 md:grid-cols-[220px_1fr]">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-1">{statTiles}</div>
+          <div className="flex flex-col">
+            <div className="mb-2.5 text-xs font-bold uppercase tracking-wider text-muted">
+              {t('growth')} · {t('createdIn')} {createdYear}
+            </div>
+            <GrowthChart points={history} className="min-h-[170px] flex-1" />
           </div>
-          <GrowthChart points={history} />
-        </>
-      )}
-
-      {repo.topics.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {repo.topics.slice(0, 12).map((topic) => (
-            <span key={topic} className="rounded-full bg-surface2 px-3 py-[5px] text-[11px] font-semibold">
-              {topic}
-            </span>
-          ))}
         </div>
+      ) : (
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{statTiles}</div>
       )}
 
       {artifact.has && (
