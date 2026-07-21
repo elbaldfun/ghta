@@ -89,6 +89,8 @@ ssh 24.199.88.38 'cd /opt/ghta && set -a && . ./.env && set +a && \
 
 Git 集成，推送到 `main` 自动部署。
 
+项目：`top-trends/starrank`。
+
 | 设置项 | 值 |
 |---|---|
 | **Root Directory** | **`web`** ← 仓库根是 Go 项目，不设会构建失败 |
@@ -96,13 +98,21 @@ Git 集成，推送到 `main` 自动部署。
 | `API_URL` | `https://api.starrank.dev` |
 | `NEXT_PUBLIC_SITE_URL` | `https://starrank.dev` |
 
+手动发布：`cd web && vercel deploy --prod`。
+
+> 自动生成的 `*.vercel.app` 部署地址受 Deployment Protection 保护（需登录 Vercel 才能访问），
+> 属正常行为。正式域名 `starrank.dev` 不受影响；若绑定后仍要求登录，
+> 去 Project Settings → Deployment Protection 关闭。
+
 ## DNS（Cloudflare）
+
+域名注册在 Cloudflare，NS 也在 Cloudflare（`melody.ns` / `yisroel.ns`）。
 
 | 类型 | 名称 | 值 | 代理状态 |
 |---|---|---|---|
 | A | `api` | `24.199.88.38` | **DNS only（灰云）** |
-| A | `@` | *以 Vercel 面板显示为准* | **DNS only（灰云）** |
-| CNAME | `www` | *以 Vercel 面板显示为准* | **DNS only（灰云）** |
+| A | `@` | `76.76.21.21` | **DNS only（灰云）** |
+| CNAME | `www` | `cname.vercel-dns.com` | **DNS only（灰云）** |
 
 > ⚠️ **云朵必须是灰色。** 橙云（Proxied）会让 Caddy 的 ACME 验证拿不到证书，
 > 也会让 Vercel 的证书签发失败并造成双层 CDN 缓存冲突。
