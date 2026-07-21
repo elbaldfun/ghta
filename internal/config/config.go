@@ -21,6 +21,11 @@ type Config struct {
 
 	GitHubToken string
 
+	// Bearer token guarding the admin surface (/internal/*, /category, /user).
+	// Empty means those routes refuse every request — a misconfigured deploy
+	// fails closed instead of exposing destructive endpoints to the internet.
+	AdminToken string
+
 	// AI
 	AIProvider      string // "openai" | "deepseek"
 	OpenAIAPIKey    string
@@ -53,6 +58,7 @@ func Load() (*Config, error) {
 		MongoURI:        os.Getenv("MONGODB_URI"),
 		MongoDB:         getEnv("MONGODB_DB", "github-trend"),
 		GitHubToken:     os.Getenv("GITHUB_API_TOKEN"),
+		AdminToken:      os.Getenv("ADMIN_API_TOKEN"),
 		AIProvider:      getEnv("AI_PROVIDER", "openai"),
 		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
 		OpenAIModel:     getEnv("OPENAI_MODEL", "gpt-4o-mini"),

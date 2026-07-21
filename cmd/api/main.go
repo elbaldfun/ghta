@@ -104,7 +104,7 @@ func main() {
 
 	starHistory := service.NewStarHistoryService(store, logger)
 
-	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx)
+	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx, cfg.AdminToken)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -134,10 +134,12 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context, adminToken string) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
+
+	// ---- Public: health plus the read-only API the website consumes ----
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -148,12 +150,17 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.GET("/trending/rising", trending.Rising)
 	r.GET("/trending/item", trending.Item)
 
-	handler.NewCategoryHandler(service.NewCategoryService(store)).Register(r)
-	handler.NewUserHandler(service.NewUserService(store)).Register(r)
+	// ---- Admin: bearer-token guarded ----
+	// These mutate data, expose user records, or start quota-burning jobs, so
+	// they must not be anonymously reachable on the public internet.
+	admin := r.Group("", handler.RequireAdminToken(adminToken))
+
+	handler.NewCategoryHandler(service.NewCategoryService(store)).Register(admin)
+	handler.NewUserHandler(service.NewUserService(store)).Register(admin)
 
 	// Internal: manually trigger a fetch. With ?source=&shard= it runs one shard
 	// synchronously (handy for smoke tests); otherwise a full pass in the background.
-	r.POST("/internal/fetch", func(c *gin.Context) {
+	admin.POST("/internal/fetch", func(c *gin.Context) {
 		src := c.Query("source")
 		shard := c.Query("shard")
 		if src != "" && shard != "" {
@@ -169,7 +176,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	})
 
 	// Internal: manually trigger a categorization pass (background).
-	r.POST("/internal/categorize", func(c *gin.Context) {
+	admin.POST("/internal/categorize", func(c *gin.Context) {
 		go categorizer.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started"})
 	})
@@ -177,7 +184,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	// Internal: warm up the star-history cache for the top-N repos by stars,
 	// in the background. Already-backfilled repos are skipped; remote queries
 	// are paced to stay polite to the public datasets.
-	r.POST("/internal/backfill-history", func(c *gin.Context) {
+	admin.POST("/internal/backfill-history", func(c *gin.Context) {
 		top := 1000
 		if v := c.Query("top"); v != "" {
 			n, err := strconv.Atoi(v)
@@ -192,7 +199,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	})
 
 	// Internal: recompute growth metrics (synchronous, so callers can read fresh data).
-	r.POST("/internal/metrics", func(c *gin.Context) {
+	admin.POST("/internal/metrics", func(c *gin.Context) {
 		if err := metrics.Run(c.Request.Context()); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

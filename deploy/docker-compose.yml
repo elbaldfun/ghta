@@ -1,0 +1,64 @@
+# Production stack for the starrank.dev droplet (1 vCPU / 2 GB RAM).
+#
+# Only Caddy publishes ports. MongoDB and the API are reachable solely on the
+# internal compose network — the database must never be exposed to the internet.
+#
+# Secrets come from deploy/.env on the server (gitignored, never committed).
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    # WiredTiger would otherwise size its cache from total RAM and leave nothing
+    # for the API on a 2 GB box. 0.5 GB keeps the working set cached with room
+    # to spare; the rest of the 1.6 GB dataset is served from disk.
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    # No `ports:` on purpose — internal network access only.
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  api:
+    image: ghta-api:latest
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: "3000"
+      LOG_LEVEL: info
+      MONGODB_DB: ghta
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/ghta?authSource=admin
+      GITHUB_API_TOKEN: ${GITHUB_API_TOKEN}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    # No `ports:` — traffic arrives through Caddy.
+    mem_limit: 640m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # Let's Encrypt certs + account keys; must persist
+      - caddy_config:/config
+    mem_limit: 128m
+
+volumes:
+  mongo_data:
+  caddy_data:
+  caddy_config:

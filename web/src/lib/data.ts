@@ -6,7 +6,9 @@ import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { LICENSE_NAMES, taxonomyTopics, TAXONOMY, type SortOption } from './rank-data';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Server-only on purpose: without the NEXT_PUBLIC_ prefix the backend address
+// is never inlined into the browser bundle. Every caller below runs on the server.
+const API = process.env.API_URL || 'http://localhost:3000';
 
 export interface RepoSummary {
   owner: string;

@@ -1,0 +1,20 @@
+# Keep the build context small and never ship secrets into an image layer.
+.git
+.github
+.claude
+openspec
+docs
+logs
+bin
+
+# Frontend is deployed separately on Vercel.
+web
+
+# Secrets — must never enter the build context.
+.env
+.env.*
+!.env.example
+
+# Local noise
+*.log
+.DS_Store

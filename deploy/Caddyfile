@@ -1,0 +1,23 @@
+# Caddy fetches and renews the Let's Encrypt certificate automatically.
+# Requires api.starrank.dev to resolve to this droplet with Cloudflare proxying
+# OFF (grey cloud), otherwise the ACME challenge cannot reach us.
+
+api.starrank.dev {
+	encode gzip zstd
+
+	# The public site is the only intended browser-facing origin; everything
+	# here is consumed server-side by Vercel, so no CORS headers are needed.
+	header {
+		# Don't advertise the backend stack.
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+
+	reverse_proxy api:3000
+
+	log {
+		output stdout
+		format console
+	}
+}
