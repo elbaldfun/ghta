@@ -134,13 +134,61 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
   };
 }
 
-/** README markdown from the database, rendered and sanitized server-side. */
-export async function getReadmeHtml(owner: string, name: string): Promise<string | null> {
+export interface ReadmeHeading {
+  id: string;
+  text: string;
+  depth: number;
+}
+
+export interface Readme {
+  html: string;
+  toc: ReadmeHeading[];
+}
+
+// h1–h3 only: deeper levels bury the outline in long READMEs.
+const HEADING_RE = /<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/g;
+
+/** Visible text of a heading, with inline markup and entities removed. */
+function headingText(inner: string): string {
+  return inner
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Anchor slug; \p{L} keeps CJK headings addressable instead of collapsing them to "section". */
+function slugify(text: string, used: Set<string>): string {
+  const base =
+    text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-+|-+$/g, '') || 'section';
+  let slug = base;
+  for (let i = 2; used.has(slug); i++) slug = `${base}-${i}`;
+  used.add(slug);
+  return slug;
+}
+
+/**
+ * README markdown from the database, rendered and sanitized server-side, plus
+ * an outline for the sidebar.
+ *
+ * Anchor ids are injected *after* sanitizing rather than allowing `id` through
+ * the whitelist: the values are slugs we generate ourselves, so untrusted
+ * markup can never place an id of its choosing on the page.
+ */
+export async function getReadme(owner: string, name: string): Promise<Readme | null> {
   const res = await fetchItem(owner, name);
   const md: string = res.error === null ? (res.data.item.sourceData?.readme ?? '') : '';
   if (!md.trim()) return null;
-  const html = await marked.parse(md, { gfm: true });
-  return sanitizeHtml(html, {
+  const rendered = await marked.parse(md, { gfm: true });
+  const clean = sanitizeHtml(rendered, {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'details', 'summary', 'ins', 'del']),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
@@ -149,6 +197,18 @@ export async function getReadmeHtml(owner: string, name: string): Promise<string
       '*': ['align'],
     },
   });
+
+  const toc: ReadmeHeading[] = [];
+  const used = new Set<string>();
+  const html = clean.replace(HEADING_RE, (match, depth: string, attrs: string, inner: string) => {
+    const text = headingText(inner);
+    if (!text) return match;
+    const id = slugify(text, used);
+    toc.push({ id, text, depth: Number(depth) });
+    return `<h${depth}${attrs} id="${id}">${inner}</h${depth}>`;
+  });
+
+  return { html, toc };
 }
 
 /** Star history from metric snapshots (grows one point per daily fetch). */

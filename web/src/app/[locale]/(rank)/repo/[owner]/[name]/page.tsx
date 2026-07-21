@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getReadmeHtml, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
+import { getReadme, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
 import { Carousel } from '@/components/rank/Carousel';
 import { GrowthChart } from '@/components/rank/GrowthChart';
@@ -28,9 +28,9 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   if (repoRes.error !== null) notFound();
   const repo = repoRes.data;
 
-  const [history, readmeHtml, related] = await Promise.all([
+  const [history, readme, related] = await Promise.all([
     getStarHistory(repo.owner, repo.name),
-    getReadmeHtml(repo.owner, repo.name),
+    getReadme(repo.owner, repo.name),
     getRelatedRepos(repo),
   ]);
 
@@ -136,7 +136,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
         </div>
       )}
 
-      {readmeHtml && <ReadmeBlock html={readmeHtml} />}
+      {readme && <ReadmeBlock html={readme.html} toc={readme.toc} />}
 
       {related.length > 0 && (
         <div className="mt-[26px]">
