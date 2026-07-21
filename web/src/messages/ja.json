@@ -1,0 +1,111 @@
+{
+  "site": {
+    "name": "GHTA",
+    "tagline": "マルチソースの開発者・ソフトウェアトレンド"
+  },
+  "rank": {
+    "homeTitle": "GitHub スターランキング",
+    "homeSubtitle": "世界で最も人気のあるオープンソースプロジェクトを発見",
+    "navRankings": "ランキング",
+    "footerTagline": "GitHub スターランキングと成長トレンド",
+    "footerDataSource": "データ提供: GitHub",
+    "searchPlaceholder": "リポジトリ、組織、キーワードを検索...",
+    "searchResultsFor": "検索結果:",
+    "browseAll": "すべてのカテゴリ",
+    "all": "すべて",
+    "filterFine": "言語で絞り込み:",
+    "filterLicense": "ライセンス:",
+    "sortBy": "並べ替え",
+    "sortStars": "スター",
+    "sortForks": "フォーク",
+    "sortUpdated": "最近の更新",
+    "results": "件",
+    "noResults": "該当するリポジトリが見つかりません",
+    "loadError": "データを読み込めませんでした",
+    "rangeText": "{total} 件中 {start}–{end} 件を表示",
+    "back": "ランキングに戻る",
+    "stars": "スター",
+    "forks": "フォーク",
+    "weeklyIncrease": "週間成長",
+    "issues": "Issue",
+    "growth": "スター成長",
+    "keyMetrics": "主要指標",
+    "artifacts": "成果物",
+    "artifactTip": "インストール可能なビルド成果物を公開",
+    "readmeExpand": "すべて表示",
+    "readmeCollapse": "折りたたむ",
+    "relatedRepos": "関連リポジトリ",
+    "cats": {
+      "frontend": "フロントエンド",
+      "backend": "バックエンド",
+      "ai": "AI・機械学習",
+      "infra": "システム・インフラ",
+      "tools": "開発ツール",
+      "lang": "言語・コンパイラ"
+    },
+    "subs": {
+      "fe-framework": "フレームワーク",
+      "fe-ui": "UIライブラリ",
+      "fe-css": "CSSツール",
+      "be-web": "Webフレームワーク",
+      "be-db": "データベース",
+      "be-async": "非同期ランタイム",
+      "ai-dl": "ディープラーニング",
+      "ai-nlp": "自然言語処理",
+      "ai-cv": "コンピュータビジョン",
+      "infra-orch": "オーケストレーション",
+      "infra-rt": "ランタイム",
+      "infra-os": "OS",
+      "tools-editor": "エディタ",
+      "tools-ssg": "静的サイト",
+      "lang-compiler": "コンパイラ"
+    }
+  },
+  "consent": {
+    "title": "Cookie について",
+    "message": "サイトの利用状況を把握するため、匿名のアクセス解析に Cookie を使用します。拒否しても機能に影響はありません。",
+    "learnMore": "プライバシーポリシー",
+    "accept": "同意する",
+    "reject": "拒否する"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
+  },
+  "blog": {
+    "title": "インサイト",
+    "subtitle": "追跡中の 67,000 リポジトリに基づく独自分析。数値はリアルタイムに読み込まれ、日次クロールで更新されます。",
+    "empty": "記事はまだありません。",
+    "readingTime": "約 {minutes} 分",
+    "backToList": "記事一覧に戻る",
+    "dataNote": "本記事の数値はすべてデータベースからリアルタイムに読み込まれ、日次クロールで更新されます。",
+    "nav": "インサイト"
+  }
+}

@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { SearchBox } from './SearchBox';
-import { LocalePills } from './LocalePills';
+import { LocaleMenu } from './LocaleMenu';
 import { ThemePill } from './ThemePill';
 
 /** Persistent 2a header: full-bleed border, content aligned to the site container. */
@@ -38,7 +38,7 @@ export function RankHeader() {
         </Suspense>
         <div className="flex items-center gap-1.5">
           <Suspense>
-            <LocalePills />
+            <LocaleMenu />
           </Suspense>
           <ThemePill />
         </div>

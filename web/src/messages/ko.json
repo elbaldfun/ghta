@@ -1,0 +1,111 @@
+{
+  "site": {
+    "name": "GHTA",
+    "tagline": "멀티소스 개발자·소프트웨어 트렌드"
+  },
+  "rank": {
+    "homeTitle": "GitHub 스타 랭킹",
+    "homeSubtitle": "전 세계에서 가장 인기 있는 오픈소스 프로젝트를 찾아보세요",
+    "navRankings": "랭킹",
+    "footerTagline": "GitHub 스타 랭킹과 성장 트렌드",
+    "footerDataSource": "데이터 출처: GitHub",
+    "searchPlaceholder": "저장소, 조직, 키워드 검색...",
+    "searchResultsFor": "검색 결과:",
+    "browseAll": "전체 카테고리",
+    "all": "전체",
+    "filterFine": "언어별:",
+    "filterLicense": "라이선스:",
+    "sortBy": "정렬",
+    "sortStars": "스타",
+    "sortForks": "포크",
+    "sortUpdated": "최근 업데이트",
+    "results": "개 결과",
+    "noResults": "저장소를 찾을 수 없습니다",
+    "loadError": "데이터를 불러오지 못했습니다",
+    "rangeText": "전체 {total}개 중 {start}–{end}",
+    "back": "랭킹으로 돌아가기",
+    "stars": "스타",
+    "forks": "포크",
+    "weeklyIncrease": "주간 성장",
+    "issues": "이슈",
+    "growth": "스타 성장",
+    "keyMetrics": "주요 지표",
+    "artifacts": "아티팩트",
+    "artifactTip": "설치 가능한 빌드 아티팩트 배포",
+    "readmeExpand": "전체 보기",
+    "readmeCollapse": "접기",
+    "relatedRepos": "관련 저장소",
+    "cats": {
+      "frontend": "프론트엔드",
+      "backend": "백엔드",
+      "ai": "AI·머신러닝",
+      "infra": "시스템·인프라",
+      "tools": "개발 도구",
+      "lang": "언어·컴파일러"
+    },
+    "subs": {
+      "fe-framework": "프레임워크",
+      "fe-ui": "UI 라이브러리",
+      "fe-css": "CSS 도구",
+      "be-web": "웹 프레임워크",
+      "be-db": "데이터베이스",
+      "be-async": "비동기 런타임",
+      "ai-dl": "딥러닝",
+      "ai-nlp": "자연어 처리",
+      "ai-cv": "컴퓨터 비전",
+      "infra-orch": "오케스트레이션",
+      "infra-rt": "런타임",
+      "infra-os": "운영체제",
+      "tools-editor": "에디터",
+      "tools-ssg": "정적 사이트",
+      "lang-compiler": "컴파일러"
+    }
+  },
+  "consent": {
+    "title": "쿠키 안내",
+    "message": "사이트 이용 현황 파악을 위해 익명 트래픽 분석에 쿠키를 사용합니다. 거부해도 기능에는 영향이 없습니다.",
+    "learnMore": "개인정보처리방침",
+    "accept": "동의",
+    "reject": "거부"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
+  },
+  "blog": {
+    "title": "인사이트",
+    "subtitle": "추적 중인 67,000개 저장소를 바탕으로 한 독자 분석. 수치는 실시간으로 읽어오며 매일 갱신됩니다.",
+    "empty": "아직 글이 없습니다.",
+    "readingTime": "{minutes}분 소요",
+    "backToList": "목록으로 돌아가기",
+    "dataNote": "이 글의 모든 수치는 데이터베이스에서 실시간으로 읽어오며 매일 갱신됩니다.",
+    "nav": "인사이트"
+  }
+}

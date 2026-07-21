@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getPost, renderPostBody } from '@/lib/blog';
+import { contentLocale } from '@/i18n/routing';
 import { DataBlock } from '@/components/blog/DataBlock';
 import { BackIcon } from '@/components/rank/icons';
 
@@ -14,7 +15,7 @@ interface Params {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const post = await getPost(params.locale, params.slug);
+  const post = await getPost(contentLocale(params.locale), params.slug);
   if (!post) return {};
   const url = `${SITE_URL}/${params.locale}/blog/${post.slug}`;
   return {
@@ -37,7 +38,7 @@ export default async function BlogPost({ params }: { params: Params }) {
   setRequestLocale(params.locale);
   const t = await getTranslations('blog');
 
-  const post = await getPost(params.locale, params.slug);
+  const post = await getPost(contentLocale(params.locale), params.slug);
   if (!post) notFound();
   const segments = await renderPostBody(post.body);
 

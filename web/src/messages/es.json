@@ -1,0 +1,111 @@
+{
+  "site": {
+    "name": "GHTA",
+    "tagline": "Tendencias de desarrollo y software de múltiples fuentes"
+  },
+  "rank": {
+    "homeTitle": "Ranking de estrellas de GitHub",
+    "homeSubtitle": "Descubre los proyectos de código abierto más populares del mundo",
+    "navRankings": "Ranking",
+    "footerTagline": "Ranking de estrellas y tendencias de crecimiento de GitHub",
+    "footerDataSource": "Datos de GitHub",
+    "searchPlaceholder": "Buscar repositorios, organizaciones o palabras clave...",
+    "searchResultsFor": "Resultados para",
+    "browseAll": "Todas las categorías",
+    "all": "Todos",
+    "filterFine": "Por lenguaje:",
+    "filterLicense": "Licencia:",
+    "sortBy": "Ordenar",
+    "sortStars": "Estrellas",
+    "sortForks": "Forks",
+    "sortUpdated": "Actualizado recientemente",
+    "results": "resultados",
+    "noResults": "No se encontraron repositorios",
+    "loadError": "No se pudieron cargar los datos",
+    "rangeText": "Mostrando {start}–{end} de {total}",
+    "back": "Volver al ranking",
+    "stars": "Estrellas",
+    "forks": "Forks",
+    "weeklyIncrease": "Crecimiento semanal",
+    "issues": "Issues",
+    "growth": "Crecimiento de estrellas",
+    "keyMetrics": "Métricas clave",
+    "artifacts": "Artefactos",
+    "artifactTip": "Publica artefactos instalables",
+    "readmeExpand": "Ver todo",
+    "readmeCollapse": "Contraer",
+    "relatedRepos": "Repositorios relacionados",
+    "cats": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "ai": "IA y ML",
+      "infra": "Sistemas e infraestructura",
+      "tools": "Herramientas",
+      "lang": "Lenguajes"
+    },
+    "subs": {
+      "fe-framework": "Frameworks",
+      "fe-ui": "Librerías UI",
+      "fe-css": "Herramientas CSS",
+      "be-web": "Frameworks web",
+      "be-db": "Bases de datos",
+      "be-async": "Runtime asíncrono",
+      "ai-dl": "Deep learning",
+      "ai-nlp": "PLN",
+      "ai-cv": "Visión por computador",
+      "infra-orch": "Orquestación",
+      "infra-rt": "Runtimes",
+      "infra-os": "Sistemas operativos",
+      "tools-editor": "Editores",
+      "tools-ssg": "Sitios estáticos",
+      "lang-compiler": "Compiladores"
+    }
+  },
+  "consent": {
+    "title": "Aviso de cookies",
+    "message": "Usamos cookies para análisis anónimo de tráfico y así entender cómo se usa el sitio. Puedes rechazarlas: nada deja de funcionar.",
+    "learnMore": "Política de privacidad",
+    "accept": "Aceptar",
+    "reject": "Rechazar"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
+  },
+  "blog": {
+    "title": "Análisis",
+    "subtitle": "Análisis propio sobre los 67.000 repositorios que seguimos. Las cifras se leen en vivo y se actualizan con el rastreo diario.",
+    "empty": "Aún no hay artículos.",
+    "readingTime": "{minutes} min de lectura",
+    "backToList": "Volver a los artículos",
+    "dataNote": "Todas las cifras de este artículo se leen en vivo de nuestra base de datos y se actualizan con el rastreo diario.",
+    "nav": "Análisis"
+  }
+}

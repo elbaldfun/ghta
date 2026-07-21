@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { routing } from '@/i18n/routing';
+import { routing, contentLocale } from '@/i18n/routing';
 import { searchRepos } from '@/lib/data';
 import { listPosts } from '@/lib/blog';
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Blog index and posts. Original content, so worth crawling often.
   for (const locale of routing.locales) {
     entries.push({ url: `${SITE_URL}/${locale}/blog`, changeFrequency: 'weekly' });
-    for (const post of await listPosts(locale)) {
+    for (const post of await listPosts(contentLocale(locale))) {
       entries.push({
         url: `${SITE_URL}/${locale}/blog/${post.slug}`,
         lastModified: post.date || undefined,
