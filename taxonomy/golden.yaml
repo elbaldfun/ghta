@@ -257,3 +257,67 @@ items:
   - { id: PixelGuys/Cubyz,                        domain: [gamedev/games],                       type: app }
   - { id: unionlabs/union,                        domain: [blockchain/protocols],                type: software }
   - { id: bitcoin/bitcoin,                        domain: [blockchain/protocols],                type: software }
+
+  # ── 定向补样：零样本/薄弱叶子（按特征 topic 从生产库捞取）────
+  # 注意：探针 topic 命中 ≠ 真实归属，下列标注已按语义纠正，
+  # 其中多条是规则层的典型假命中案例（保留即为难例样本）。
+  - { id: hashicorp/terraform,                    domain: [infra/iac],                           type: cli }
+  - { id: MichaelCade/90DaysOfDevOps,             domain: [],                                    type: tutorial } # REVIEW: 泛 devops 学习仓库，domain 可给 infra/iac
+  - { id: GoogleCloudPlatform/microservices-demo, domain: [infra/containers],                    type: software } # REVIEW: 官方示例项目，type 待定
+  - { id: pathwaycom/pathway,                     domain: [data/pipeline],                       type: library }
+  - { id: apache/kafka,                           domain: [data/pipeline],                       type: software }
+  - { id: DataTalksClub/data-engineering-zoomcamp, domain: [data/pipeline],                      type: tutorial }
+  - { id: openssl/openssl,                        domain: [security/crypto-auth],                type: library }
+  - { id: TheAlgorithms/JavaScript,               domain: [lang/utils],                          type: tutorial } # 假命中案例: cryptography topic ≠ 加密库
+  - { id: anoma/anoma,                            domain: [blockchain/protocols],                type: software } # 假命中案例: cryptography topic，实为区块链协议
+  - { id: shadps4-emu/shadPS4,                    domain: [systems/emulation],                   type: app }
+  - { id: copy/v86,                               domain: [systems/emulation],                   type: software }
+  - { id: ish-app/ish,                            domain: [systems/emulation],                   type: app }
+  - { id: gorhill/uBlock,                         domain: [apps/browser-ext],                    type: app } # REVIEW: 浏览器扩展的 type 用 app 还是新增枚举
+  - { id: refined-github/refined-github,          domain: [apps/browser-ext],                    type: app } # REVIEW: 同上
+  - { id: quasarframework/quasar,                 domain: [web/frontend, mobile/cross-platform], type: library } # 假命中案例: 带扩展 topic 的全栈框架
+  - { id: OpenZeppelin/openzeppelin-contracts,    domain: [blockchain/contracts],                type: library }
+  - { id: ethereum/solidity,                      domain: [blockchain/contracts, lang/implementations], type: software }
+  - { id: argotorg/solidity,                      domain: [blockchain/contracts, lang/implementations], type: software } # REVIEW: 与 ethereum/solidity 同项目新旧地址，库存去重问题
+  - { id: withastro/astro,                        domain: [web/static-site, web/frontend],       type: library }
+  - { id: nuxt/nuxt,                              domain: [web/frontend],                        type: library } # REVIEW: 全栈 Vue 框架，static-site 是否要
+  - { id: gatsbyjs/gatsby,                        domain: [web/static-site],                     type: library }
+  - { id: Homebrew/brew,                          domain: [devtools/package-manager],            type: cli }
+  - { id: yarnpkg/yarn,                           domain: [devtools/package-manager],            type: cli }
+  - { id: pnpm/pnpm,                              domain: [devtools/package-manager],            type: cli }
+  - { id: meilisearch/meilisearch,                domain: [data/search],                         type: software }
+  - { id: ItzCrazyKns/Vane,                       domain: [data/search, ai/llm],                 type: app } # REVIEW: AI 答案引擎的归属
+  - { id: searxng/searxng,                        domain: [data/search, apps/selfhosted],        type: app }
+  - { id: raysan5/raylib,                         domain: [gamedev/engines],                     type: library } # 假命中案例: embedded topic ≠ 嵌入式
+  - { id: 78/xiaozhi-esp32,                       domain: [systems/embedded],                    type: software }
+  - { id: arendst/Tasmota,                        domain: [systems/embedded],                    type: software }
+  - { id: facebook/react-native,                  domain: [mobile/cross-platform],               type: library }
+  - { id: rustdesk/rustdesk,                      domain: [apps/productivity],                   type: app } # 假命中案例: 远程桌面，非 mobile
+  - { id: dkhamsing/open-source-ios-apps,         domain: [mobile/native],                       type: awesome }
+  - { id: grafana/grafana,                        domain: [infra/monitoring],                    type: app } # 假命中案例: data-visualization topic，主域是可观测
+  - { id: apache/superset,                        domain: [ai/data-science, data/analytics],     type: app }
+  - { id: apache/echarts,                         domain: [ai/data-science, web/frontend],       type: library }
+  - { id: ggml-org/whisper.cpp,                   domain: [ai/speech-audio],                     type: library }
+  - { id: ggerganov/whisper.cpp,                  domain: [ai/speech-audio],                     type: library } # REVIEW: 与 ggml-org 同项目新旧地址，库存去重问题
+  - { id: mozilla/DeepSpeech,                     domain: [ai/speech-audio],                     type: library }
+  - { id: shadcn-ui/ui,                           domain: [web/css-ui],                          type: library }
+  - { id: tailwindlabs/tailwindcss,               domain: [web/css-ui],                          type: library }
+  - { id: calcom/cal.diy,                         domain: [apps/productivity, apps/selfhosted],  type: app } # 假命中案例: tailwindcss topic ≠ css-ui
+  - { id: storybookjs/storybook,                  domain: [web/build-tools, devtools/testing],   type: library } # REVIEW: 组件工坊的归属
+  - { id: vitejs/vite,                            domain: [web/build-tools],                     type: library } # REVIEW: 构建工具 type 约定，同 rollup
+  - { id: makeplane/plane,                        domain: [apps/productivity, apps/selfhosted],  type: app } # 假命中案例: 项目管理工具，非 build-tools
+  - { id: goldbergyoni/nodebestpractices,         domain: [web/backend],                         type: tutorial } # 假命中案例: 最佳实践文档，非测试工具
+  - { id: puppeteer/puppeteer,                    domain: [devtools/testing],                    type: library }
+  - { id: microsoft/playwright,                   domain: [devtools/testing],                    type: library }
+  - { id: prometheus/prometheus,                  domain: [infra/monitoring],                    type: software }
+  - { id: SigNoz/signoz,                          domain: [infra/monitoring, apps/selfhosted],   type: app }
+  - { id: grafana/loki,                           domain: [infra/monitoring],                    type: software }
+  - { id: Hack-with-Github/Awesome-Hacking,       domain: [security/pentest],                    type: awesome }
+  - { id: swisskyrepo/PayloadsAllTheThings,       domain: [security/pentest],                    type: software } # REVIEW: payload 资源集，software vs awesome
+  - { id: KeygraphHQ/shannon,                     domain: [security/pentest, ai/agents],         type: software }
+  - { id: pixijs/pixijs,                          domain: [gamedev/engines],                     type: library }
+  - { id: Anuken/Mindustry,                       domain: [gamedev/games],                       type: app }
+  - { id: libgdx/libgdx,                          domain: [gamedev/engines],                     type: library }
+  - { id: ethereum/go-ethereum,                   domain: [blockchain/protocols],                type: software }
+  - { id: ccxt/ccxt,                              domain: [blockchain/protocols],                type: library } # REVIEW: 交易所 API 库，非协议实现，domain 待商榷
+  - { id: shardeum/shardeum,                      domain: [blockchain/protocols],                type: software }
