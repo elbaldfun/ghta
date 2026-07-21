@@ -17,22 +17,37 @@
 
 ## 3. 数据模型与流水线
 
-- [ ] 3.1 `TrackedItem` 增 `type string`
+- [ ] 3.1 `TrackedItem` 增 `type string`；`categoryPath` 由单值改 `[]string`（categorizer
+      markDone 写全部命中 path；趁前端尚未消费此字段尽早改）
 - [ ] 3.2 categorizer 前置 type 层（确定性，topics 空则兜底 software，不进 LLM）
 - [ ] 3.3 领域 ② embedding 改收所有过阈叶子、③ LLM prompt/解析支持多 path；
       上限 `DOMAIN_MAX_LABELS`（config，默认 3）；.env.example 补充
 - [ ] 3.4 资料类（type ∈ awesome/interview/tutorial）领域落空不计失败升级
 
-## 4. 查询与前端
+## 4. 查询与导航接口
 
-- [ ] 4.1 `/trending` 增 `type`（精确）、`topic`（含匹配）参数；`type` 与 `sourceData.topicNames`
-      建索引；openapi.yaml 更新
+- [ ] 4.1 `/trending` 增 `type`（精确）参数并建索引；openapi.yaml 更新
+      （topic 筛选与 topicNames 索引已存在，无需改动）
 - [ ] 4.2 查询/详情返回体补 `type`
-- [ ] 4.3 前端：type chip 快切 + topic 筛选；默认榜单是否排除资料类在此定夺（产品决策）
+- [ ] 4.3 `GET /category` 树接口：过滤 createdBy=taxonomy（排除遗留 AI 分类）+ 聚合每节点
+      条目 count（多标签用 $addToSet 去重，父类勿简单求和）
+- [ ] 4.4 新增 `GET /category/facets`：type 枚举 + 各值 count
+- [ ] 4.5 `category` 参数支持按 path 过滤（含 `/` 查 categoryPath，否则查 categoryId）；
+      categoryPath 建索引
 
-## 5. 验证与迁移
+## 5. 前端导航收敛（消灭双分类系统）
 
-- [ ] 5.1 单测：type 优先级/兜底、领域 top-K 与上限、资料类落空不升级
-- [ ] 5.2 集成：mongo + fake embedder/LLM 跑通 type + 领域三级多标签路径
-- [ ] 5.3 分批重跑存量（先小批 → eval 校准 → 全量），记录 eval 前后对比
-- [ ] 5.4 确认 `learning/*` 历史文档未破坏、不再是归类目标
+- [ ] 5.1 导航树改为消费 `GET /category`（替换 rank-data.ts 硬编码 TAXONOMY，
+      消灭 data.ts 的 N+1 count 请求）
+- [ ] 5.2 列表查询由 `topics=...` 组合改为 `category=<path>&type=<key>`
+- [ ] 5.3 分类显示名 i18n 方案定夺：taxonomy.yaml 加 nameEn 或前端按 path 映射
+- [ ] 5.4 导航 URL/slug 迁移与重定向（SEO）
+- [ ] 5.5 type chip 快切 + 默认榜单是否排除资料类在此定夺（产品决策）
+
+## 6. 验证与迁移
+
+- [ ] 6.1 单测：type 优先级/兜底、领域 top-K 与上限、资料类落空不升级、categoryPath 多值
+- [ ] 6.2 集成：mongo + fake embedder/LLM 跑通 type + 领域三级多标签路径
+- [ ] 6.3 分批重跑存量（先小批 → eval 校准 → 全量；重跑同时回填多值 categoryPath 与 type），
+      记录 eval 前后对比
+- [ ] 6.4 确认 `learning/*` 历史文档未破坏、不再是归类目标

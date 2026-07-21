@@ -49,6 +49,21 @@ type:
 - 粒度均衡：`ai` 拆 `media-gen`（图像/视频生成，从 cv 分离）；`data/cache` 并入 `data/database`、
   增 `data/analytics`；补 `devtools/ai-coding`（Copilot 类）。其余枝保持稳定，改动最小化。
 
+### 树深度决策：维持两级，不做全树三级
+
+评审结论（记录在案，防翻烧饼）：**不加第三级**。理由：当前数据量下三级叶子会稀疏到撑不起
+榜单页；叶子数翻 3 倍会拖垮三级流水线的准确率（embedding 语料区分度下降、LLM 混淆、rule
+表维护量爆炸）；且三级想表达的细分（`ai/llm/rag`、`web/frontend/react`）几乎全是 topic/
+language/type 已覆盖的正交维度——硬塞进树就是把本 change 拆掉的维度混淆请回来。二级树 +
+facet 组合的表达力等价于虚拟三级（`ai/llm + topic=rag` ≡ `ai/llm/rag`）。
+
+实现层面加深是零代码改动（Load/Sync/buildTree 均递归、categorizer 对深度无假设），属可逆
+决策。**局部**拆某叶子为三级的触发条件（三者齐备才拆，且只拆该叶子）：
+
+1. 该叶子条目占全库比例失衡（> ~8-10%），浏览页失去筛选意义；
+2. 建议队列反复出现该叶子下的细分 path；
+3. eval 基线已建立，拆分后可量化确认准确率未回退。
+
 ## 流水线：type 前置，领域多标签
 
 ```
