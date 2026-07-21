@@ -106,6 +106,9 @@
     "readingTime": "{minutes} min de lecture",
     "backToList": "Retour aux articles",
     "dataNote": "Tous les chiffres de cet article sont lus en direct depuis notre base et actualisés quotidiennement.",
-    "nav": "Analyses"
+    "nav": "Analyses",
+    "machineTranslated": "Cet article a été traduit automatiquement et n'a pas été relu par un locuteur natif.",
+    "notTranslated": "Cet article n'est pas encore disponible dans votre langue ; l'original est affiché.",
+    "readOriginal": "Lire l'original →"
   }
 }

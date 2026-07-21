@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getPost, renderPostBody } from '@/lib/blog';
-import { contentLocale } from '@/i18n/routing';
 import { DataBlock } from '@/components/blog/DataBlock';
 import { BackIcon } from '@/components/rank/icons';
 
@@ -15,7 +14,7 @@ interface Params {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const post = await getPost(contentLocale(params.locale), params.slug);
+  const post = await getPost(params.locale, params.slug);
   if (!post) return {};
   const url = `${SITE_URL}/${params.locale}/blog/${post.slug}`;
   return {
@@ -38,7 +37,7 @@ export default async function BlogPost({ params }: { params: Params }) {
   setRequestLocale(params.locale);
   const t = await getTranslations('blog');
 
-  const post = await getPost(contentLocale(params.locale), params.slug);
+  const post = await getPost(params.locale, params.slug);
   if (!post) notFound();
   const segments = await renderPostBody(post.body);
 
@@ -83,6 +82,20 @@ export default async function BlogPost({ params }: { params: Params }) {
             </span>
           ))}
         </div>
+
+        {(post.translatedFrom || post.isFallback) && (
+          // Say plainly when the text isn't an original, and link to the source.
+          <p className="mt-5 rounded-card border border-border bg-surface2 px-4 py-2.5 text-[11.5px] leading-relaxed text-muted">
+            {post.isFallback ? t('notTranslated') : t('machineTranslated')}{' '}
+            <Link
+              href={`/blog/${post.slug}`}
+              locale={post.translatedFrom ?? 'en'}
+              className="font-semibold text-accent hover:underline"
+            >
+              {t('readOriginal')}
+            </Link>
+          </p>
+        )}
 
         <div className="mt-6">
           {segments.map((seg, i) =>

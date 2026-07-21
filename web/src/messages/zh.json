@@ -106,6 +106,9 @@
     "readingTime": "约 {minutes} 分钟",
     "backToList": "返回文章列表",
     "dataNote": "文中所有数据均实时读取自本站数据库，随每日抓取自动更新。",
-    "nav": "洞察"
+    "nav": "洞察",
+    "machineTranslated": "本文为机器翻译，未经母语者校对。",
+    "notTranslated": "本文尚无你所选语言的版本，此处显示原文。",
+    "readOriginal": "阅读原文 →"
   }
 }

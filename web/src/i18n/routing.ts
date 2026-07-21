@@ -37,13 +37,8 @@ export const LOCALE_SHORT: Record<Locale, string> = {
 };
 
 /**
- * Locales with hand-written long-form content (privacy policy, blog posts).
- * Everything else falls back to English for those pages: machine-translated
- * legal text is a liability, and a blog index with no posts is worse than one
- * showing the English originals.
+ * The privacy policy stays in English outside zh — machine-translated legal
+ * text is a liability, so the other locales' message files carry the English
+ * wording verbatim. Blog posts are translated per file instead (see lib/blog).
  */
-export const CONTENT_LOCALES: readonly Locale[] = ['en', 'zh'];
-
-export function contentLocale(locale: string): Locale {
-  return (CONTENT_LOCALES as readonly string[]).includes(locale) ? (locale as Locale) : 'en';
-}
+export const LEGAL_LOCALES: readonly Locale[] = ['en', 'zh'];

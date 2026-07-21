@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { listPosts } from '@/lib/blog';
-import { contentLocale } from '@/i18n/routing';
 
 export async function generateMetadata({
   params: { locale },
@@ -20,7 +19,7 @@ export default async function BlogIndex({
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('blog');
-  const posts = await listPosts(contentLocale(locale));
+  const posts = await listPosts(locale);
 
   return (
     <div className="px-7 py-[22px]">

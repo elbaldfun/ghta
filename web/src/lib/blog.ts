@@ -22,6 +22,9 @@ const BLOG_DIR = path.join(process.cwd(), 'content', 'blog');
 export const DATA_BLOCKS = ['languages', 'top-repos'] as const;
 export type DataBlockName = (typeof DATA_BLOCKS)[number];
 
+/** Language articles are authored in; everything else is translated from it. */
+export const SOURCE_LOCALE = 'en';
+
 export interface PostMeta {
   slug: string;
   title: string;
@@ -30,6 +33,10 @@ export interface PostMeta {
   date: string;
   tags: string[];
   readingMinutes: number;
+  /** Locale the text was translated from, when it is not an original. */
+  translatedFrom?: string;
+  /** True when this locale has no file and the English original is shown instead. */
+  isFallback?: boolean;
 }
 
 export interface Post extends PostMeta {
@@ -82,6 +89,7 @@ async function readPostFile(locale: string, slug: string): Promise<Post | null> 
       date: data.date instanceof Date ? data.date.toISOString().slice(0, 10) : String(data.date ?? ''),
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
       readingMinutes: readingMinutes(content),
+      translatedFrom: data.translatedFrom ? String(data.translatedFrom) : undefined,
       body: content,
     };
   } catch (e) {
@@ -92,17 +100,25 @@ async function readPostFile(locale: string, slug: string): Promise<Post | null> 
   }
 }
 
-/** Post metadata for a locale, newest first. */
-export async function listPosts(locale: string): Promise<PostMeta[]> {
-  let files: string[];
+async function slugsFor(locale: string): Promise<string[]> {
   try {
-    files = await fs.readdir(path.join(BLOG_DIR, locale));
+    const files = await fs.readdir(path.join(BLOG_DIR, locale));
+    return files.filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''));
   } catch {
     return [];
   }
-  const posts = await Promise.all(
-    files.filter((f) => f.endsWith('.md')).map((f) => readPostFile(locale, f.replace(/\.md$/, ''))),
-  );
+}
+
+/**
+ * Post metadata for a locale, newest first.
+ *
+ * The catalogue is defined by the source locale, and each entry falls back to
+ * the original per post — so a newly published article is visible in every
+ * language immediately instead of waiting on all eight translations.
+ */
+export async function listPosts(locale: string): Promise<PostMeta[]> {
+  const slugs = new Set([...(await slugsFor(SOURCE_LOCALE)), ...(await slugsFor(locale))]);
+  const posts = await Promise.all([...slugs].map((slug) => getPost(locale, slug)));
   return posts
     .filter((p): p is Post => p !== null)
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -113,7 +129,13 @@ export async function getPost(locale: string, slug: string): Promise<Post | null
   // Slugs come from the URL; keep them to a flat, safe shape so a crafted path
   // can never escape the content directory.
   if (!/^[a-z0-9-]+$/.test(slug)) return null;
-  return readPostFile(locale, slug);
+
+  const localized = await readPostFile(locale, slug);
+  if (localized) return localized;
+  if (locale === SOURCE_LOCALE) return null;
+
+  const original = await readPostFile(SOURCE_LOCALE, slug);
+  return original && { ...original, isFallback: true };
 }
 
 /** Split a post body into rendered Markdown and live-data placeholders. */

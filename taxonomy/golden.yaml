@@ -1,0 +1,259 @@
+# GHTA golden set —— 人工标注基准（初稿：AI 起草，待人工审核）
+# ─────────────────────────────────────────────────────────────
+# 用途：cmd/eval 用它评估分类流水线（change 12 tasks 1.1）。
+# 标注基于 change 12 修订后的领域树 + type facet：
+#   type:   awesome | interview | tutorial | cli | app | library | software(兜底)
+#   domain: 新树叶子 path，可多标签(≤3)；资料类允许为空 []
+# 与现行树的 path 对照（eval 跑基线时按此别名换算）：
+#   web/frontend  ← web/frontend-framework      web/backend ← web/backend-framework
+#   data/pipeline ← data/data-pipeline          lang/utils  ← lang/stdlib-utils
+#   ai/media-gen / data/analytics / devtools/ai-coding 为新叶子（现行树无对应）
+# 行尾 "# REVIEW:" = 起草者低置信，请重点审核。
+# 抽样：生产 API 分层抽样 226 条（头部100/上升41/语言分层/形态信号/无topics难例30/长尾）。
+
+items:
+  # ── 资料类：awesome / interview / tutorial ──────────────────
+  - { id: jaywcjlove/awesome-mac,                 domain: [],                                    type: awesome }
+  - { id: papers-we-love/papers-we-love,          domain: [],                                    type: awesome }
+  - { id: MunGell/awesome-for-beginners,          domain: [],                                    type: awesome }
+  - { id: DopplerHQ/awesome-interview-questions,  domain: [],                                    type: interview } # REVIEW: awesome 与 interview 双命中，语义取 interview；优先级顺序(awesome>interview)需定夺
+  - { id: enaqx/awesome-react,                    domain: [web/frontend],                        type: awesome }
+  - { id: binhnguyennus/awesome-scalability,      domain: [web/backend],                         type: awesome } # REVIEW: 系统设计清单，domain 可空
+  - { id: fffaraz/awesome-cpp,                    domain: [],                                    type: awesome }
+  - { id: vinta/awesome-python,                   domain: [],                                    type: awesome }
+  - { id: awesome-selfhosted/awesome-selfhosted,  domain: [apps/selfhosted],                     type: awesome }
+  - { id: Shubhamsaboo/awesome-llm-apps,          domain: [ai/agents, ai/llm],                   type: awesome }
+  - { id: ashishps1/awesome-system-design-resources, domain: [],                                 type: awesome }
+  - { id: f/prompts.chat,                         domain: [ai/llm],                              type: awesome }
+  - { id: x1xhlol/system-prompts-and-models-of-ai-tools, domain: [ai/llm],                       type: awesome } # REVIEW: 系统提示词汇编，type 也可视为 software
+  - { id: ripienaar/free-for-dev,                 domain: [],                                    type: awesome }
+  - { id: 521xueweihan/HelloGitHub,               domain: [],                                    type: awesome }
+  - { id: justjavac/free-programming-books-zh_CN, domain: [],                                    type: awesome }
+  - { id: EbookFoundation/free-programming-books, domain: [],                                    type: awesome }
+  - { id: github/gitignore,                       domain: [devtools/vcs],                        type: software } # REVIEW: 模板集合，type 无合适枚举（software 兜底 or awesome?）
+  - { id: codecrafters-io/build-your-own-x,       domain: [],                                    type: awesome } # REVIEW: 教程清单，awesome vs tutorial
+  - { id: practical-tutorials/project-based-learning, domain: [],                                type: awesome } # REVIEW: 同上
+  - { id: ossu/computer-science,                  domain: [],                                    type: awesome } # REVIEW: 课程表，awesome vs tutorial
+  - { id: datasciencemasters/go,                  domain: [ai/data-science],                     type: awesome }
+  - { id: poteto/hiring-without-whiteboards,      domain: [],                                    type: awesome } # REVIEW: 公司名单，interview 相关但形态是清单
+  - { id: jwasham/coding-interview-university,    domain: [],                                    type: interview }
+  - { id: yangshun/tech-interview-handbook,       domain: [],                                    type: interview }
+  - { id: yangshun/front-end-interview-handbook,  domain: [web/frontend],                        type: interview }
+  - { id: labuladong/fucking-algorithm,           domain: [],                                    type: interview }
+  - { id: youngyangyang04/leetcode-master,        domain: [],                                    type: interview }
+  - { id: azl397985856/leetcode,                  domain: [],                                    type: interview }
+  - { id: MisterBooo/LeetCodeAnimation,           domain: [],                                    type: interview }
+  - { id: kdn251/interviews,                      domain: [],                                    type: interview }
+  - { id: Snailclimb/JavaGuide,                   domain: [web/backend],                         type: interview }
+  - { id: doocs/advanced-java,                    domain: [web/backend],                         type: interview }
+  - { id: bregman-arie/devops-exercises,          domain: [infra/ci-cd],                         type: interview } # REVIEW: domain 泛 devops，可空
+  - { id: karanpratapsingh/system-design,         domain: [web/backend],                         type: tutorial } # REVIEW: tutorial vs interview
+  - { id: shareAI-lab/learn-claude-code,          domain: [ai/agents],                           type: tutorial }
+  - { id: datawhalechina/hello-agents,            domain: [ai/agents],                           type: tutorial }
+  - { id: byoungd/up,                             domain: [],                                    type: tutorial } # REVIEW: 非编程内容(英语学习)，是否该进库存
+  - { id: byoungd/English-level-up-tips,          domain: [],                                    type: tutorial } # REVIEW: 同上
+  - { id: firstcontributions/first-contributions, domain: [devtools/vcs],                        type: tutorial }
+  - { id: Avik-Jain/100-Days-Of-ML-Code,          domain: [ai/ml-framework],                     type: tutorial } # REVIEW: domain 泛 ML
+  - { id: aymericdamien/TensorFlow-Examples,      domain: [ai/ml-framework],                     type: tutorial }
+  - { id: luongnv89/claude-howto,                 domain: [devtools/ai-coding],                  type: tutorial }
+  - { id: mouredev/Hello-Python,                  domain: [],                                    type: tutorial }
+  - { id: unknwon/the-way-to-go_ZH_CN,            domain: [],                                    type: tutorial }
+  - { id: javascript-tutorial/en.javascript.info, domain: [],                                    type: tutorial }
+  - { id: ssloy/tinyrenderer,                     domain: [gamedev/engines],                     type: tutorial } # REVIEW: 图形学课程，domain 待商榷
+  - { id: jackfrued/Python-100-Days,              domain: [],                                    type: tutorial }
+  - { id: anthropics/claude-cookbooks,            domain: [ai/llm],                              type: tutorial }
+  - { id: kelseyhightower/kubernetes-the-hard-way, domain: [infra/containers],                   type: tutorial }
+  - { id: microsoft/generative-ai-for-beginners,  domain: [ai/llm],                              type: tutorial }
+  - { id: nilbuild/developer-roadmap,             domain: [],                                    type: tutorial }
+  - { id: Chalarangelo/30-seconds-of-code,        domain: [],                                    type: tutorial }
+  - { id: getify/You-Dont-Know-JS,                domain: [],                                    type: tutorial }
+  - { id: airbnb/javascript,                      domain: [],                                    type: tutorial } # REVIEW: 风格指南算 tutorial?
+  - { id: qiurunze123/miaosha,                    domain: [web/backend],                         type: tutorial } # REVIEW: 秒杀系统设计学习项目
+  - { id: iluwatar/java-design-patterns,          domain: [],                                    type: tutorial }
+  - { id: TheAlgorithms/Python,                   domain: [lang/utils],                          type: tutorial } # REVIEW: 教学用算法实现，tutorial vs interview
+  - { id: TheAlgorithms/Java,                     domain: [lang/utils],                          type: tutorial } # REVIEW: 同上
+  - { id: tldr-pages/tldr,                        domain: [devtools/cli],                        type: tutorial } # REVIEW: 命令速查文档，type 待定夺
+
+  # ── AI 域 ───────────────────────────────────────────────────
+  - { id: huggingface/transformers,               domain: [ai/ml-framework, ai/llm],             type: library }
+  - { id: tensorflow/tensorflow,                  domain: [ai/ml-framework],                     type: library }
+  - { id: pjreddie/darknet,                       domain: [ai/ml-framework, ai/cv],              type: library }
+  - { id: facebookresearch/Detectron,             domain: [ai/cv],                               type: library }
+  - { id: opencv/opencv,                          domain: [ai/cv],                               type: library }
+  - { id: tesseract-ocr/tesseract,                domain: [ai/cv],                               type: library }
+  - { id: baidu/Unlimited-OCR,                    domain: [ai/cv],                               type: library } # REVIEW
+  - { id: Robbyant/lingbot-map,                   domain: [ai/cv],                               type: library } # REVIEW: 3D 重建基础模型
+  - { id: unslothai/unsloth,                      domain: [ai/llm],                              type: library }
+  - { id: ggml-org/llama.cpp,                     domain: [ai/llm],                              type: library }
+  - { id: ggerganov/llama.cpp,                    domain: [ai/llm],                              type: library } # REVIEW: 与 ggml-org 同项目旧地址，建议留一个
+  - { id: meta-llama/codellama,                   domain: [ai/llm],                              type: library }
+  - { id: nomic-ai/gpt4all,                       domain: [ai/llm],                              type: app }
+  - { id: ollama/ollama,                          domain: [ai/llm],                              type: cli }
+  - { id: janhq/jan,                              domain: [ai/llm, apps/selfhosted],             type: app }
+  - { id: open-webui/open-webui,                  domain: [ai/llm, apps/selfhosted],             type: app }
+  - { id: infiniflow/ragflow,                     domain: [ai/llm],                              type: software }
+  - { id: langgenius/dify,                        domain: [ai/agents, ai/llm],                   type: app }
+  - { id: langchain-ai/langchain,                 domain: [ai/agents, ai/llm],                   type: library }
+  - { id: OpenHands/OpenHands,                    domain: [devtools/ai-coding, ai/agents],       type: software }
+  - { id: NousResearch/hermes-agent,              domain: [ai/agents],                           type: cli } # REVIEW
+  - { id: openclaw/openclaw,                      domain: [ai/agents],                           type: app }
+  - { id: nullclaw/nullclaw,                      domain: [ai/agents],                           type: software }
+  - { id: HKUDS/Vibe-Trading,                     domain: [ai/agents],                           type: software } # REVIEW: 量化交易 agent，domain 单标签是否够
+  - { id: Panniantong/Agent-Reach,                domain: [ai/agents],                           type: software } # REVIEW
+  - { id: headroomlabs-ai/headroom,               domain: [ai/llm],                              type: software } # REVIEW: LLM 上下文压缩代理
+  - { id: diegosouzapw/OmniRoute,                 domain: [ai/llm],                              type: software } # REVIEW: AI 网关，也沾 infra/networking
+  - { id: JustVugg/colibri,                       domain: [ai/llm],                              type: software } # REVIEW: 纯 C 推理引擎，library?
+  - { id: microsoft/VibeVoice,                    domain: [ai/speech-audio],                     type: library } # REVIEW
+  - { id: jamiepine/voicebox,                     domain: [ai/speech-audio],                     type: app }
+  - { id: AUTOMATIC1111/stable-diffusion-webui,   domain: [ai/media-gen],                        type: app }
+  - { id: Comfy-Org/ComfyUI,                      domain: [ai/media-gen],                        type: app }
+  - { id: lllyasviel/Fooocus,                     domain: [ai/media-gen],                        type: app }
+  - { id: calesthio/OpenMontage,                  domain: [ai/media-gen, ai/agents],             type: software } # REVIEW
+  - { id: d3/d3,                                  domain: [ai/data-science, web/frontend],       type: library }
+  - { id: zml/zml,                                domain: [ai/ml-framework],                     type: library }
+
+  # ── AI 编程助手 / agent 工具（大多无 topics 或新词，难例区）──
+  - { id: anthropics/claude-code,                 domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: google-gemini/gemini-cli,               domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: QwenLM/qwen-code,                       domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: MoonshotAI/kimi-cli,                    domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: xai-org/grok-build,                     domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: openinterpreter/openinterpreter,        domain: [devtools/ai-coding, ai/agents],       type: cli }
+  - { id: ogulcancelik/herdr,                     domain: [devtools/ai-coding],                  type: cli }
+  - { id: rtk-ai/rtk,                             domain: [devtools/ai-coding],                  type: cli }
+  - { id: farion1231/cc-switch,                   domain: [devtools/ai-coding],                  type: app }
+  - { id: tirth8205/code-review-graph,            domain: [devtools/ai-coding],                  type: cli } # REVIEW
+  - { id: Graphify-Labs/graphify,                 domain: [devtools/ai-coding],                  type: software }
+  - { id: colbymchenry/codegraph,                 domain: [devtools/ai-coding],                  type: software }
+  - { id: obra/superpowers,                       domain: [devtools/ai-coding, ai/agents],       type: software }
+  - { id: anthropics/skills,                      domain: [devtools/ai-coding],                  type: software } # REVIEW: skill/提示词包这一新形态，type 枚举或需扩展
+  - { id: mattpocock/skills,                      domain: [devtools/ai-coding],                  type: software } # REVIEW: 同上
+  - { id: emilkowalski/skills,                    domain: [devtools/ai-coding],                  type: software } # REVIEW: 同上
+  - { id: DietrichGebert/ponytail,                domain: [devtools/ai-coding],                  type: software } # REVIEW: 同上
+  - { id: Leonxlnx/taste-skill,                   domain: [devtools/ai-coding],                  type: software } # REVIEW: 同上
+  - { id: Nutlope/hallmark,                       domain: [devtools/ai-coding],                  type: software } # REVIEW: 同上
+  - { id: nextlevelbuilder/ui-ux-pro-max-skill,   domain: [devtools/ai-coding, web/css-ui],      type: software } # REVIEW: 同上
+  - { id: Fei-Away/Codex-Dream-Skin,              domain: [devtools/ai-coding],                  type: software } # REVIEW: 主题皮肤，domain 存疑
+  - { id: garrytan/gstack,                        domain: [devtools/ai-coding],                  type: software } # REVIEW
+  - { id: santifer/career-ops,                    domain: [ai/agents, apps/productivity],        type: cli } # REVIEW: AI 求职工具
+  - { id: iOfficeAI/OfficeCLI,                    domain: [apps/productivity, ai/agents],        type: cli }
+  - { id: ultraworkers/claw-code,                 domain: [ai/agents],                           type: software } # REVIEW: 描述含混("agent-managed museum exhibit")
+  - { id: oso95/scroll-world,                     domain: [],                                    type: software } # REVIEW: 描述含混，无法归域
+
+  # ── Web ─────────────────────────────────────────────────────
+  - { id: facebook/react,                         domain: [web/frontend],                        type: library }
+  - { id: react/react,                            domain: [web/frontend],                        type: library } # REVIEW: 疑似 facebook/react 镜像重复
+  - { id: vercel/next.js,                         domain: [web/frontend],                        type: library }
+  - { id: react/react-native,                     domain: [mobile/cross-platform],               type: library }
+  - { id: twbs/bootstrap,                         domain: [web/css-ui],                          type: library }
+  - { id: mrdoob/three.js,                        domain: [web/frontend, gamedev/engines],       type: library } # REVIEW: 多标签是否两个都要
+  - { id: mattboldt/typed.js,                     domain: [web/frontend],                        type: library }
+  - { id: axios/axios,                            domain: [web/frontend, web/backend],           type: library }
+  - { id: rollup/rollup,                          domain: [web/build-tools],                     type: library } # REVIEW: 构建工具 type 约定(library vs cli)需统一
+  - { id: oven-sh/bun,                            domain: [lang/implementations, web/build-tools], type: software }
+  - { id: denoland/deno,                          domain: [lang/implementations],                type: software }
+  - { id: nodejs/node,                            domain: [lang/implementations],                type: software }
+  - { id: gin-gonic/gin,                          domain: [web/backend],                         type: library }
+  - { id: spring-projects/spring-boot,            domain: [web/backend],                         type: library }
+  - { id: spring-projects/spring-framework,       domain: [web/backend],                         type: library }
+  - { id: macrozheng/mall,                        domain: [web/backend],                         type: software } # REVIEW: 电商示例项目，software vs tutorial
+  - { id: tokio-rs/topcoat,                       domain: [web/backend],                         type: library } # REVIEW: Rust web 全栈框架(新库低star)
+  - { id: gohugoio/hugo,                          domain: [web/static-site],                     type: software } # REVIEW: SSG type 约定(software vs cli)
+  - { id: DioxusLabs/dioxus,                      domain: [web/frontend, mobile/cross-platform], type: library }
+  - { id: chenshuo/muduo,                         domain: [web/backend],                         type: library } # REVIEW: C++ 网络库，web/backend vs lang/utils
+
+  # ── devtools ───────────────────────────────────────────────
+  - { id: microsoft/vscode,                       domain: [devtools/editors],                    type: app }
+  - { id: zed-industries/zed,                     domain: [devtools/editors],                    type: app }
+  - { id: zigtools/zls,                           domain: [devtools/editors],                    type: software } # REVIEW: language server 归 editors?
+  - { id: sharkdp/bat,                            domain: [devtools/cli],                        type: cli }
+  - { id: BurntSushi/ripgrep,                     domain: [devtools/cli],                        type: cli }
+  - { id: junegunn/fzf,                           domain: [devtools/cli],                        type: cli }
+  - { id: ohmyzsh/ohmyzsh,                        domain: [devtools/cli],                        type: software }
+  - { id: tmux/tmux,                              domain: [devtools/cli],                        type: cli }
+  - { id: ghostty-org/ghostty,                    domain: [devtools/cli],                        type: app }
+  - { id: microsoft/terminal,                     domain: [devtools/cli],                        type: app }
+  - { id: powerline/fonts,                        domain: [devtools/cli],                        type: software } # REVIEW: 字体资源包
+  - { id: jesseduffield/lazygit,                  domain: [devtools/vcs, devtools/cli],          type: cli }
+  - { id: git/git,                                domain: [devtools/vcs],                        type: cli }
+  - { id: go-gitea/gitea,                         domain: [devtools/vcs, apps/selfhosted],       type: app }
+  - { id: gogs/gogs,                              domain: [devtools/vcs, apps/selfhosted],       type: app }
+  - { id: astral-sh/uv,                           domain: [devtools/package-manager],            type: cli }
+  - { id: wg/wrk,                                 domain: [devtools/testing],                    type: cli } # REVIEW: 压测工具归 testing?
+  - { id: lightpanda-io/browser,                  domain: [devtools/testing],                    type: software } # REVIEW: 自动化 headless 浏览器
+  - { id: NARKOZ/hacker-scripts,                  domain: [],                                    type: software } # REVIEW: 段子性质仓库
+
+  # ── infra ──────────────────────────────────────────────────
+  - { id: moby/moby,                              domain: [infra/containers],                    type: software }
+  - { id: wagoodman/dive,                         domain: [infra/containers, devtools/cli],      type: cli }
+  - { id: NilsIrl/dockerc,                        domain: [infra/containers],                    type: cli }
+  - { id: nektos/act,                             domain: [infra/ci-cd],                         type: cli }
+  - { id: coollabsio/coolify,                     domain: [apps/selfhosted, infra/containers],   type: app } # REVIEW: PaaS 归 containers?
+  - { id: oblien/openship,                        domain: [infra/ci-cd, apps/selfhosted],        type: app } # REVIEW
+  - { id: louislam/uptime-kuma,                   domain: [infra/monitoring, apps/selfhosted],   type: app }
+  - { id: netdata/netdata,                        domain: [infra/monitoring],                    type: software }
+  - { id: fatedier/frp,                           domain: [infra/networking],                    type: software }
+  - { id: caddyserver/caddy,                      domain: [infra/networking, web/backend],       type: software } # REVIEW: web server 的叶子归属
+  - { id: clash-verge-rev/clash-verge-rev,        domain: [infra/networking],                    type: app }
+  - { id: schollz/croc,                           domain: [infra/networking],                    type: cli } # REVIEW: 文件传输工具
+  - { id: syncthing/syncthing,                    domain: [apps/selfhosted, infra/networking],   type: app } # REVIEW
+  - { id: curl/curl,                              domain: [devtools/cli, infra/networking],      type: cli }
+
+  # ── data ───────────────────────────────────────────────────
+  - { id: ClickHouse/ClickHouse,                  domain: [data/database, data/analytics],       type: software }
+  - { id: redis/redis,                            domain: [data/database],                       type: software }
+  - { id: elastic/elasticsearch,                  domain: [data/search],                         type: software }
+  - { id: tigerbeetle/tigerbeetle,                domain: [data/database],                       type: software }
+  - { id: dbeaver/dbeaver,                        domain: [data/database],                       type: app }
+  - { id: every-app/open-seo,                     domain: [data/analytics],                      type: app } # REVIEW: SEO 工具的归属
+  - { id: microsoft/Ontology-Playground,          domain: [data/analytics],                      type: app } # REVIEW: 描述含混
+
+  # ── lang / systems ─────────────────────────────────────────
+  - { id: torvalds/linux,                         domain: [systems/os],                          type: software }
+  - { id: php/php-src,                            domain: [lang/implementations],                type: software }
+  - { id: ziglang/zig,                            domain: [lang/implementations],                type: software }
+  - { id: roc-lang/roc,                           domain: [lang/implementations],                type: software }
+  - { id: google/guava,                           domain: [lang/utils],                          type: library }
+  - { id: mitchellh/libxev,                       domain: [lang/utils],                          type: library }
+  - { id: protocolbuffers/protobuf,               domain: [lang/utils],                          type: library } # REVIEW: 序列化格式，lang/utils vs data/pipeline
+  - { id: ocornut/imgui,                          domain: [lang/utils],                          type: library } # REVIEW: 原生 GUI 工具包无叶子，或建议新叶
+  - { id: ventoy/Ventoy,                          domain: [systems/os],                          type: software }
+  - { id: pbatard/rufus,                          domain: [systems/os],                          type: app }
+  - { id: fairyglade/ly,                          domain: [systems/os],                          type: app }
+  - { id: riverwm/river,                          domain: [systems/os],                          type: app }
+  - { id: massgravel/Microsoft-Activation-Scripts, domain: [systems/os],                         type: cli } # REVIEW: 激活工具的合规性/收录策略
+  - { id: ruvnet/RuView,                          domain: [systems/embedded],                    type: software } # REVIEW: WiFi 感知，跨 ai/cv
+  - { id: LadybirdBrowser/ladybird,               domain: [apps/productivity],                   type: app } # REVIEW: 浏览器无叶子——建议队列候选(apps/browser?)
+  - { id: vercel-labs/native,                     domain: [mobile/cross-platform],               type: library } # REVIEW: 桌面应用工具包
+
+  # ── apps / media ───────────────────────────────────────────
+  - { id: immich-app/immich,                      domain: [apps/selfhosted, apps/media],         type: app }
+  - { id: usememos/memos,                         domain: [apps/selfhosted, apps/productivity],  type: app }
+  - { id: siyuan-note/siyuan,                     domain: [apps/productivity, apps/selfhosted],  type: app }
+  - { id: appwrite/appwrite,                      domain: [web/backend, apps/selfhosted],        type: software }
+  - { id: n8n-io/n8n,                             domain: [apps/productivity, apps/selfhosted],  type: app }
+  - { id: excalidraw/excalidraw,                  domain: [apps/productivity],                   type: app }
+  - { id: microsoft/PowerToys,                    domain: [apps/productivity],                   type: app }
+  - { id: Stirling-Tools/Stirling-PDF,            domain: [apps/productivity, apps/selfhosted],  type: app }
+  - { id: microsoft/markitdown,                   domain: [apps/productivity],                   type: cli } # REVIEW
+  - { id: ytdl-org/youtube-dl,                    domain: [apps/media],                          type: cli }
+  - { id: yt-dlp/yt-dlp,                          domain: [apps/media],                          type: cli }
+  - { id: obsproject/obs-studio,                  domain: [apps/media],                          type: app }
+  - { id: FFmpeg/FFmpeg,                          domain: [apps/media],                          type: cli }
+  - { id: mpv-player/mpv,                         domain: [apps/media],                          type: app }
+  - { id: OpenCut-app/OpenCut,                    domain: [apps/media],                          type: app }
+  - { id: Genymobile/scrcpy,                      domain: [apps/media],                          type: cli } # REVIEW: 安卓投屏，domain 待商榷(mobile/native?)
+  - { id: hydralauncher/hydra,                    domain: [apps/media],                          type: app } # REVIEW: 游戏启动器，gamedev/games?
+  - { id: sherlock-project/sherlock,              domain: [security/pentest],                    type: cli }
+  - { id: NationalSecurityAgency/ghidra,          domain: [security/pentest],                    type: app } # REVIEW: 逆向工程归 pentest?
+  - { id: 996icu/996.ICU,                         domain: [],                                    type: software } # REVIEW: 社运仓库，type 无合适枚举
+  - { id: k1tbyte/Wand-Enhancer,                  domain: [gamedev/games],                       type: app } # REVIEW: 游戏修改器扩展
+
+  # ── mobile / gamedev / blockchain ──────────────────────────
+  - { id: flutter/flutter,                        domain: [mobile/cross-platform],               type: library }
+  - { id: tauri-apps/tauri,                       domain: [mobile/cross-platform],               type: library } # REVIEW: 桌面为主的跨端框架
+  - { id: termux/termux-app,                      domain: [devtools/cli, mobile/native],         type: app }
+  - { id: hexops/mach,                            domain: [gamedev/engines],                     type: library }
+  - { id: PixelGuys/Cubyz,                        domain: [gamedev/games],                       type: app }
+  - { id: unionlabs/union,                        domain: [blockchain/protocols],                type: software }
+  - { id: bitcoin/bitcoin,                        domain: [blockchain/protocols],                type: software }
