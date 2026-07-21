@@ -131,6 +131,21 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 	}); err != nil {
 		return fmt.Errorf("star history indexes: %w", err)
 	}
+
+	// A time-series collection's automatic index covers the whole `meta` object,
+	// which a query on meta.externalId cannot use. The metrics job does one such
+	// lookup per tracked item, so without this index a pass degrades into ~67k
+	// unindexed scans — measured at ~111ms each, over two hours per run.
+	if _, err := s.Snapshots().Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "meta.externalId", Value: 1},
+			{Key: "meta.source", Value: 1},
+			{Key: "capturedAt", Value: 1},
+		},
+		Options: options.Index().SetName("snapshot_lookup"),
+	}); err != nil {
+		return fmt.Errorf("snapshot indexes: %w", err)
+	}
 	return nil
 }
 

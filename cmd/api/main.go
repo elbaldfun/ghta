@@ -150,6 +150,8 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.GET("/trending/rising", trending.Rising)
 	r.GET("/trending/item", trending.Item)
 
+	handler.NewStatsHandler(store).Register(r)
+
 	// ---- Admin: bearer-token guarded ----
 	// These mutate data, expose user records, or start quota-burning jobs, so
 	// they must not be anonymously reachable on the public internet.
