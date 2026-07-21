@@ -98,5 +98,14 @@
         "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
       }
     }
+  },
+  "blog": {
+    "title": "Insights",
+    "subtitle": "Original analysis built on the 67,000 high-star repositories we track. Figures are read live and refresh with the daily crawl.",
+    "empty": "No posts yet.",
+    "readingTime": "{minutes} min read",
+    "backToList": "Back to all posts",
+    "dataNote": "Every figure in this article is read live from our database and refreshes with the daily crawl.",
+    "nav": "Insights"
   }
 }

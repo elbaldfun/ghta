@@ -264,3 +264,21 @@ export async function getCategoryCounts(): Promise<CategoryCounts> {
     subs: Object.fromEntries(subEntries),
   };
 }
+
+export interface LanguageStat {
+  language: string;
+  repos: number;
+  totalStars: number;
+  medianStars: number;
+  topRepo: string;
+  topStars: number;
+}
+
+/**
+ * Per-language corpus totals, used by the site's own analysis posts.
+ * Cached for an hour: the underlying numbers only move once a day.
+ */
+export async function getLanguageStats(limit = 12): Promise<LanguageStat[]> {
+  const res = await apiGet<{ data: LanguageStat[] }>(`/stats/languages?limit=${limit}`, 3600);
+  return res.error === null ? res.data.data : [];
+}

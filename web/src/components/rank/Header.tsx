@@ -8,6 +8,7 @@ import { ThemePill } from './ThemePill';
 /** Persistent 2a header: full-bleed border, content aligned to the site container. */
 export function RankHeader() {
   const t = useTranslations('rank');
+  const tb = useTranslations('blog');
 
   return (
     <header className="border-b border-border">
@@ -23,6 +24,12 @@ export function RankHeader() {
               className="rounded-lg bg-accent px-[13px] py-[7px] text-[12.5px] font-bold text-accent-fg"
             >
               {t('navRankings')}
+            </Link>
+            <Link
+              href="/blog"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {tb('nav')}
             </Link>
           </nav>
         </div>
