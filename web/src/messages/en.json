@@ -60,5 +60,43 @@
       "tools-ssg": "Static Site",
       "lang-compiler": "Compilers"
     }
+  },
+  "consent": {
+    "title": "Cookie notice",
+    "message": "We use cookies for anonymous traffic analytics to understand how the site is used. You can decline — nothing stops working.",
+    "learnMore": "Privacy Policy",
+    "accept": "Accept",
+    "reject": "Decline"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
   }
 }

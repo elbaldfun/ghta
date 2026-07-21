@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 /** Single-row footer: full-bleed top border, content aligned to the site container. */
 export function RankFooter() {
   const t = useTranslations('rank');
+  const tp = useTranslations('privacy');
   const year = new Date().getFullYear();
 
   return (
@@ -15,6 +16,9 @@ export function RankFooter() {
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link href="/" className="hover:text-fg">
             {t('navRankings')}
+          </Link>
+          <Link href="/privacy" className="hover:text-fg">
+            {tp('title')}
           </Link>
           <a
             href="https://github.com"

@@ -2,8 +2,12 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { Sora, Manrope, IBM_Plex_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import { routing } from '@/i18n/routing';
+import { GoogleAnalytics } from '@/components/Analytics';
+import { ConsentBanner } from '@/components/ConsentBanner';
 import '../globals.css';
 
 const sora = Sora({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-sora' });
@@ -59,7 +63,15 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: noFlashTheme }} />
       </head>
       <body>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+          <ConsentBanner />
+        </NextIntlClientProvider>
+        {/* useSearchParams needs a Suspense boundary to keep the route statically renderable. */}
+        <Suspense>
+          <GoogleAnalytics />
+        </Suspense>
+        <Analytics />
       </body>
     </html>
   );
