@@ -110,5 +110,20 @@
     "machineTranslated": "이 글은 기계 번역이며 원어민 검수를 거치지 않았습니다.",
     "notTranslated": "이 글은 아직 선택하신 언어로 제공되지 않아 원문을 표시합니다.",
     "readOriginal": "원문 보기 →"
+  },
+  "stale": {
+    "lastPush": "마지막 push",
+    "repos": "저장소 수",
+    "share": "비중",
+    "medianStars": "스타 중앙값",
+    "issuesPerK": "1천 스타당 미해결 이슈",
+    "yearsQuiet": "{years}년 침묵",
+    "caption": "push 기록이 있는 저장소 {total}개.",
+    "bucket": {
+      "active": "3개월 이내",
+      "slowing": "3~12개월",
+      "dormant": "1~2년",
+      "stale": "2년 초과"
+    }
   }
 }

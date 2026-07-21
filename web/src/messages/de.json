@@ -110,5 +110,20 @@
     "machineTranslated": "Dieser Beitrag wurde maschinell übersetzt und nicht von Muttersprachlern geprüft.",
     "notTranslated": "Dieser Beitrag liegt noch nicht in deiner Sprache vor, daher wird das Original gezeigt.",
     "readOriginal": "Original lesen →"
+  },
+  "stale": {
+    "lastPush": "Letzter Push",
+    "repos": "Repos",
+    "share": "Anteil",
+    "medianStars": "Median-Sterne",
+    "issuesPerK": "Offene Issues / 1000 Sterne",
+    "yearsQuiet": "{years} Jahre still",
+    "caption": "{total} Repositories mit erfasstem Push-Datum.",
+    "bucket": {
+      "active": "Unter 3 Monaten",
+      "slowing": "3–12 Monate",
+      "dormant": "1–2 Jahre",
+      "stale": "Über 2 Jahre"
+    }
   }
 }

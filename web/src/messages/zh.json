@@ -110,5 +110,20 @@
     "machineTranslated": "本文为机器翻译，未经母语者校对。",
     "notTranslated": "本文尚无你所选语言的版本，此处显示原文。",
     "readOriginal": "阅读原文 →"
+  },
+  "stale": {
+    "lastPush": "最后一次 push",
+    "repos": "仓库数",
+    "share": "占比",
+    "medianStars": "star 中位数",
+    "issuesPerK": "每千 star 的未关 issue",
+    "yearsQuiet": "沉寂 {years} 年",
+    "caption": "共 {total} 个有 push 时间记录的仓库。",
+    "bucket": {
+      "active": "3 个月内",
+      "slowing": "3–12 个月",
+      "dormant": "1–2 年",
+      "stale": "超过 2 年"
+    }
   }
 }

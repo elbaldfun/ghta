@@ -110,5 +110,20 @@
     "machineTranslated": "Cet article a été traduit automatiquement et n'a pas été relu par un locuteur natif.",
     "notTranslated": "Cet article n'est pas encore disponible dans votre langue ; l'original est affiché.",
     "readOriginal": "Lire l'original →"
+  },
+  "stale": {
+    "lastPush": "Dernier push",
+    "repos": "Dépôts",
+    "share": "Part",
+    "medianStars": "Médiane d'étoiles",
+    "issuesPerK": "Issues ouvertes / 1k étoiles",
+    "yearsQuiet": "{years} ans de silence",
+    "caption": "{total} dépôts avec une date de push enregistrée.",
+    "bucket": {
+      "active": "Moins de 3 mois",
+      "slowing": "3–12 mois",
+      "dormant": "1–2 ans",
+      "stale": "Plus de 2 ans"
+    }
   }
 }

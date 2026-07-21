@@ -110,5 +110,20 @@
     "machineTranslated": "本記事は機械翻訳であり、ネイティブによる校正は行われていません。",
     "notTranslated": "この記事はお使いの言語にまだ翻訳されていないため、原文を表示しています。",
     "readOriginal": "原文を読む →"
+  },
+  "stale": {
+    "lastPush": "最終 push",
+    "repos": "リポジトリ数",
+    "share": "割合",
+    "medianStars": "スター中央値",
+    "issuesPerK": "1000 スターあたり未解決 issue",
+    "yearsQuiet": "{years} 年沈黙",
+    "caption": "push 日時が記録されている {total} リポジトリ。",
+    "bucket": {
+      "active": "3 か月以内",
+      "slowing": "3〜12 か月",
+      "dormant": "1〜2 年",
+      "stale": "2 年超"
+    }
   }
 }

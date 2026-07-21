@@ -110,5 +110,20 @@
     "machineTranslated": "This article was machine-translated and has not been reviewed by a native speaker.",
     "notTranslated": "This article is not available in your language yet, so the original is shown.",
     "readOriginal": "Read the original →"
+  },
+  "stale": {
+    "lastPush": "Last push",
+    "repos": "Repos",
+    "share": "Share",
+    "medianStars": "Median stars",
+    "issuesPerK": "Open issues / 1k stars",
+    "yearsQuiet": "{years} yrs quiet",
+    "caption": "{total} tracked repositories with a recorded push date.",
+    "bucket": {
+      "active": "Under 3 months",
+      "slowing": "3–12 months",
+      "dormant": "1–2 years",
+      "stale": "Over 2 years"
+    }
   }
 }

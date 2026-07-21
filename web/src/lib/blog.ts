@@ -19,7 +19,7 @@ import sanitizeHtml from 'sanitize-html';
 
 const BLOG_DIR = path.join(process.cwd(), 'content', 'blog');
 
-export const DATA_BLOCKS = ['languages', 'top-repos'] as const;
+export const DATA_BLOCKS = ['languages', 'top-repos', 'staleness', 'stale-repos'] as const;
 export type DataBlockName = (typeof DATA_BLOCKS)[number];
 
 /** Language articles are authored in; everything else is translated from it. */

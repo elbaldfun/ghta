@@ -110,5 +110,20 @@
     "machineTranslated": "Este artigo foi traduzido automaticamente e não passou por revisão de falante nativo.",
     "notTranslated": "Este artigo ainda não está disponível no seu idioma, então o original é exibido.",
     "readOriginal": "Ler o original →"
+  },
+  "stale": {
+    "lastPush": "Último push",
+    "repos": "Repos",
+    "share": "Parcela",
+    "medianStars": "Mediana de estrelas",
+    "issuesPerK": "Issues abertas / 1k estrelas",
+    "yearsQuiet": "{years} anos em silêncio",
+    "caption": "{total} repositórios com data de push registrada.",
+    "bucket": {
+      "active": "Menos de 3 meses",
+      "slowing": "3–12 meses",
+      "dormant": "1–2 anos",
+      "stale": "Mais de 2 anos"
+    }
   }
 }

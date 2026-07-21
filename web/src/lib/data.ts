@@ -282,3 +282,32 @@ export async function getLanguageStats(limit = 12): Promise<LanguageStat[]> {
   const res = await apiGet<{ data: LanguageStat[] }>(`/stats/languages?limit=${limit}`, 3600);
   return res.error === null ? res.data.data : [];
 }
+
+export interface StalenessBucket {
+  bucket: 'active' | 'slowing' | 'dormant' | 'stale';
+  repos: number;
+  medianStars: number;
+  medianIssues: number;
+  /** Open issues per 1,000 stars — backlog normalised against audience size. */
+  issuesPerKStar: number;
+}
+
+export interface StaleRepo {
+  externalId: string;
+  language: string;
+  stars: number;
+  openIssues: number;
+  pushedAt: string;
+}
+
+export interface Staleness {
+  total: number;
+  buckets: StalenessBucket[];
+  examples: StaleRepo[];
+}
+
+/** Push-recency distribution. Cached for an hour; the corpus moves once a day. */
+export async function getStaleness(examples = 0): Promise<Staleness | null> {
+  const res = await apiGet<{ data: Staleness }>(`/stats/staleness?examples=${examples}`, 3600);
+  return res.error === null ? res.data.data : null;
+}
