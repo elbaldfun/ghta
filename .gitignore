@@ -38,3 +38,5 @@ lerna-debug.log*
 
 # Server deployment secrets
 deploy/.env
+.vercel
+.env*

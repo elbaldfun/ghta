@@ -98,7 +98,11 @@ Git 集成，推送到 `main` 自动部署。
 | `API_URL` | `https://api.starrank.dev` |
 | `NEXT_PUBLIC_SITE_URL` | `https://starrank.dev` |
 
-手动发布：`cd web && vercel deploy --prod`。
+手动发布：**在仓库根执行** `vercel deploy --prod`。
+因为项目的 Root Directory 设成了 `web`，Vercel 会在上传内容里找 `web/` 子目录——
+从 `web/` 目录内执行会变成找 `web/web/` 而失败。
+
+> Root Directory 在面板的 **Settings → Build and Deployment**（不在 General）。
 
 > 自动生成的 `*.vercel.app` 部署地址受 Deployment Protection 保护（需登录 Vercel 才能访问），
 > 属正常行为。正式域名 `starrank.dev` 不受影响；若绑定后仍要求登录，
