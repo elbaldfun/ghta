@@ -82,10 +82,14 @@ func New(cfg *config.Config, log *slog.Logger) Provider {
 	}
 }
 
-// baseURLKey returns the API key for the OpenAI-compatible base-URL path
-// (LM Studio ignores it; hosted relays like an xAI/Grok proxy require it).
-// Falls back to a placeholder so a keyless local server still works.
+// baseURLKey returns the API key for the OpenAI-compatible base-URL path.
+// A dedicated LMSTUDIO_API_KEY wins (hosted relays like an xAI/Grok proxy need
+// it) so it never has to borrow — and clobber — OPENAI_API_KEY; falls back to
+// OPENAI_API_KEY, then a placeholder for a keyless local LM Studio.
 func baseURLKey(cfg *config.Config) string {
+	if cfg.LMStudioAPIKey != "" {
+		return cfg.LMStudioAPIKey
+	}
 	if cfg.OpenAIAPIKey != "" {
 		return cfg.OpenAIAPIKey
 	}

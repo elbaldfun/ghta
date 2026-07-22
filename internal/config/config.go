@@ -32,6 +32,7 @@ type Config struct {
 	OpenAIModel     string
 	LMStudioBaseURL string
 	LMStudioModel   string
+	LMStudioAPIKey  string // auth for a hosted OpenAI-compatible relay (e.g. grok); empty for local LM Studio
 
 	// Fetch scheduling
 	FetchCron       string
@@ -65,6 +66,7 @@ func Load() (*Config, error) {
 		OpenAIModel:     getEnv("OPENAI_MODEL", "gpt-4o-mini"),
 		LMStudioBaseURL: getEnv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
 		LMStudioModel:   os.Getenv("LMSTUDIO_LOCAL_MODULE_NAME"),
+		LMStudioAPIKey:  os.Getenv("LMSTUDIO_API_KEY"),
 		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
 		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
 	}
