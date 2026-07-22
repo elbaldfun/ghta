@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,8 +46,20 @@ type TypeFacet struct {
 	Count int    `json:"count"`
 }
 
+// categoryCacheTTL bounds how stale the tree/facet counts may be. The count
+// aggregations scan the whole tracked_items collection (~20s on the prod box),
+// so they must not run per-request; counts only shift once a day (categorize
+// job), making a few minutes of staleness invisible.
+const categoryCacheTTL = 5 * time.Minute
+
 type CategoryService struct {
 	store *repository.Store
+
+	mu         sync.Mutex
+	treeCache  []CategoryTree
+	treeAt     time.Time
+	facetCache []TypeFacet
+	facetAt    time.Time
 }
 
 func NewCategoryService(store *repository.Store) *CategoryService {
@@ -86,7 +99,28 @@ func (s *CategoryService) Create(ctx context.Context, in CategoryInput) (*domain
 
 // FindAll returns the controlled domain tree (createdBy=taxonomy only — legacy
 // AI-created categories are excluded) as a nested tree with per-node item counts.
+// Result is cached for categoryCacheTTL: the count aggregation is expensive and
+// counts move slowly.
 func (s *CategoryService) FindAll(ctx context.Context) ([]CategoryTree, error) {
+	s.mu.Lock()
+	if s.treeCache != nil && time.Since(s.treeAt) < categoryCacheTTL {
+		cached := s.treeCache
+		s.mu.Unlock()
+		return cached, nil
+	}
+	s.mu.Unlock()
+
+	tree, err := s.buildTreeWithCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	s.treeCache, s.treeAt = tree, time.Now()
+	s.mu.Unlock()
+	return tree, nil
+}
+
+func (s *CategoryService) buildTreeWithCounts(ctx context.Context) ([]CategoryTree, error) {
 	cur, err := s.store.Categories().Find(ctx, bson.M{"createdBy": "taxonomy"})
 	if err != nil {
 		return nil, err
@@ -209,6 +243,14 @@ func ResetAnalysis(ctx context.Context, store *repository.Store, limit int) (int
 // TypeFacets returns each facet type value (in facets.yaml priority order) with
 // its item count, for the filter chips. Values with no items are still listed.
 func (s *CategoryService) TypeFacets(ctx context.Context, order []TypeFacet) ([]TypeFacet, error) {
+	s.mu.Lock()
+	if s.facetCache != nil && time.Since(s.facetAt) < categoryCacheTTL {
+		cached := s.facetCache
+		s.mu.Unlock()
+		return cached, nil
+	}
+	s.mu.Unlock()
+
 	cur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
 		{{Key: "$group", Value: bson.M{"_id": "$type", "n": bson.M{"$sum": 1}}}},
 	})
@@ -223,6 +265,9 @@ func (s *CategoryService) TypeFacets(ctx context.Context, order []TypeFacet) ([]
 	for i, f := range order {
 		out[i] = TypeFacet{Key: f.Key, Name: f.Name, Count: counts[f.Key]}
 	}
+	s.mu.Lock()
+	s.facetCache, s.facetAt = out, time.Now()
+	s.mu.Unlock()
 	return out, nil
 }
 
