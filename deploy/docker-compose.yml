@@ -48,6 +48,7 @@ services:
       LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
       CATEGORIZE_BATCH_SIZE: ${CATEGORIZE_BATCH_SIZE:-15}
       DOMAIN_MAX_LABELS: ${DOMAIN_MAX_LABELS:-3}
+      LLM_CONCURRENCY: ${LLM_CONCURRENCY:-1}
       EMBED_MODEL: ${EMBED_MODEL:-}
     # The grok relay's DNS resolves to a CN CDN edge that 504s from this US
     # droplet; pin it to a working origin IP (override via LLM_RELAY_HOST_PIN).
