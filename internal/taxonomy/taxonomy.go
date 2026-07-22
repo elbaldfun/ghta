@@ -23,6 +23,7 @@ import (
 type Node struct {
 	Path     string `yaml:"path"`
 	Name     string `yaml:"name"`
+	NameEn   string `yaml:"nameEn"`
 	Desc     string `yaml:"desc"`
 	Children []Node `yaml:"children"`
 }
@@ -67,7 +68,7 @@ func Sync(ctx context.Context, store *repository.Store, nodes []Node) error {
 			bson.M{"path": n.Path},
 			bson.M{
 				"$set": bson.M{
-					"name": n.Name, "description": n.Desc, "level": level,
+					"name": n.Name, "nameEn": n.NameEn, "description": n.Desc, "level": level,
 					"parentId": parentID, "createdBy": "taxonomy", "updatedAt": now,
 				},
 				"$setOnInsert": bson.M{"createdAt": now},
@@ -79,6 +80,21 @@ func Sync(ctx context.Context, store *repository.Store, nodes []Node) error {
 			return fmt.Errorf("sync category %s: %w", n.Path, err)
 		}
 		idByPath[n.Path] = cat.ID
+	}
+
+	// Prune taxonomy categories no longer in the tree (e.g. change 12 removed
+	// learning/*, lang/stdlib-utils, *-framework). Without this they linger in
+	// the categories collection and still render in GET /category. Only prunes
+	// createdBy=taxonomy — human/legacy-ai categories are never touched.
+	current := make([]string, 0, len(nodes))
+	for _, n := range nodes {
+		current = append(current, n.Path)
+	}
+	if _, err := store.Categories().DeleteMany(ctx, bson.M{
+		"createdBy": "taxonomy",
+		"path":      bson.M{"$nin": current},
+	}); err != nil {
+		return fmt.Errorf("prune stale categories: %w", err)
 	}
 	return nil
 }

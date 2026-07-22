@@ -1,0 +1,60 @@
+# GHTA type facet —— 形态维度（初稿：按 golden 32 题裁决落笔，待人审）
+# ─────────────────────────────────────────────────────────────
+# type 是与领域树正交的「是什么东西」维度，单值。
+# 判定：按下面列表**从上到下**匹配 topics，命中第一个即取该 key；全不中 → 兜底 software。
+# 列表顺序 == 优先级（Q1 裁决：awesome > interview > tutorial）。
+# key 全小写；topic 匹配大小写不敏感、全等（非子串）。
+#
+# 与 golden 裁决的对应：
+#   Q1 双命中优先级 awesome>interview>tutorial   Q3 新增 skill（agent skill/提示词包）
+#   Q5 构建工具/SSG=library                       Q6 风格指南/最佳实践=tutorial
+#   Q7 速查文档=tutorial、模板集=software          Q8 教学算法实现=interview
+#   总原则：type 管形态、domain 管检索；资料类(awesome/interview/tutorial/skill)默认可从榜单排除
+
+type:
+  # ── 资料类（优先级最高：先把非软件挑出来，保证软件榜干净）──
+  - key: awesome
+    name: 资源清单
+    topics: [awesome, awesome-list, awesome-lists, list, curated-list]
+
+  - key: interview
+    name: 面试准备
+    topics: [interview, interview-questions, interview-preparation, leetcode,
+             coding-interviews, coding-interview, system-design-interview]
+
+  - key: tutorial
+    name: 教程
+    # Q6 风格指南/最佳实践、Q7 速查表 都并入 tutorial
+    topics: [tutorial, tutorials, course, roadmap, book, learning, education,
+             cheatsheet, best-practices, style-guide, styleguide, guide, examples,
+             sample, samples, getting-started, 100-days-of-code]
+
+  # ── skill：给 AI 编程工具用的能力/提示词包（Q3 新形态）──
+  # 注意：这是本枚举里 topic 信号最弱的一类（很多 skill 仓库只有 claude-code/skills 标签，
+  # 甚至无 topic），人审时重点确认线索是否够；不够则 2.4 里辅以命名/README 规则。
+  - key: skill
+    name: 能力包
+    topics: [agent-skills, agent-skill, claude-skill, claude-skills, skill, skills,
+             claude-code-plugin, cursor-rules, prompt-pack]
+
+  # ── 软件形态（资料类未命中后，按具体形态细分）──
+  - key: cli
+    name: 命令行工具
+    topics: [cli, command-line, command-line-tool, terminal, tui, shell]
+
+  - key: app
+    name: 应用
+    # Q4 浏览器扩展也归 app（区分靠 domain=apps/browser-ext）
+    topics: [desktop-app, app, application, electron, tauri-app, gui,
+             browser-extension, chrome-extension, firefox-addon, mobile-app]
+
+  - key: library
+    name: 库/框架
+    # Q5 构建工具/打包器/SSG 统一 library
+    topics: [library, framework, sdk, package, module, api,
+             build-tool, bundler, compiler-tool, static-site-generator]
+
+# 兜底：以上全不命中 → software（软件项目）。此项不需 topic，由加载器隐式补齐。
+fallback: software
+
+fallbackName: 软件项目

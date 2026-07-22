@@ -27,6 +27,7 @@ func (h *TrendingHandler) List(c *gin.Context) {
 		Issues:   c.Query("issues"),
 		Language: c.Query("language"),
 		Category: c.Query("category"),
+		Type:     c.Query("type"),
 		Q:        c.Query("q"),
 		License:  c.Query("license"),
 		Sort:     c.Query("sort"),
@@ -80,6 +81,7 @@ func (h *TrendingHandler) Rising(c *gin.Context) {
 		Window:   c.Query("window"),
 		Source:   c.Query("source"),
 		Category: c.Query("category"),
+		Type:     c.Query("type"),
 		Language: c.Query("language"),
 	}
 	if l := c.Query("limit"); l != "" {

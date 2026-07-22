@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { getCategoryCounts, searchRepos } from '@/lib/data';
+import {
+  categoryLabel,
+  findCategory,
+  getCategoryTree,
+  getFacets,
+  getTotalCount,
+  searchRepos,
+} from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
 import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';
@@ -19,8 +26,8 @@ export async function generateMetadata({
 }
 
 interface HomeSearchParams {
-  cat?: string;
-  sub?: string;
+  category?: string;
+  type?: string;
   q?: string;
   lang?: string;
   license?: string;
@@ -43,11 +50,13 @@ export default async function RankHome({
     : 'stars';
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const [countsRes, searchRes] = await Promise.all([
-    getCategoryCounts(),
+  const [tree, facets, total, searchRes] = await Promise.all([
+    getCategoryTree(),
+    getFacets(),
+    getTotalCount(),
     searchRepos({
-      cat: searchParams.cat,
-      sub: searchParams.sub,
+      category: searchParams.category,
+      type: searchParams.type,
       q: searchParams.q,
       language: searchParams.lang,
       license: searchParams.license,
@@ -57,16 +66,16 @@ export default async function RankHome({
     }),
   ]);
 
-  const heading = searchParams.sub
-    ? t(`subs.${searchParams.sub}`)
-    : searchParams.cat
-      ? t(`cats.${searchParams.cat}`)
-      : t('homeTitle');
-  const breadcrumb = searchParams.sub && searchParams.cat ? t(`cats.${searchParams.cat}`) : null;
+  const activeNode = searchParams.category ? findCategory(tree, searchParams.category) : undefined;
+  const heading = activeNode ? categoryLabel(activeNode, locale) : t('homeTitle');
+  // Breadcrumb: for a leaf ("a/b"), show its parent's label.
+  const parentPath = searchParams.category?.includes('/') ? searchParams.category.split('/')[0] : null;
+  const parentNode = parentPath ? findCategory(tree, parentPath) : undefined;
+  const breadcrumb = parentNode ? categoryLabel(parentNode, locale) : null;
 
   return (
     <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
-      <CategoryTree counts={countsRes} />
+      <CategoryTree tree={tree} total={total} />
 
       <div className="px-[26px] py-[22px]">
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
@@ -82,7 +91,7 @@ export default async function RankHome({
               </span>
             </div>
           </div>
-          <FilterBar />
+          <FilterBar types={facets} />
         </div>
 
         {searchRes.error !== null ? (
@@ -103,8 +112,8 @@ export default async function RankHome({
               perPage={PER_PAGE}
               totalCount={searchRes.data.totalCount}
               params={{
-                cat: searchParams.cat,
-                sub: searchParams.sub,
+                category: searchParams.category,
+                type: searchParams.type,
                 q: searchParams.q,
                 lang: searchParams.lang,
                 license: searchParams.license,

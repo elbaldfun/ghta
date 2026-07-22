@@ -1,85 +1,107 @@
-# GitHub topic / 主语言 → 分类 path 的规则映射（初稿，待人工审定）
+# GitHub topic / 主语言 → 领域 path 的规则映射 v2（change 12 定稿，待人审）
 # 命中即归类（免费、确定性），多命中 = 多标签。key 全小写。
+# ─────────────────────────────────────────────────────────────
+# v2 相对 v1 的清理（依据 golden 误判分析，规则 firing 精度 48%→62%）：
+#   · 删「平台/环境」词：android/ios/linux/docker/raspberry-pi/embedded/flutter
+#     —— 它们表示「跑在什么上/支持什么」而非「是什么」，误判率极高，改落 LLM
+#   · 删「用了某组件≠是该组件」：redis/mysql/postgresql/elasticsearch/mongodb/sql/cache
+#   · 删过宽 AI 词：openai/ai-agents/deep-learning/neural-network（易压过更精确的叶子）
+#   · 删弱信号：data-visualization/automation/productivity/nextjs/svelte
+#   · 新增 ai/media-gen、devtools/ai-coding、data/analytics 的映射
+#   · 路径迁移到新树（web/frontend 等）；删 learning 段（→ facets.yaml type）
 
 topics:
-  # ai
-  machine-learning: ai/ml-framework
-  deep-learning: ai/ml-framework
-  neural-network: ai/ml-framework
-  pytorch: ai/ml-framework
-  tensorflow: ai/ml-framework
+  # ai/llm
   llm: ai/llm
   large-language-models: ai/llm
   gpt: ai/llm
   chatgpt: ai/llm
-  openai: ai/llm
   language-model: ai/llm
   rag: ai/llm
   prompt-engineering: ai/llm
   fine-tuning: ai/llm
   llama: ai/llm
+  llm-inference: ai/llm
+  # ai/agents
   agents: ai/agents
-  ai-agents: ai/agents
   autonomous-agents: ai/agents
+  multi-agent: ai/agents
+  # ai/ml-framework
+  machine-learning: ai/ml-framework
+  pytorch: ai/ml-framework
+  tensorflow: ai/ml-framework
+  # ai/cv
   computer-vision: ai/cv
   object-detection: ai/cv
-  image-generation: ai/cv
-  stable-diffusion: ai/cv
   opencv: ai/cv
+  ocr: ai/cv
+  # ai/media-gen
+  stable-diffusion: ai/media-gen
+  image-generation: ai/media-gen
+  text-to-image: ai/media-gen
+  img2img: ai/media-gen
+  diffusion: ai/media-gen
+  # ai/speech-audio
   speech-recognition: ai/speech-audio
   text-to-speech: ai/speech-audio
   whisper: ai/speech-audio
+  speech-to-text: ai/speech-audio
+  # ai/data-science
   data-science: ai/data-science
-  data-visualization: ai/data-science
   jupyter: ai/data-science
   pandas: ai/data-science
 
   # web
-  react: web/frontend-framework
-  vue: web/frontend-framework
-  angular: web/frontend-framework
-  svelte: web/frontend-framework
-  nextjs: web/frontend-framework
-  frontend: web/frontend-framework
-  nodejs: web/backend-framework
-  django: web/backend-framework
-  flask: web/backend-framework
-  fastapi: web/backend-framework
-  spring-boot: web/backend-framework
-  express: web/backend-framework
-  rails: web/backend-framework
+  react: web/frontend
+  vue: web/frontend
+  angular: web/frontend
+  svelte: web/frontend
+  frontend: web/frontend
+  django: web/backend
+  flask: web/backend
+  fastapi: web/backend
+  spring-boot: web/backend
+  express: web/backend
+  rails: web/backend
+  backend-as-a-service: web/backend
   css: web/css-ui
   tailwindcss: web/css-ui
+  css-framework: web/css-ui
   ui-components: web/css-ui
   design-system: web/css-ui
   webpack: web/build-tools
   vite: web/build-tools
-  babel: web/build-tools
   bundler: web/build-tools
+  build-tool: web/build-tools
   static-site-generator: web/static-site
-  documentation: web/static-site
-  blog: web/static-site
+  blog-engine: web/static-site
 
   # devtools
   cli: devtools/cli
-  terminal: devtools/cli
-  shell: devtools/cli
-  zsh: devtools/cli
   command-line: devtools/cli
+  terminal: devtools/cli
+  zsh: devtools/cli
+  tui: devtools/cli
   vscode: devtools/editors
   neovim: devtools/editors
   vim: devtools/editors
   editor: devtools/editors
   ide: devtools/editors
+  language-server: devtools/editors
+  ai-coding: devtools/ai-coding
+  agentic-coding: devtools/ai-coding
+  coding-agent: devtools/ai-coding
+  claude-code: devtools/ai-coding
+  agent-skills: devtools/ai-coding
   git: devtools/vcs
-  github: devtools/vcs
+  code-review: devtools/vcs
   testing: devtools/testing
   test-automation: devtools/testing
   e2e-testing: devtools/testing
+  browser-automation: devtools/testing
   package-manager: devtools/package-manager
 
   # infra
-  docker: infra/containers
   kubernetes: infra/containers
   containers: infra/containers
   helm: infra/containers
@@ -93,74 +115,62 @@ topics:
   observability: infra/monitoring
   prometheus: infra/monitoring
   logging: infra/monitoring
-  proxy: infra/networking
   reverse-proxy: infra/networking
+  web-server: infra/networking
   vpn: infra/networking
   load-balancer: infra/networking
+  tunnel: infra/networking
 
   # data
   database: data/database
-  sql: data/database
-  postgresql: data/database
-  mysql: data/database
-  mongodb: data/database
-  redis: data/cache
-  cache: data/cache
-  etl: data/data-pipeline
-  stream-processing: data/data-pipeline
-  kafka: data/data-pipeline
-  message-queue: data/data-pipeline
-  search-engine: data/search
-  elasticsearch: data/search
   vector-database: data/search
+  etl: data/pipeline
+  stream-processing: data/pipeline
+  kafka: data/pipeline
+  message-queue: data/pipeline
+  search-engine: data/search
   full-text-search: data/search
+  olap: data/analytics
+  analytics: data/analytics
 
   # lang
   compiler: lang/implementations
   interpreter: lang/implementations
   programming-language: lang/implementations
-  algorithms: lang/stdlib-utils
-  data-structures: lang/stdlib-utils
+  algorithms: lang/utils
+  data-structures: lang/utils
+  serialization: lang/utils
 
   # mobile
-  flutter: mobile/cross-platform
   react-native: mobile/cross-platform
-  android: mobile/native
-  ios: mobile/native
   swift: mobile/native
 
   # security
   penetration-testing: security/pentest
   ctf: security/pentest
-  security-tools: security/pentest
+  reverse-engineering: security/pentest
   cryptography: security/crypto-auth
   authentication: security/crypto-auth
   oauth: security/crypto-auth
 
   # systems
   operating-system: systems/os
-  linux: systems/os
   kernel: systems/os
   emulator: systems/emulation
   virtualization: systems/emulation
   virtual-machine: systems/emulation
-  embedded: systems/embedded
   iot: systems/embedded
   arduino: systems/embedded
-  raspberry-pi: systems/embedded
   esp32: systems/embedded
+  firmware: systems/embedded
 
   # apps
-  productivity: apps/productivity
   note-taking: apps/productivity
-  automation: apps/productivity
   self-hosted: apps/selfhosted
   selfhosted: apps/selfhosted
   homelab: apps/selfhosted
   media-server: apps/media
   video: apps/media
-  music: apps/media
-  youtube-dl: apps/media
   browser-extension: apps/browser-ext
   chrome-extension: apps/browser-ext
   userscript: apps/browser-ext
@@ -180,21 +190,8 @@ topics:
   solidity: blockchain/contracts
   smart-contracts: blockchain/contracts
 
-  # learning
-  tutorial: learning/tutorials
-  learning: learning/tutorials
-  roadmap: learning/tutorials
-  course: learning/tutorials
-  book: learning/tutorials
-  awesome: learning/awesome-lists
-  awesome-list: learning/awesome-lists
-  interview: learning/interview
-  interview-questions: learning/interview
-  leetcode: learning/interview
-
-# 主语言兜底映射：仅当 topics 全部未命中时使用（信号弱，只映射指向性强的语言）
+# 主语言兜底：仅当 topics 全部未命中时使用（信号弱，只映射指向性强的语言）
 languages:
   verilog: systems/embedded
   vhdl: systems/embedded
   solidity: blockchain/contracts
-  dart: mobile/cross-platform

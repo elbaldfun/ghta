@@ -64,22 +64,38 @@ facet 组合的表达力等价于虚拟三级（`ai/llm + topic=rag` ≡ `ai/llm
 2. 建议队列反复出现该叶子下的细分 path；
 3. eval 基线已建立，拆分后可量化确认准确率未回退。
 
+## 生成 tag 富化（no-topic 仓库，搭分类调用便车）
+
+约 15% 仓库无作者 topic，在 topic 筛选与相似推荐里隐形。**不新增 LLM 轮次**：这些仓库本就落 LLM
+分类，让 LLM 在同一响应里多返回几个规范化 tag（信号特别薄时把库里现成的 `sourceData.readme`
+截断塞进 prompt）。
+
+- 存 `sourceData.generatedTopics`，**与作者 `topicNames` 分开**。
+- 护栏：生成 tag **默认不回喂规则层**（会把已清理的歧义词如 docker/linux 请回来，拉低 precision）；
+  主要用途是用户 topic 筛选、相似推荐、以及给 LLM 判 type 当上下文。要回喂须走同一张清理过的表并标来源。
+- 完整的 README 富化（摘要、词表规范化、喂搜索/相似）属独立能力，留后续 change，本 change 只做便车版。
+
 ## 流水线：type 前置，领域多标签
+
+流水线降为**两级**（embedding 分类层已停用，eval 运行 D 判决：全阈值段 31-38%，够不着 LLM
+的 71%；embedding 留给未来语义搜索，独立 change）。
 
 ```
 pending item
   ├─ type 层（确定性，先跑，永远可用）
-  │    └─ facets.yaml 优先级匹配 → type（单值，兜底 software）
-  └─ domain 层（语义，三级，前级命中即停）
-       ├─ ① rule       topic-map 命中 → 多标签全收（现状保持）
-       ├─ ② embedding  余弦 ≥ 阈值的叶子全收（top-K），上限 DOMAIN_MAX_LABELS
-       ├─ ③ LLM        兜底长尾；prompt 允许返回多个 path（≤ DOMAIN_MAX_LABELS）
-       │                isNewCategory → 建议队列（同 change 9，不变）
+  │    └─ facets.yaml 优先级匹配 → 资料类 type（95%）；软件细分无信号时交 ② 的 LLM 顺带判
+  └─ domain 层（前级命中即停）
+       ├─ ① rule   topic-map 命中 → 多标签全收（清理后规则层 hit@any 87%）
+       └─ ② LLM    兜底长尾；一次响应返回 {多个 path(≤DOMAIN_MAX_LABELS) + type + tags}
+       │            isNewCategory → 建议队列（同 change 9，不变）
        └─ 全部失败 → 失败计数（同 change 9，不变）
 ```
 
 - `DOMAIN_MAX_LABELS` 默认 3，走 config；防过度打标由 eval 的 precision 监控兜底。
-- `classifiedBy` 语义不变（记录领域主类由哪级判定）。
+- LLM 一次响应同时给 domain 多标签 + type（软件细分）+ generatedTopics（no-topic 富化），零额外轮次。
+- `classifiedBy` 语义不变（记录领域主类由哪级判定：rule / llm）。
+- 后端：eval 选定 grok-4.5（type 93%、快 11×）；provider 已适配 base-url + key（`baseURLKey`）。
+  注意 grok 偶发批次漏项，全量跑用小批次（≤8）或漏项重排。
 - embedding 仍即算即用（不落库）；无 embedding 后端时领域退化为 ①+③，type 层不受影响。
 
 ## 评估（先建再动树）

@@ -23,7 +23,9 @@ paths:
         - { name: stars, in: query, schema: { type: string }, description: "Range on metrics.stars: a..b, >n, <n, n (0 is valid)" }
         - { name: issues, in: query, schema: { type: string }, description: "Range on metrics.openIssues" }
         - { name: language, in: query, schema: { type: string } }
-        - { name: category, in: query, schema: { type: string }, description: "categoryId" }
+        - { name: category, in: query, schema: { type: string }, description: "categoryId (hex) or a category path containing '/' (e.g. infra/containers)" }
+        - { name: type, in: query, schema: { type: string, enum: [cli, app, library, software, tutorial, awesome, interview, skill] }, description: "Form facet filter" }
+        - { name: topics, in: query, schema: { type: string }, description: "Comma-separated topics; every one must be present" }
         - { name: sort, in: query, schema: { type: string }, description: "field:order; field in [stars,forks,issues,fetchedAt] (stars aliases metrics.stars)" }
         - { name: limit, in: query, schema: { type: integer, maximum: 50, default: 50 } }
       responses:
@@ -85,12 +87,35 @@ paths:
         "400": { description: Missing source/externalId }
         "404": { description: Not found }
 
-  /category:
+  /category/facets:
     get:
-      summary: Category tree
+      summary: Type-facet enum with item counts (public, for filter chips)
       responses:
         "200":
-          description: Nested category tree
+          description: Form types in priority order, each with its item count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      type:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            name: { type: string }
+                            count: { type: integer }
+
+  /category:
+    get:
+      summary: Domain category tree with item counts (public, createdBy=taxonomy only)
+      responses:
+        "200":
+          description: Nested category tree; each node carries an item count (distinct items for parents)
           content:
             application/json:
               schema:
@@ -182,7 +207,8 @@ components:
         description: { type: string }
         language: { type: string }
         categoryId: { type: array, items: { type: string } }
-        categoryPath: { type: string }
+        categoryPath: { type: array, items: { type: string } }
+        type: { type: string, description: form facet (cli|app|library|software|tutorial|awesome|interview|skill) }
         primaryMetric: { type: string }
         metricDirection: { type: string, enum: [desc-better, asc-better] }
         metrics: { type: object, additionalProperties: { type: number } }
@@ -203,6 +229,7 @@ components:
         id: { type: string }
         name: { type: string }
         path: { type: string }
+        count: { type: integer, description: "Items filed under this node (distinct items for a parent)" }
         children:
           type: array
           items: { $ref: "#/components/schemas/CategoryTree" }

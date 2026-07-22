@@ -3,10 +3,10 @@ package service
 import "testing"
 
 func TestParseBatchResponse(t *testing.T) {
-	t.Run("well-formed array", func(t *testing.T) {
+	t.Run("well-formed object", func(t *testing.T) {
 		raw := `{"results":[
-			{"id":"a/one","categoryId":"c1","path":"ai/llm","isNewCategory":false},
-			{"id":"b/two","categoryId":"","path":"web","isNewCategory":true}
+			{"id":"a/one","paths":["ai/llm"],"type":"library","isNewCategory":false},
+			{"id":"b/two","paths":["web"],"isNewCategory":true}
 		]}`
 		got, err := parseBatchResponse(raw)
 		if err != nil {
@@ -15,24 +15,24 @@ func TestParseBatchResponse(t *testing.T) {
 		if len(got) != 2 {
 			t.Fatalf("got %d elements, want 2", len(got))
 		}
-		if got["a/one"].Path != "ai/llm" || got["b/two"].IsNewCategory != true {
+		if len(got["a/one"].Paths) != 1 || got["a/one"].Paths[0] != "ai/llm" || !got["b/two"].IsNewCategory {
 			t.Errorf("bad mapping: %+v", got)
 		}
 	})
 
-	t.Run("wrapped in prose still parses", func(t *testing.T) {
-		raw := "Sure! {\"results\":[{\"id\":\"x/y\",\"path\":\"tools\"}]} done"
+	t.Run("bare top-level array (grok) parses", func(t *testing.T) {
+		raw := `[{"id":"x/y","paths":["devtools/cli"],"type":"cli"}]`
 		got, err := parseBatchResponse(raw)
-		if err != nil || got["x/y"].Path != "tools" {
+		if err != nil || len(got["x/y"].Paths) != 1 || got["x/y"].Paths[0] != "devtools/cli" {
 			t.Fatalf("got %+v err %v", got, err)
 		}
 	})
 
-	t.Run("missing element is simply absent", func(t *testing.T) {
-		raw := `{"results":[{"id":"only/one","path":"a"}]}`
-		got, _ := parseBatchResponse(raw)
-		if _, ok := got["missing/item"]; ok {
-			t.Errorf("did not expect missing/item in results")
+	t.Run("wrapped in prose still parses", func(t *testing.T) {
+		raw := "Sure! {\"results\":[{\"id\":\"x/y\",\"paths\":[\"tools\"]}]} done"
+		got, err := parseBatchResponse(raw)
+		if err != nil || len(got["x/y"].Paths) != 1 || got["x/y"].Paths[0] != "tools" {
+			t.Fatalf("got %+v err %v", got, err)
 		}
 	})
 

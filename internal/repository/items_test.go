@@ -55,7 +55,7 @@ func TestUpsertPreservesCategorization(t *testing.T) {
 	// simulate the categorizer assigning a category
 	if _, err := store.Items().UpdateOne(ctx,
 		bson.M{"source": domain.SourceGitHub, "externalId": "o/r"},
-		bson.M{"$set": bson.M{"categoryId": []string{"cat1"}, "categoryPath": "ai/llm", "analysisStatus": domain.AnalysisDone}},
+		bson.M{"$set": bson.M{"categoryId": []string{"cat1"}, "categoryPath": []string{"ai/llm"}, "analysisStatus": domain.AnalysisDone}},
 	); err != nil {
 		t.Fatalf("categorize: %v", err)
 	}
@@ -71,8 +71,8 @@ func TestUpsertPreservesCategorization(t *testing.T) {
 	if got.Metrics["stars"] != 250 {
 		t.Errorf("stars = %v, want 250 (fetch should update)", got.Metrics["stars"])
 	}
-	if got.CategoryPath != "ai/llm" || len(got.CategoryID) != 1 || got.CategoryID[0] != "cat1" {
-		t.Errorf("categorization lost: path=%q id=%v", got.CategoryPath, got.CategoryID)
+	if len(got.CategoryPath) != 1 || got.CategoryPath[0] != "ai/llm" || len(got.CategoryID) != 1 || got.CategoryID[0] != "cat1" {
+		t.Errorf("categorization lost: path=%v id=%v", got.CategoryPath, got.CategoryID)
 	}
 	if got.AnalysisStatus != domain.AnalysisDone {
 		t.Errorf("analysisStatus = %q, want done", got.AnalysisStatus)

@@ -1,50 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
-import { TAXONOMY, formatCompact } from '@/lib/rank-data';
-import type { CategoryCounts } from '@/lib/data';
+import { formatCompact } from '@/lib/rank-data';
+import { categoryLabel, type CategoryNode } from '@/lib/data';
 import { GridIcon } from './icons';
 
 /**
- * Two-level taxonomy tree (2a sidebar). Selecting a node filters the grid and
- * resets to page 1; other filters (language/license/sort) are preserved.
+ * Two-level domain tree (2a sidebar), rendered from the backend GET /category
+ * tree. Selecting a node sets the `category` param (leaf path or parent segment),
+ * resets to page 1; other filters (language/license/sort/type) are preserved.
  */
-export function CategoryTree({ counts }: { counts: CategoryCounts }) {
+export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: number | null }) {
   const t = useTranslations('rank');
+  const locale = useLocale();
   const router = useRouter();
   const params = useSearchParams();
-  const activeCat = params.get('cat');
-  const activeSub = params.get('sub');
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
-    activeCat ? { [activeCat]: true } : { frontend: true, ai: true },
-  );
+  const active = params.get('category');
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    // Expand the ancestor of the active node, else a sensible default.
+    const parent = active?.includes('/') ? active.split('/')[0] : active;
+    return parent ? { [parent]: true } : { ai: true, web: true };
+  });
 
-  function navigate(cat: string | null, sub: string | null) {
+  function navigate(path: string | null) {
     const next = new URLSearchParams(params.toString());
     next.delete('page');
     next.delete('q');
-    if (cat) next.set('cat', cat);
-    else next.delete('cat');
-    if (sub) next.set('sub', sub);
-    else next.delete('sub');
+    if (path) next.set('category', path);
+    else next.delete('category');
     const qs = next.toString();
     router.push(qs ? `/?${qs}` : '/');
   }
 
-  const badge = (n: number | null | undefined) =>
-    n === null || n === undefined ? null : (
-      <span className="rounded-full bg-surface2 px-2 py-px text-[11px] text-muted">{formatCompact(n)}</span>
-    );
-
-  const allActive = !activeCat;
+  const count = (n: number) => (n > 0 ? <span className="text-[11px] text-muted">{formatCompact(n)}</span> : null);
+  const allActive = !active;
 
   return (
     <aside className="border-r border-border bg-surface px-4 py-5">
       <button
-        onClick={() => navigate(null, null)}
+        onClick={() => navigate(null)}
         className={`mb-2 flex w-full items-center justify-between rounded-lg px-2.5 py-2 ${
           allActive ? 'bg-surface2' : 'hover:bg-surface2/60'
         }`}
@@ -55,18 +52,18 @@ export function CategoryTree({ counts }: { counts: CategoryCounts }) {
           <GridIcon size={15} />
           {t('browseAll')}
         </span>
-        {badge(counts.all)}
+        {total !== null && count(total)}
       </button>
 
-      {TAXONOMY.map((group) => {
-        const isOpen = !!expanded[group.id];
-        const isActiveCat = activeCat === group.id && !activeSub;
+      {tree.map((group) => {
+        const isOpen = !!expanded[group.path];
+        const isActiveCat = active === group.path;
         return (
-          <div key={group.id} className="mt-0.5">
+          <div key={group.path} className="mt-0.5">
             <button
               onClick={() => {
-                setExpanded((e) => ({ ...e, [group.id]: activeCat === group.id ? !isOpen : true }));
-                navigate(group.id, null);
+                setExpanded((e) => ({ ...e, [group.path]: active === group.path ? !isOpen : true }));
+                navigate(group.path);
               }}
               className={`flex w-full items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 ${
                 isActiveCat ? 'bg-surface2' : 'hover:bg-surface2/60'
@@ -78,20 +75,18 @@ export function CategoryTree({ counts }: { counts: CategoryCounts }) {
                 }`}
               >
                 <span className="inline-block w-2.5 text-[9px] text-muted">{isOpen ? '▾' : '▸'}</span>
-                {t(`cats.${group.id}`)}
+                {categoryLabel(group, locale)}
               </span>
-              <span className="text-[11px] text-muted">
-                {counts.cats[group.id] !== null ? formatCompact(counts.cats[group.id]!) : ''}
-              </span>
+              {count(group.count)}
             </button>
-            {isOpen && group.subs && (
+            {isOpen && group.children && (
               <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-1.5">
-                {group.subs.map((node) => {
-                  const isActive = activeSub === node.id;
+                {group.children.map((node) => {
+                  const isActive = active === node.path;
                   return (
                     <button
-                      key={node.id}
-                      onClick={() => navigate(group.id, node.id)}
+                      key={node.path}
+                      onClick={() => navigate(node.path)}
                       className={`flex items-center justify-between rounded-[7px] px-2.5 py-1.5 ${
                         isActive ? 'bg-surface2' : 'hover:bg-surface2/60'
                       }`}
@@ -99,11 +94,9 @@ export function CategoryTree({ counts }: { counts: CategoryCounts }) {
                       <span
                         className={`text-[12.5px] ${isActive ? 'font-bold text-accent' : 'font-medium text-fg'}`}
                       >
-                        {t(`subs.${node.id}`)}
+                        {categoryLabel(node, locale)}
                       </span>
-                      <span className="text-[11px] text-muted">
-                        {counts.subs[node.id] !== null ? formatCompact(counts.subs[node.id]!) : ''}
-                      </span>
+                      {count(node.count)}
                     </button>
                   );
                 })}

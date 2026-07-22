@@ -70,6 +70,11 @@ export function RepoCard({
             {artifact.registry}
           </span>
         )}
+        {repo.type && repo.type !== 'software' && (
+          <span className="rounded-full border border-border bg-surface2 px-[9px] py-0.5 text-[10px] font-semibold text-fg">
+            {repo.type}
+          </span>
+        )}
         {repo.license && (
           <span className="flex items-center gap-1 rounded-full border border-border bg-surface2 px-[9px] py-0.5 text-[10px] font-semibold text-muted">
             <ShieldIcon size={10} />

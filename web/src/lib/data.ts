@@ -4,7 +4,7 @@
 
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import { LICENSE_NAMES, taxonomyTopics, TAXONOMY, type SortOption } from './rank-data';
+import { LICENSE_NAMES, type SortOption } from './rank-data';
 
 // Server-only on purpose: without the NEXT_PUBLIC_ prefix the backend address
 // is never inlined into the browser bundle. Every caller below runs on the server.
@@ -22,6 +22,8 @@ export interface RepoSummary {
   license: string | null;
   homepage: string | null;
   topics: string[];
+  type: string | null; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)
+  categoryPath: string[]; // domain leaf paths (multi-label)
   pushedAt: string;
   createdAt: string | null;
   htmlUrl: string;
@@ -44,6 +46,10 @@ export interface StarPoint {
 function mapItem(it: any): RepoSummary {
   const [owner = '', name = ''] = String(it.externalId ?? '').split('/');
   const sd = it.sourceData ?? {};
+  // Prefer the author's own topics; fall back to LLM-generated tags so no-topic
+  // repos are still searchable and get related-repo suggestions (change 12).
+  const authorTopics: string[] = sd.topicNames ?? [];
+  const topics = authorTopics.length > 0 ? authorTopics : (it.generatedTopics ?? []);
   return {
     owner,
     name: name || it.name,
@@ -55,7 +61,9 @@ function mapItem(it: any): RepoSummary {
     openIssues: it.metrics?.openIssues ?? 0,
     license: sd.license || null,
     homepage: sd.homepageUrl || null,
-    topics: sd.topicNames ?? [],
+    topics,
+    type: it.type || null,
+    categoryPath: it.categoryPath ?? [],
     pushedAt: sd.pushedAt || it.fetchedAt,
     createdAt: null, // repo creation date is not tracked in the database
     htmlUrl: sd.url || `https://github.com/${it.externalId}`,
@@ -73,8 +81,8 @@ async function apiGet<T>(path: string, revalidate: number): Promise<Fetched<T>> 
 }
 
 export interface SearchParamsIn {
-  cat?: string;
-  sub?: string;
+  category?: string; // domain path (leaf "a/b" or parent "a") or category id
+  type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)
   q?: string;
   language?: string;
   license?: string;
@@ -90,8 +98,8 @@ export interface SearchResult {
 
 function listParams(p: SearchParamsIn): URLSearchParams {
   const params = new URLSearchParams({ source: 'github' });
-  const topics = taxonomyTopics(p.cat, p.sub);
-  if (topics.length > 0) params.set('topics', topics.join(','));
+  if (p.category) params.set('category', p.category);
+  if (p.type) params.set('type', p.type);
   if (p.q) params.set('q', p.q);
   if (p.language) params.set('language', p.language);
   if (p.license && LICENSE_NAMES[p.license]) params.set('license', LICENSE_NAMES[p.license]);
@@ -237,32 +245,54 @@ export async function getRelatedRepos(repo: RepoSummary, limit = 12): Promise<Re
     .slice(0, limit);
 }
 
-export interface CategoryCounts {
-  all: number | null;
-  cats: Record<string, number | null>;
-  subs: Record<string, number | null>;
+export interface CategoryNode {
+  id: string;
+  name: string;
+  nameEn?: string;
+  path: string;
+  count: number;
+  children?: CategoryNode[];
 }
 
-/** Match totals per taxonomy node, heavily cached; nulls hide the badge. */
-export async function getCategoryCounts(): Promise<CategoryCounts> {
-  const count = async (topics: string[]): Promise<number | null> => {
-    const params = new URLSearchParams({ source: 'github', limit: '1' });
-    if (topics.length > 0) params.set('topics', topics.join(','));
-    const res = await apiGet<{ total: number }>(`/trending?${params}`, 3600);
-    return res.error === null ? res.data.total : null;
-  };
+export interface TypeFacet {
+  key: string;
+  name: string;
+  count: number;
+}
 
-  const catEntries = await Promise.all(
-    TAXONOMY.map(async (g) => [g.id, await count(g.topics)] as const),
-  );
-  const subEntries = await Promise.all(
-    TAXONOMY.flatMap((g) => g.subs ?? []).map(async (s) => [s.id, await count(s.topics)] as const),
-  );
-  return {
-    all: await count([]),
-    cats: Object.fromEntries(catEntries),
-    subs: Object.fromEntries(subEntries),
-  };
+/** The controlled domain tree with per-node item counts (backend GET /category).
+ * Replaces the old hardcoded TAXONOMY and its 22-request count fan-out. */
+export async function getCategoryTree(): Promise<CategoryNode[]> {
+  const res = await apiGet<{ data: CategoryNode[] }>(`/category`, 3600);
+  return res.error === null ? res.data.data : [];
+}
+
+/** Total item count across the corpus, for the "browse all" badge. */
+export async function getTotalCount(): Promise<number | null> {
+  const res = await apiGet<{ total: number }>(`/trending?source=github&limit=1`, 3600);
+  return res.error === null ? res.data.total : null;
+}
+
+/** Form-facet chips with counts (backend GET /category/facets), in priority order. */
+export async function getFacets(): Promise<TypeFacet[]> {
+  const res = await apiGet<{ data: { type: TypeFacet[] } }>(`/category/facets`, 3600);
+  return res.error === null ? res.data.data.type : [];
+}
+
+/** Locale-aware display name: Chinese locales get the zh name, others fall back
+ * to the English name (backend supplies zh + en only). */
+export function categoryLabel(node: { name: string; nameEn?: string }, locale: string): string {
+  return locale.startsWith('zh') ? node.name : node.nameEn || node.name;
+}
+
+/** Find a node by its path anywhere in the tree (for headings/breadcrumbs). */
+export function findCategory(tree: CategoryNode[], path: string): CategoryNode | undefined {
+  for (const g of tree) {
+    if (g.path === path) return g;
+    const hit = g.children?.find((c) => c.path === path);
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 export interface LanguageStat {

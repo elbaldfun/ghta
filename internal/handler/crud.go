@@ -24,16 +24,38 @@ func respondErr(c *gin.Context, err error) {
 
 // ---- Category ----
 
-type CategoryHandler struct{ svc *service.CategoryService }
+type CategoryHandler struct {
+	svc        *service.CategoryService
+	facetOrder []service.TypeFacet // type enum in priority order, for /category/facets
+}
 
-func NewCategoryHandler(svc *service.CategoryService) *CategoryHandler { return &CategoryHandler{svc} }
+func NewCategoryHandler(svc *service.CategoryService, facetOrder []service.TypeFacet) *CategoryHandler {
+	return &CategoryHandler{svc: svc, facetOrder: facetOrder}
+}
 
-func (h *CategoryHandler) Register(r gin.IRoutes) {
-	r.POST("/category", h.Create)
+// RegisterPublic mounts the read-only tree/facets the website navigation reads.
+func (h *CategoryHandler) RegisterPublic(r gin.IRoutes) {
 	r.GET("/category", h.FindAll)
+	r.GET("/category/facets", h.Facets)
+}
+
+// RegisterAdmin mounts the mutating + single-item routes behind the admin guard.
+func (h *CategoryHandler) RegisterAdmin(r gin.IRoutes) {
+	r.POST("/category", h.Create)
 	r.GET("/category/:id", h.FindOne)
 	r.PATCH("/category/:id", h.Update)
 	r.DELETE("/category/:id", h.Remove)
+}
+
+// Facets handles GET /category/facets — the type enum with item counts, for the
+// frontend filter chips.
+func (h *CategoryHandler) Facets(c *gin.Context) {
+	facets, err := h.svc.TypeFacets(c.Request.Context(), h.facetOrder)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"type": facets}})
 }
 
 func (h *CategoryHandler) Create(c *gin.Context) {

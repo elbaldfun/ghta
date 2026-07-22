@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -33,7 +34,7 @@ func NewEmbedder(cfg *config.Config, log *slog.Logger) Embedder {
 	}
 	switch cfg.AIProvider {
 	case "deepseek":
-		c := openai.DefaultConfig("not-needed")
+		c := openai.DefaultConfig(baseURLKey(cfg))
 		c.BaseURL = cfg.LMStudioBaseURL
 		return &embedProvider{client: openai.NewClientWithConfig(c), model: cfg.EmbedModel, log: log}
 	default:
@@ -73,12 +74,22 @@ func (p *embedProvider) Embed(ctx context.Context, texts []string) ([][]float32,
 func New(cfg *config.Config, log *slog.Logger) Provider {
 	switch cfg.AIProvider {
 	case "deepseek":
-		c := openai.DefaultConfig("not-needed") // local server ignores the key
+		c := openai.DefaultConfig(baseURLKey(cfg))
 		c.BaseURL = cfg.LMStudioBaseURL
 		return &chatProvider{client: openai.NewClientWithConfig(c), model: cfg.LMStudioModel, log: log}
 	default:
 		return &chatProvider{client: openai.NewClient(cfg.OpenAIAPIKey), model: cfg.OpenAIModel, log: log}
 	}
+}
+
+// baseURLKey returns the API key for the OpenAI-compatible base-URL path
+// (LM Studio ignores it; hosted relays like an xAI/Grok proxy require it).
+// Falls back to a placeholder so a keyless local server still works.
+func baseURLKey(cfg *config.Config) string {
+	if cfg.OpenAIAPIKey != "" {
+		return cfg.OpenAIAPIKey
+	}
+	return "not-needed"
 }
 
 type chatProvider struct {
@@ -90,21 +101,27 @@ type chatProvider struct {
 const maxAttempts = 3
 
 // AnalyzeJSON requests a JSON object response, removing the need to scrape prose
-// or code fences from the reply.
+// or code fences from the reply. Servers that reject response_format=json_object
+// (LM Studio only accepts 'json_schema' or 'text') get a retry without the
+// format constraint — the callers already parse defensively.
 func (p *chatProvider) AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
 	var lastErr error
+	useJSONFormat := true
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		resp, err := p.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+		req := openai.ChatCompletionRequest{
 			Model:       p.model,
 			Temperature: 0.2,
-			ResponseFormat: &openai.ChatCompletionResponseFormat{
-				Type: openai.ChatCompletionResponseFormatTypeJSONObject,
-			},
 			Messages: []openai.ChatCompletionMessage{
 				{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 				{Role: openai.ChatMessageRoleUser, Content: userPrompt},
 			},
-		})
+		}
+		if useJSONFormat {
+			req.ResponseFormat = &openai.ChatCompletionResponseFormat{
+				Type: openai.ChatCompletionResponseFormatTypeJSONObject,
+			}
+		}
+		resp, err := p.client.CreateChatCompletion(ctx, req)
 		if err == nil {
 			if len(resp.Choices) == 0 {
 				return "", fmt.Errorf("ai returned no choices")
@@ -112,6 +129,14 @@ func (p *chatProvider) AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt
 			return resp.Choices[0].Message.Content, nil
 		}
 		lastErr = err
+		if useJSONFormat && strings.Contains(err.Error(), "response_format") {
+			// Capability probe, not a real failure: drop the constraint and
+			// retry immediately without consuming backoff time.
+			p.log.Info("server rejects response_format=json_object, retrying without it")
+			useJSONFormat = false
+			attempt--
+			continue
+		}
 		p.log.Warn("ai attempt failed", "attempt", attempt, "err", err)
 		if attempt < maxAttempts {
 			select {

@@ -77,12 +77,16 @@ func main() {
 		slog.Error("topic map load failed", "err", err)
 		os.Exit(1)
 	}
-	slog.Info("taxonomy synced", "categories", len(taxNodes), "topicRules", len(rules.Topics))
+	facets, err := taxonomy.LoadFacets("taxonomy/facets.yaml")
+	if err != nil {
+		slog.Error("facets load failed", "err", err)
+		os.Exit(1)
+	}
+	slog.Info("taxonomy synced", "categories", len(taxNodes), "topicRules", len(rules.Topics), "typeFacets", len(facets.Type))
 
-	// AI categorization pipeline: rules -> embedding (optional) -> LLM.
+	// AI categorization pipeline: type facet + domain (rules -> LLM).
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
-	embedClassifier := service.NewEmbedClassifier(provider.NewEmbedder(cfg, logger), cfg.EmbedSimThreshold)
-	categorizer := job.NewCategorizer(store, rules, embedClassifier, aiService, cfg.CategorizeBatchSize, logger)
+	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
@@ -104,7 +108,13 @@ func main() {
 
 	starHistory := service.NewStarHistoryService(store, logger)
 
-	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx, cfg.AdminToken)
+	facetOrder := make([]service.TypeFacet, len(facets.Type))
+	for i, f := range facets.Type {
+		facetOrder[i] = service.TypeFacet{Key: f.Key, Name: f.Name}
+	}
+	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
+
+	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -134,7 +144,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context, adminToken string) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -152,12 +162,15 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	handler.NewStatsHandler(store).Register(r)
 
+	categoryHandler := handler.NewCategoryHandler(service.NewCategoryService(store), facetOrder)
+	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
+
 	// ---- Admin: bearer-token guarded ----
 	// These mutate data, expose user records, or start quota-burning jobs, so
 	// they must not be anonymously reachable on the public internet.
 	admin := r.Group("", handler.RequireAdminToken(adminToken))
 
-	handler.NewCategoryHandler(service.NewCategoryService(store)).Register(admin)
+	categoryHandler.RegisterAdmin(admin)
 	handler.NewUserHandler(service.NewUserService(store)).Register(admin)
 
 	// Internal: manually trigger a fetch. With ?source=&shard= it runs one shard
@@ -181,6 +194,29 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	admin.POST("/internal/categorize", func(c *gin.Context) {
 		go categorizer.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started"})
+	})
+
+	// Internal (change 12 migration): reset done/failed items back to pending so
+	// the categorizer re-classifies them on the new tree. ?limit=N stages the
+	// rollout (default 500; 0 = all). Operator loops reset -> categorize until
+	// drained. Reset only touches analysisStatus/failCount; categoryPath/type
+	// stay until re-categorized, so the site keeps serving during migration.
+	admin.POST("/internal/reset-analysis", func(c *gin.Context) {
+		limit := 500
+		if v := c.Query("limit"); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be >= 0"})
+				return
+			}
+			limit = n
+		}
+		n, err := service.ResetAnalysis(c.Request.Context(), store, limit)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "reset", "count": n})
 	})
 
 	// Internal: warm up the star-history cache for the top-N repos by stars,

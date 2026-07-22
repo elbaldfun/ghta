@@ -19,10 +19,12 @@ import (
 
 const aiSystemPrompt = "You are a technical expert who categorizes items (GitHub repositories, apps, browser extensions) by their content and purpose. Respond with a single JSON object only."
 
-// BatchResult is a resolved categorization for one item.
+// BatchResult is a resolved categorization for one item: one or more domain
+// leaf paths (multi-label), the form type, and generated tags for enrichment.
 type BatchResult struct {
-	CategoryID string
-	Path       string
+	Paths []string
+	Type  string
+	Tags  []string
 }
 
 type AIService struct {
@@ -57,14 +59,18 @@ func (s *AIService) AnalyzeBatch(ctx context.Context, cats []domain.Category, it
 		}
 		if el.IsNewCategory {
 			// The AI never creates categories: file a suggestion for human
-			// review and leave the item unresolved (counts as a failed attempt).
-			s.SuggestCategory(ctx, el.Path, it.ExternalID)
+			// review. Each suggested path counts as a gap signal.
+			for _, p := range el.Paths {
+				s.SuggestCategory(ctx, p, it.ExternalID)
+			}
 			continue
 		}
-		if el.Path == "" && el.CategoryID == "" {
-			continue // unusable element
+		// A result is usable if it has at least a type (resource-class items may
+		// legitimately have no domain path — Q10/资料类领域可空).
+		if len(el.Paths) == 0 && el.Type == "" {
+			continue
 		}
-		results[it.ExternalID] = BatchResult{CategoryID: el.CategoryID, Path: el.Path}
+		results[it.ExternalID] = BatchResult{Paths: el.Paths, Type: el.Type, Tags: el.Tags}
 	}
 	return results, nil
 }
@@ -87,33 +93,39 @@ func (s *AIService) SuggestCategory(ctx context.Context, path, example string) {
 }
 
 type batchElement struct {
-	ID            string `json:"id"`
-	CategoryID    string `json:"categoryId"`
-	Path          string `json:"path"`
-	IsNewCategory bool   `json:"isNewCategory"`
-	SuggestedName string `json:"suggestedName"`
+	ID            string   `json:"id"`
+	Paths         []string `json:"paths"`
+	Type          string   `json:"type"`
+	Tags          []string `json:"tags"`
+	IsNewCategory bool     `json:"isNewCategory"`
+	SuggestedName string   `json:"suggestedName"`
 }
 
 func buildBatchPrompt(cats []domain.Category, items []domain.TrackedItem) string {
 	var b strings.Builder
-	b.WriteString(`Categorize each item below using the existing category tree.
+	b.WriteString(`Classify each repository below. For each, return:
+- paths: 1-3 domain category paths from the existing tree, most relevant first (a repo may span domains).
+- type: its form, one of: cli, app, library, software, tutorial, awesome, interview, skill.
+- tags: 3-6 short lowercase topic tags describing it (for search), especially if it has no topics.
 
 Rules:
-1. Use each item's name, description, language and topics to find the best category.
-2. Reuse an existing category whenever possible.
-3. Only when nothing fits, propose a new category whose path extends the tree.
+1. Use each item's name, description, language and topics. Reuse existing paths only.
+2. Choose the most SPECIFIC leaf path (e.g. "ai/llm", never a bare top-level parent like "ai" or "lang").
+3. Resource repos (awesome list / tutorial / interview prep) may have an empty paths array if no domain fits.
+4. Only when a genuine domain is missing from the tree, set isNewCategory and put the proposed path in paths.
+5. Return exactly one result object for EVERY id listed below — never omit an item.
 
-Existing categories:
+Existing category paths:
 `)
 	b.WriteString(renderCategoryTree(cats))
-	b.WriteString("\nItems (categorize each, echo its id):\n")
+	b.WriteString("\nItems (classify each, echo its id):\n")
 	for _, it := range items {
 		fmt.Fprintf(&b, "- id=%q name=%q lang=%q topics=[%s] desc=%q\n",
 			it.ExternalID, it.Name, it.Language, topicsOf(it), truncate(it.Description, 240))
 	}
 	b.WriteString(`
 Respond with a single JSON object only:
-{"results":[{"id":"<echo item id>","categoryId":"existing-id or empty","path":"existing or new path","isNewCategory":false,"suggestedName":""}]}`)
+{"results":[{"id":"<echo item id>","paths":["path1"],"type":"library","tags":["tag1","tag2"],"isNewCategory":false,"suggestedName":""}]}`)
 	return b.String()
 }
 
@@ -141,9 +153,22 @@ func renderCategoryTree(cats []domain.Category) string {
 	return b.String()
 }
 
-// parseBatchResponse extracts the results array from the model's JSON object,
-// falling back to the outermost braces. Returns a map keyed by item id.
+// parseBatchResponse extracts the results from the model's reply, tolerating
+// the wrapped {"results":[...]} object (with or without prose/fences around it)
+// and a bare top-level [...] array — some models (e.g. grok) return the latter.
+// Returns a map keyed by item id.
 func parseBatchResponse(raw string) (map[string]batchElement, error) {
+	build := func(elems []batchElement) map[string]batchElement {
+		out := make(map[string]batchElement, len(elems))
+		for _, e := range elems {
+			if e.ID != "" {
+				out[e.ID] = e
+			}
+		}
+		return out
+	}
+
+	// Wrapped object: {"results":[...]}
 	type wrap struct {
 		Results []batchElement `json:"results"`
 	}
@@ -153,18 +178,32 @@ func parseBatchResponse(raw string) (map[string]batchElement, error) {
 		}
 		var w wrap
 		if err := json.Unmarshal([]byte(candidate), &w); err == nil && len(w.Results) > 0 {
-			out := make(map[string]batchElement, len(w.Results))
-			for _, e := range w.Results {
-				if e.ID != "" {
-					out[e.ID] = e
-				}
-			}
-			if len(out) > 0 {
+			if out := build(w.Results); len(out) > 0 {
 				return out, nil
 			}
 		}
 	}
+
+	// Bare array: [{...},{...}]
+	if arr := extractBrackets(raw); arr != "" {
+		var elems []batchElement
+		if err := json.Unmarshal([]byte(arr), &elems); err == nil {
+			if out := build(elems); len(out) > 0 {
+				return out, nil
+			}
+		}
+	}
+
 	return nil, errors.New("failed to parse AI batch response")
+}
+
+func extractBrackets(s string) string {
+	i := strings.IndexByte(s, '[')
+	j := strings.LastIndexByte(s, ']')
+	if i < 0 || j <= i {
+		return ""
+	}
+	return s[i : j+1]
 }
 
 func extractBraces(s string) string {

@@ -95,6 +95,8 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "language", Value: 1}}},
 		{Keys: bson.D{{Key: "fetchedAt", Value: -1}}},
 		{Keys: bson.D{{Key: "categoryId", Value: 1}}},
+		{Keys: bson.D{{Key: "categoryPath", Value: 1}}},
+		{Keys: bson.D{{Key: "type", Value: 1}}},
 		{Keys: bson.D{{Key: "analysisStatus", Value: 1}}},
 		{Keys: bson.D{{Key: "weeklyIncrease", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.stars", Value: -1}}},

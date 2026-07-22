@@ -1,101 +1,117 @@
-# GHTA 分类树 —— 唯一事实源（初稿，待人工审定）
-# 修改本文件并提交 git 是新增/调整分类的唯一途径；AI 只能提建议。
-# desc 同时是 embedding 相似度层的比对语料，请写清该分类覆盖什么。
+# GHTA 领域分类树 v2 —— 唯一事实源（change 12 定稿，待人审）
+# ─────────────────────────────────────────────────────────────
+# 相对 v1 的结构改动（见 change 12 + golden 裁决）：
+#   · 删 learning 大类 → 下放为 type facet（facets.yaml）
+#   · 删 lang/stdlib-utils → 改名 lang/utils（通用工具库，含序列化/RPC/GUI 工具包 Q16/Q14）
+#   · 新增 ai/media-gen（图像/视频生成，从 cv 分离）
+#   · 新增 data/analytics；data/cache 并入 data/database
+#   · 新增 devtools/ai-coding（AI 编程助手/agent 工具/skill 宿主）
+#   · web/frontend-framework→web/frontend，web/backend-framework→web/backend，data/data-pipeline→data/pipeline
+# desc 是 LLM 分类 prompt 里的分类语境说明（embedding 层已停用，desc 不再作相似度语料）。
+# 边界裁决已写进对应 desc：Q11 web server→networking，Q12 testing 含压测+浏览器自动化，
+#   Q16 序列化/RPC→lang/utils，Q30 data-science 不含可视化。
 
 - path: ai
   name: 人工智能
+  nameEn: AI
   desc: 机器学习、深度学习、大模型及其应用
   children:
-    - { path: ai/llm, name: 大语言模型, desc: LLM 的训练、推理、部署框架，提示工程与模型应用 }
-    - { path: ai/agents, name: AI 智能体, desc: 自主智能体、多智能体框架、工具调用与编排 }
-    - { path: ai/ml-framework, name: 机器学习框架, desc: 通用机器学习与深度学习训练框架和库 }
-    - { path: ai/cv, name: 计算机视觉, desc: 图像识别、目标检测、图像生成与视频理解 }
-    - { path: ai/speech-audio, name: 语音与音频, desc: 语音识别、语音合成、音频处理与音乐生成 }
-    - { path: ai/data-science, name: 数据科学, desc: 数据分析、可视化、notebook 与统计建模工具 }
+    - { path: ai/llm, name: 大语言模型, nameEn: Large Language Models, desc: LLM 训练/推理/部署框架，提示工程，RAG，以及 LLM 网关、上下文压缩等配套基建  }
+    - { path: ai/agents, name: AI 智能体, nameEn: AI Agents, desc: 自主智能体、多智能体框架、工具调用与编排（不含以写代码为主的编程助手，那归 devtools/ai-coding） }
+    - { path: ai/ml-framework, name: 机器学习框架, nameEn: ML Frameworks, desc: 通用机器学习与深度学习训练框架和库（不含专门做视觉/语音/生成的库） }
+    - { path: ai/cv, name: 计算机视觉, nameEn: Computer Vision, desc: 图像识别、目标检测、OCR、视频理解（不含以生成为目的的模型） }
+    - { path: ai/media-gen, name: 图像视频生成, nameEn: Image & Video Generation, desc: 扩散模型、文生图/图生图、AI 视频与音乐生成及其 GUI  }
+    - { path: ai/speech-audio, name: 语音与音频, nameEn: Speech & Audio, desc: 语音识别、语音合成、音频处理  }
+    - { path: ai/data-science, name: 数据科学, nameEn: Data Science, desc: 数据分析、notebook、统计建模与商业智能工具（数据可视化图表库归 web/frontend） }
 - path: web
   name: Web 开发
+  nameEn: Web Development
   desc: 前端、后端与全栈 Web 开发
   children:
-    - { path: web/frontend-framework, name: 前端框架, desc: React、Vue 等构建用户界面的框架和库 }
-    - { path: web/backend-framework, name: 后端框架, desc: HTTP 服务端框架、API 框架与全栈框架 }
-    - { path: web/css-ui, name: CSS 与 UI 组件, desc: CSS 框架、组件库、图标与设计系统实现 }
-    - { path: web/build-tools, name: 构建工具, desc: 打包器、编译器、转译器与前端工程化工具 }
-    - { path: web/static-site, name: 静态站点与文档, desc: 静态站点生成器、文档站与博客引擎 }
+    - { path: web/frontend, name: 前端框架, nameEn: Frontend, desc: React、Vue 等构建用户界面的框架和库，含数据可视化图表库  }
+    - { path: web/backend, name: 后端框架, nameEn: Backend, desc: HTTP 服务端框架、API 框架、BaaS 与全栈框架  }
+    - { path: web/css-ui, name: CSS 与 UI 组件, nameEn: CSS & UI, desc: CSS 框架、组件库、图标与设计系统实现  }
+    - { path: web/build-tools, name: 构建工具, nameEn: Build Tools, desc: 打包器、编译器、转译器、组件工坊与前端工程化工具  }
+    - { path: web/static-site, name: 静态站点与文档, nameEn: Static Sites & Docs, desc: 静态站点生成器、文档站与博客引擎  }
 - path: devtools
   name: 开发者工具
+  nameEn: Developer Tools
   desc: 提升开发效率的工具链
   children:
-    - { path: devtools/cli, name: 命令行工具, desc: 终端命令行实用工具与 shell 增强 }
-    - { path: devtools/editors, name: 编辑器与 IDE, desc: 代码编辑器、IDE 及其插件生态 }
-    - { path: devtools/vcs, name: 版本控制, desc: Git 工具、代码评审与仓库管理 }
-    - { path: devtools/testing, name: 测试工具, desc: 测试框架、mock、断言与自动化测试 }
-    - { path: devtools/package-manager, name: 包管理与依赖, desc: 包管理器、版本与依赖管理工具 }
+    - { path: devtools/cli, name: 命令行工具, nameEn: CLI Tools, desc: 终端命令行实用工具与 shell 增强  }
+    - { path: devtools/editors, name: 编辑器与 IDE, nameEn: Editors & IDEs, desc: 代码编辑器、IDE、插件生态与 language server  }
+    - { path: devtools/ai-coding, name: AI 编程助手, nameEn: AI Coding Assistants, desc: AI 编程 agent、编码 CLU、代码知识图谱，以及给 AI 编程工具用的 skill/提示词包  }
+    - { path: devtools/vcs, name: 版本控制, nameEn: Version Control, desc: Git 工具、代码评审与仓库托管  }
+    - { path: devtools/testing, name: 测试工具, nameEn: Testing, desc: 测试框架、mock、断言、压测工具与浏览器自动化  }
+    - { path: devtools/package-manager, name: 包管理与依赖, nameEn: Package Managers, desc: 包管理器、版本与依赖管理工具  }
 - path: infra
   name: 基础设施
+  nameEn: Infrastructure
   desc: 部署、运维与云原生
   children:
-    - { path: infra/containers, name: 容器与编排, desc: Docker、Kubernetes 及容器生态 }
-    - { path: infra/ci-cd, name: CI/CD, desc: 持续集成、持续交付与自动化流水线 }
-    - { path: infra/iac, name: 基础设施即代码, desc: Terraform 等资源编排与配置管理 }
-    - { path: infra/monitoring, name: 监控与可观测, desc: 指标、日志、链路追踪与告警系统 }
-    - { path: infra/networking, name: 网络与代理, desc: 反向代理、负载均衡、隧道与网络工具 }
+    - { path: infra/containers, name: 容器与编排, nameEn: Containers & Orchestration, desc: 容器运行时、Kubernetes、编排与 PaaS 平台  }
+    - { path: infra/ci-cd, name: CI/CD, nameEn: CI/CD, desc: 持续集成、持续交付与自动化流水线  }
+    - { path: infra/iac, name: 基础设施即代码, nameEn: Infrastructure as Code, desc: Terraform 等资源编排与配置管理  }
+    - { path: infra/monitoring, name: 监控与可观测, nameEn: Monitoring & Observability, desc: 指标、日志、链路追踪、告警与可观测平台  }
+    - { path: infra/networking, name: 网络与代理, nameEn: Networking & Proxies, desc: 反向代理、Web 服务器、负载均衡、隧道、VPN 与网络工具  }
 - path: data
   name: 数据系统
+  nameEn: Data Systems
   desc: 数据的存储、处理与传输
   children:
-    - { path: data/database, name: 数据库, desc: 关系型、NoSQL、时序、图数据库与嵌入式存储 }
-    - { path: data/data-pipeline, name: 数据管道, desc: ETL、流处理、消息队列与数据编排 }
-    - { path: data/search, name: 搜索引擎, desc: 全文检索、向量检索与搜索基础设施 }
-    - { path: data/cache, name: 缓存, desc: 内存缓存与缓存中间件 }
+    - { path: data/database, name: 数据库, nameEn: Databases, desc: 关系型、NoSQL、时序、图数据库、缓存与嵌入式存储  }
+    - { path: data/pipeline, name: 数据管道, nameEn: Data Pipelines, desc: ETL、流处理、消息队列与数据编排  }
+    - { path: data/search, name: 搜索引擎, nameEn: Search Engines, desc: 全文检索、向量检索与搜索基础设施  }
+    - { path: data/analytics, name: 分析引擎, nameEn: Analytics Engines, desc: OLAP、实时分析与数据分析引擎  }
 - path: lang
-  name: 编程语言
+  name: 语言基础设施
+  nameEn: Language Infrastructure
   desc: 语言实现、运行时与语言核心生态
   children:
-    - { path: lang/implementations, name: 语言实现, desc: 编译器、解释器、运行时与语言本体 }
-    - { path: lang/stdlib-utils, name: 语言工具库, desc: 某语言的通用工具库、标准库增强与算法实现 }
+    - { path: lang/implementations, name: 语言实现, nameEn: Language Implementations, desc: 编译器、解释器、运行时与语言本体  }
+    - { path: lang/utils, name: 通用工具库, nameEn: General Utilities, desc: 无明确领域归属的通用工具库、算法实现、序列化/RPC 与原生 GUI 工具包  }
 - path: mobile
   name: 移动开发
+  nameEn: Mobile
   desc: 移动端应用与跨端开发
   children:
-    - { path: mobile/cross-platform, name: 跨平台框架, desc: Flutter、React Native 等跨端方案 }
-    - { path: mobile/native, name: 原生开发, desc: iOS、Android 原生开发库与工具 }
+    - { path: mobile/cross-platform, name: 跨平台框架, nameEn: Cross-Platform, desc: Flutter、React Native 等跨端方案  }
+    - { path: mobile/native, name: 原生开发, nameEn: Native, desc: iOS、Android 原生开发库与工具  }
 - path: security
   name: 安全
+  nameEn: Security
   desc: 安全工具与实践
   children:
-    - { path: security/pentest, name: 渗透测试, desc: 授权安全测试、漏洞研究与 CTF 工具 }
-    - { path: security/crypto-auth, name: 加密与认证, desc: 加密库、身份认证、密钥与访问控制 }
+    - { path: security/pentest, name: 渗透测试, nameEn: Penetration Testing, desc: 授权安全测试、漏洞研究、逆向工程与 CTF 工具  }
+    - { path: security/crypto-auth, name: 加密与认证, nameEn: Cryptography & Auth, desc: 加密库、身份认证、密钥与访问控制  }
 - path: systems
   name: 系统软件
+  nameEn: Systems Software
   desc: 操作系统与底层软件
   children:
-    - { path: systems/os, name: 操作系统, desc: 内核、发行版与操作系统组件 }
-    - { path: systems/emulation, name: 虚拟化与模拟, desc: 虚拟机、模拟器与兼容层 }
-    - { path: systems/embedded, name: 嵌入式与物联网, desc: 单片机、固件、IoT 平台与硬件编程 }
+    - { path: systems/os, name: 操作系统, nameEn: Operating Systems, desc: 内核、发行版、启动/引导与操作系统组件  }
+    - { path: systems/emulation, name: 虚拟化与模拟, nameEn: Virtualization & Emulation, desc: 虚拟机、模拟器与兼容层  }
+    - { path: systems/embedded, name: 嵌入式与物联网, nameEn: Embedded & IoT, desc: 单片机、固件、IoT 平台与硬件编程  }
 - path: apps
   name: 应用软件
+  nameEn: Applications
   desc: 面向最终用户的软件
   children:
-    - { path: apps/productivity, name: 效率工具, desc: 笔记、任务管理、自动化与个人效率应用 }
-    - { path: apps/media, name: 多媒体, desc: 音视频播放、下载、编辑与媒体服务器 }
-    - { path: apps/selfhosted, name: 自托管服务, desc: 可自建部署的网盘、聊天、家庭服务器等服务 }
-    - { path: apps/browser-ext, name: 浏览器扩展, desc: 浏览器插件与用户脚本 }
+    - { path: apps/productivity, name: 效率工具, nameEn: Productivity, desc: 笔记、任务管理、白板、个人效率与远程桌面/文件同步等个人网络工具  }
+    - { path: apps/media, name: 多媒体, nameEn: Media, desc: 音视频播放、下载、编辑与媒体服务器  }
+    - { path: apps/selfhosted, name: 自托管服务, nameEn: Self-Hosted, desc: 可自建部署的网盘、聊天、家庭服务器等服务  }
+    - { path: apps/browser-ext, name: 浏览器扩展, nameEn: Browser Extensions, desc: 浏览器插件与用户脚本  }
 - path: gamedev
   name: 游戏开发
+  nameEn: Game Development
   desc: 游戏引擎、游戏与相关工具
   children:
-    - { path: gamedev/engines, name: 游戏引擎, desc: 游戏引擎、渲染引擎与游戏框架 }
-    - { path: gamedev/games, name: 游戏, desc: 开源游戏与游戏复刻 }
+    - { path: gamedev/engines, name: 游戏引擎, nameEn: Game Engines, desc: 游戏引擎、渲染引擎、游戏框架与图形工具包  }
+    - { path: gamedev/games, name: 游戏, nameEn: Games, desc: 开源游戏、游戏复刻与游戏平台  }
 - path: blockchain
   name: 区块链
+  nameEn: Blockchain
   desc: 区块链协议、合约与加密生态
   children:
-    - { path: blockchain/protocols, name: 协议与节点, desc: 区块链协议实现、节点与共识 }
-    - { path: blockchain/contracts, name: 智能合约, desc: 合约语言、开发框架与合约安全 }
-- path: learning
-  name: 学习资源
-  desc: 教程、书籍、面试与知识整理类仓库
-  children:
-    - { path: learning/tutorials, name: 教程与课程, desc: 系统性教程、课程、路线图与练习项目 }
-    - { path: learning/awesome-lists, name: 资源清单, desc: awesome 系列与主题资源汇总列表 }
-    - { path: learning/interview, name: 面试准备, desc: 面试题库、算法题解与求职资料 }
+    - { path: blockchain/protocols, name: 协议与节点, nameEn: Protocols & Nodes, desc: 区块链协议实现、节点、共识与交易所 API  }
+    - { path: blockchain/contracts, name: 智能合约, nameEn: Smart Contracts, desc: 合约语言、开发框架与合约安全  }

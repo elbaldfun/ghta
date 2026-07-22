@@ -39,6 +39,7 @@ type Config struct {
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
 
 	CategorizeBatchSize int // items per AI categorization call
+	DomainMaxLabels     int // max domain leaf paths per item (multi-label cap)
 
 	// Embedding classification layer (skipped when EmbedModel is empty or the
 	// provider has no credentials).
@@ -88,6 +89,13 @@ func Load() (*Config, error) {
 		errs = append(errs, "CATEGORIZE_BATCH_SIZE must be a positive number")
 	}
 	cfg.CategorizeBatchSize = batch
+
+	// DOMAIN_MAX_LABELS
+	maxLabels, err := strconv.Atoi(getEnv("DOMAIN_MAX_LABELS", "3"))
+	if err != nil || maxLabels < 1 {
+		errs = append(errs, "DOMAIN_MAX_LABELS must be a positive number")
+	}
+	cfg.DomainMaxLabels = maxLabels
 
 	// Embedding layer
 	cfg.EmbedModel = getEnv("EMBED_MODEL", "text-embedding-3-small")

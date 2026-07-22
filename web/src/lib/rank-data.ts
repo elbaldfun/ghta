@@ -1,75 +1,7 @@
-// Static data for the 2a ranking UI: taxonomy → GitHub search mapping,
-// canonical language colors, and package-registry heuristics.
-// Labels live in the i18n messages (rank.cats / rank.subs).
+// Static presentation data for the ranking UI: language colors, license
+// names, sort options, and package-registry heuristics. The category taxonomy
+// now comes from the backend GET /category tree (see lib/data.ts).
 
-export interface TaxonomyNode {
-  id: string;
-  /** Topic tags a repo must carry (matched against sourceData.topicNames). */
-  topics: string[];
-  subs?: TaxonomyNode[];
-}
-
-export const TAXONOMY: TaxonomyNode[] = [
-  {
-    id: 'frontend',
-    topics: ['frontend'],
-    subs: [
-      { id: 'fe-framework', topics: ['frontend', 'framework'] },
-      { id: 'fe-ui', topics: ['ui', 'components'] },
-      { id: 'fe-css', topics: ['css-framework'] },
-    ],
-  },
-  {
-    id: 'backend',
-    topics: ['backend'],
-    subs: [
-      { id: 'be-web', topics: ['web-framework'] },
-      { id: 'be-db', topics: ['database'] },
-      { id: 'be-async', topics: ['async', 'runtime'] },
-    ],
-  },
-  {
-    id: 'ai',
-    topics: ['machine-learning'],
-    subs: [
-      { id: 'ai-dl', topics: ['deep-learning'] },
-      { id: 'ai-nlp', topics: ['nlp'] },
-      { id: 'ai-cv', topics: ['computer-vision'] },
-    ],
-  },
-  {
-    id: 'infra',
-    topics: ['devops'],
-    subs: [
-      { id: 'infra-orch', topics: ['kubernetes'] },
-      { id: 'infra-rt', topics: ['container', 'runtime'] },
-      { id: 'infra-os', topics: ['operating-system'] },
-    ],
-  },
-  {
-    id: 'tools',
-    topics: ['developer-tools'],
-    subs: [
-      { id: 'tools-editor', topics: ['editor'] },
-      { id: 'tools-ssg', topics: ['static-site-generator'] },
-    ],
-  },
-  {
-    id: 'lang',
-    topics: ['programming-language'],
-    subs: [{ id: 'lang-compiler', topics: ['compiler'] }],
-  },
-];
-
-export function taxonomyTopics(cat?: string | null, sub?: string | null): string[] {
-  const group = TAXONOMY.find((g) => g.id === cat);
-  if (!group) return [];
-  if (sub) {
-    const node = group.subs?.find((s) => s.id === sub);
-    if (node) return node.topics;
-  }
-  return group.topics;
-}
 
 /** Canonical GitHub language colors (subset + fallback). */
 export const LANG_COLORS: Record<string, string> = {

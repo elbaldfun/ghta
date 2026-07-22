@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { FILTER_LANGS, FILTER_LICENSES, SORT_OPTIONS } from '@/lib/rank-data';
+import type { TypeFacet } from '@/lib/data';
 
 const selectClass =
   'cursor-pointer appearance-none rounded-lg border border-border bg-surface py-1.5 pl-[11px] pr-[30px] text-xs font-semibold text-fg outline-none ' +
@@ -34,11 +35,12 @@ function LabeledSelect({
   );
 }
 
-/** Fine-grained language / license / sort selects above the grid. */
-export function FilterBar() {
+/** Form-type chips + fine-grained language / license / sort selects. */
+export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
   const t = useTranslations('rank');
   const router = useRouter();
   const params = useSearchParams();
+  const activeType = params.get('type');
 
   function setParam(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -58,6 +60,28 @@ export function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-3.5">
+      {types.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {types
+            .filter((ty) => ty.count > 0)
+            .map((ty) => {
+              const on = activeType === ty.key;
+              return (
+                <button
+                  key={ty.key}
+                  onClick={() => setParam('type', on ? 'all' : ty.key)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                    on
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-border text-muted hover:bg-surface2/60'
+                  }`}
+                >
+                  {ty.name}
+                </button>
+              );
+            })}
+        </div>
+      )}
       <LabeledSelect
         label={t('filterFine')}
         value={params.get('lang') ?? 'all'}

@@ -38,7 +38,7 @@ func (s *Store) UpsertItems(ctx context.Context, items []domain.TrackedItem) (in
 		}
 		setOnInsert := bson.M{
 			"categoryId":        []string{},
-			"categoryPath":      "",
+			"categoryPath":      []string{},
 			"analysisStatus":    domain.AnalysisPending,
 			"analysisFailCount": 0,
 			"createdAt":         now,

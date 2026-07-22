@@ -46,13 +46,35 @@ type TrendQuery struct {
 	Stars    string
 	Issues   string
 	Language string
-	Category string   // categoryId
+	Category string   // categoryId (hex) or a category path (contains "/")
+	Type     string   // form facet: cli|app|library|software|tutorial|awesome|interview|skill
 	Q        string   // case-insensitive match on externalId/name/description
 	Topics   []string // every topic must be present in sourceData.topicNames
 	License  string   // exact sourceData.license
 	Sort     string   // "field:order"
 	Limit    int
 	Page     int // 1-based; combined with Limit for offset pagination
+}
+
+var hex24 = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+
+// categoryFilter matches a category argument three ways:
+//   - a 24-char hex id      -> categoryId membership
+//   - a leaf path "a/b"     -> exact categoryPath membership
+//   - a bare parent "a"     -> any leaf under it (categoryPath prefix "a/")
+//
+// categoryId/categoryPath are arrays (multi-label), so equality matches membership.
+func categoryFilter(filter bson.M, category string) {
+	switch {
+	case category == "":
+		return
+	case hex24.MatchString(category):
+		filter["categoryId"] = category
+	case strings.Contains(category, "/"):
+		filter["categoryPath"] = category
+	default:
+		filter["categoryPath"] = bson.M{"$regex": "^" + regexp.QuoteMeta(category) + "/"}
+	}
 }
 
 type TrendService struct {
@@ -75,8 +97,9 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 	if q.Language != "" {
 		filter["language"] = q.Language
 	}
-	if q.Category != "" {
-		filter["categoryId"] = q.Category
+	categoryFilter(filter, q.Category)
+	if q.Type != "" {
+		filter["type"] = q.Type
 	}
 	if q.License != "" {
 		filter["sourceData.license"] = q.License
@@ -242,6 +265,7 @@ type RisingQuery struct {
 	Window   string // daily | weekly | monthly (default weekly)
 	Source   string
 	Category string
+	Type     string
 	Language string
 	Limit    int
 }
@@ -265,8 +289,9 @@ func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.Trac
 	if q.Language != "" {
 		filter["language"] = q.Language
 	}
-	if q.Category != "" {
-		filter["categoryId"] = q.Category
+	categoryFilter(filter, q.Category)
+	if q.Type != "" {
+		filter["type"] = q.Type
 	}
 
 	limit := q.Limit
