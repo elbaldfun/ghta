@@ -49,6 +49,10 @@ services:
       CATEGORIZE_BATCH_SIZE: ${CATEGORIZE_BATCH_SIZE:-15}
       DOMAIN_MAX_LABELS: ${DOMAIN_MAX_LABELS:-3}
       EMBED_MODEL: ${EMBED_MODEL:-}
+    # The grok relay's DNS resolves to a CN CDN edge that 504s from this US
+    # droplet; pin it to a working origin IP (override via LLM_RELAY_HOST_PIN).
+    extra_hosts:
+      - ${LLM_RELAY_HOST_PIN:-dragoncode.codes:192.238.249.146}
     # No `ports:` — traffic arrives through Caddy.
     mem_limit: 640m
 
