@@ -86,7 +86,7 @@ func main() {
 
 	// AI categorization pipeline: type facet + domain (rules -> LLM).
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
-	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, logger)
+	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
@@ -190,10 +190,19 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		c.JSON(http.StatusAccepted, gin.H{"status": "fetch started"})
 	})
 
-	// Internal: manually trigger a categorization pass (background).
+	// Internal: manually trigger a categorization pass (background). ?concurrency=N
+	// retunes LLM parallelism live (persists for later runs too).
 	admin.POST("/internal/categorize", func(c *gin.Context) {
+		if v := c.Query("concurrency"); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 1 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "concurrency must be a positive number"})
+				return
+			}
+			categorizer.SetConcurrency(n)
+		}
 		go categorizer.Run(jobCtx)
-		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started"})
+		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started", "concurrency": categorizer.Concurrency()})
 	})
 
 	// Internal (change 12 migration): reset done/failed items back to pending so

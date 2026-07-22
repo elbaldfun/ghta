@@ -41,6 +41,7 @@ type Config struct {
 
 	CategorizeBatchSize int // items per AI categorization call
 	DomainMaxLabels     int // max domain leaf paths per item (multi-label cap)
+	LLMConcurrency      int // LLM batches processed in parallel
 
 	// Embedding classification layer (skipped when EmbedModel is empty or the
 	// provider has no credentials).
@@ -98,6 +99,13 @@ func Load() (*Config, error) {
 		errs = append(errs, "DOMAIN_MAX_LABELS must be a positive number")
 	}
 	cfg.DomainMaxLabels = maxLabels
+
+	// LLM_CONCURRENCY
+	conc, err := strconv.Atoi(getEnv("LLM_CONCURRENCY", "1"))
+	if err != nil || conc < 1 {
+		errs = append(errs, "LLM_CONCURRENCY must be a positive number")
+	}
+	cfg.LLMConcurrency = conc
 
 	// Embedding layer
 	cfg.EmbedModel = getEnv("EMBED_MODEL", "text-embedding-3-small")

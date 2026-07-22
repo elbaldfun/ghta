@@ -50,7 +50,7 @@ func testFacets(t *testing.T) *taxonomy.Facets {
 }
 
 func newTestCategorizer(t *testing.T, store *repository.Store, ai *service.AIService) *Categorizer {
-	return NewCategorizer(store, testRules, testFacets(t), ai, 15, 3, slog.Default())
+	return NewCategorizer(store, testRules, testFacets(t), ai, 15, 3, 2, slog.Default())
 }
 
 func jobTestStore(t *testing.T) *repository.Store {

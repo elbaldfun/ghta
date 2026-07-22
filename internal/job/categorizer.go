@@ -3,6 +3,8 @@ package job
 import (
 	"context"
 	"log/slog"
+	"sync"
+	"sync/atomic"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,24 +28,43 @@ const (
 // (2) LLM batch for the long tail (the embedding tier was dropped — see
 // change 12 eval-baseline: it resolved at ~31% accuracy, below the LLM).
 type Categorizer struct {
-	store     *repository.Store
-	rules     *taxonomy.Rules
-	facets    *taxonomy.Facets
-	ai        *service.AIService
-	batchSize int
-	maxLabels int
-	log       *slog.Logger
+	store       *repository.Store
+	rules       *taxonomy.Rules
+	facets      *taxonomy.Facets
+	ai          *service.AIService
+	batchSize   int
+	maxLabels   int
+	concurrency atomic.Int64 // LLM batches in flight; retunable at runtime
+	log         *slog.Logger
 }
 
-func NewCategorizer(store *repository.Store, rules *taxonomy.Rules, facets *taxonomy.Facets, ai *service.AIService, batchSize, maxLabels int, log *slog.Logger) *Categorizer {
+func NewCategorizer(store *repository.Store, rules *taxonomy.Rules, facets *taxonomy.Facets, ai *service.AIService, batchSize, maxLabels, concurrency int, log *slog.Logger) *Categorizer {
 	if batchSize < 1 {
 		batchSize = 15
 	}
 	if maxLabels < 1 {
 		maxLabels = defaultMaxLabels
 	}
-	return &Categorizer{store: store, rules: rules, facets: facets, ai: ai, batchSize: batchSize, maxLabels: maxLabels, log: log}
+	c := &Categorizer{store: store, rules: rules, facets: facets, ai: ai, batchSize: batchSize, maxLabels: maxLabels, log: log}
+	c.SetConcurrency(concurrency)
+	return c
 }
+
+// SetConcurrency retunes how many LLM batches run in parallel (clamped 1..32).
+// Takes effect on the next Run — safe to call while a run is in flight.
+func (c *Categorizer) SetConcurrency(n int) int {
+	if n < 1 {
+		n = 1
+	}
+	if n > 32 {
+		n = 32
+	}
+	c.concurrency.Store(int64(n))
+	return n
+}
+
+// Concurrency reports the current LLM parallelism.
+func (c *Categorizer) Concurrency() int { return int(c.concurrency.Load()) }
 
 // pending pairs an item with its deterministically-derived form type, carried
 // into the LLM tier so a resource-class item that comes up empty on domain is
@@ -124,11 +145,22 @@ func (c *Categorizer) resolveIDs(paths []string, idByPath map[string]string) res
 	return out
 }
 
+// runLLMTier processes the long tail in batches, up to `concurrency` batches in
+// flight at once (each is an independent grok call + independent mongo writes).
+// Concurrency is read live from the atomic so an admin call can retune it
+// mid-migration without a restart.
 func (c *Categorizer) runLLMTier(ctx context.Context, cats []domain.Category, idByPath map[string]string, items []pending) int {
-	done := 0
+	conc := int(c.concurrency.Load())
+	if conc < 1 {
+		conc = 1
+	}
+
+	var done atomic.Int64
+	sem := make(chan struct{}, conc)
+	var wg sync.WaitGroup
 	for start := 0; start < len(items); start += c.batchSize {
 		if ctx.Err() != nil {
-			return done
+			break
 		}
 		end := start + c.batchSize
 		if end > len(items) {
@@ -136,43 +168,56 @@ func (c *Categorizer) runLLMTier(ctx context.Context, cats []domain.Category, id
 		}
 		batch := items[start:end]
 
-		trackedBatch := make([]domain.TrackedItem, len(batch))
-		for i, p := range batch {
-			trackedBatch[i] = p.item
+		wg.Add(1)
+		sem <- struct{}{} // block once `conc` batches are in flight
+		go func(batch []pending) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			c.processBatch(ctx, cats, idByPath, batch, &done)
+		}(batch)
+	}
+	wg.Wait()
+	return int(done.Load())
+}
+
+// processBatch classifies one batch and writes results. Safe to run concurrently:
+// each item is a distinct mongo doc, and done is an atomic.
+func (c *Categorizer) processBatch(ctx context.Context, cats []domain.Category, idByPath map[string]string, batch []pending, done *atomic.Int64) {
+	trackedBatch := make([]domain.TrackedItem, len(batch))
+	for i, p := range batch {
+		trackedBatch[i] = p.item
+	}
+	results, err := c.ai.AnalyzeBatch(ctx, cats, trackedBatch)
+	if err != nil {
+		c.log.Warn("categorize batch failed", "err", err, "size", len(batch))
+		for _, p := range batch {
+			c.failOrTypeOnly(ctx, p)
 		}
-		results, err := c.ai.AnalyzeBatch(ctx, cats, trackedBatch)
-		if err != nil {
-			c.log.Warn("categorize batch failed", "err", err, "size", len(batch))
-			for _, p := range batch {
-				c.failOrTypeOnly(ctx, p)
-			}
+		return
+	}
+	for _, p := range batch {
+		r, ok := results[p.item.ExternalID]
+		if !ok {
+			c.failOrTypeOnly(ctx, p) // omitted by the model
 			continue
 		}
-		for _, p := range batch {
-			r, ok := results[p.item.ExternalID]
-			if !ok {
-				c.failOrTypeOnly(ctx, p) // omitted by the model
-				continue
-			}
-			ids := c.resolveIDs(r.Paths, idByPath)
-			ftype := r.Type // LLM's type is preferred for the software sub-form
-			if ftype == "" {
-				ftype = p.ftype
-			}
-			// Resource-class items may legitimately have no domain; that is a
-			// success (marked done with type), not a failure.
-			if len(ids.paths) == 0 && !isResourceType(ftype) {
-				c.failOrTypeOnly(ctx, p)
-				continue
-			}
-			if err := c.markDone(ctx, p.item.ID, ids.ids, ids.paths, ftype, r.Tags, "llm"); err != nil {
-				c.log.Error("categorize update failed", "item", p.item.ExternalID, "err", err)
-				continue
-			}
-			done++
+		ids := c.resolveIDs(r.Paths, idByPath)
+		ftype := r.Type // LLM's type is preferred for the software sub-form
+		if ftype == "" {
+			ftype = p.ftype
 		}
+		// Resource-class items may legitimately have no domain; that is a
+		// success (marked done with type), not a failure.
+		if len(ids.paths) == 0 && !isResourceType(ftype) {
+			c.failOrTypeOnly(ctx, p)
+			continue
+		}
+		if err := c.markDone(ctx, p.item.ID, ids.ids, ids.paths, ftype, r.Tags, "llm"); err != nil {
+			c.log.Error("categorize update failed", "item", p.item.ExternalID, "err", err)
+			continue
+		}
+		done.Add(1)
 	}
-	return done
 }
 
 // failOrTypeOnly resolves an item the LLM could not place. Resource-class items
