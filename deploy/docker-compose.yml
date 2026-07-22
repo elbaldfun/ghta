@@ -42,6 +42,13 @@ services:
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
       AI_PROVIDER: ${AI_PROVIDER:-openai}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # LLM backend (change 12: grok relay) + classification tuning.
+      LMSTUDIO_BASE_URL: ${LMSTUDIO_BASE_URL:-}
+      LMSTUDIO_LOCAL_MODULE_NAME: ${LMSTUDIO_LOCAL_MODULE_NAME:-}
+      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
+      CATEGORIZE_BATCH_SIZE: ${CATEGORIZE_BATCH_SIZE:-15}
+      DOMAIN_MAX_LABELS: ${DOMAIN_MAX_LABELS:-3}
+      EMBED_MODEL: ${EMBED_MODEL:-}
     # No `ports:` — traffic arrives through Caddy.
     mem_limit: 640m
 
