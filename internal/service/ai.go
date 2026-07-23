@@ -114,6 +114,10 @@ Rules:
 3. Resource repos (awesome list / tutorial / interview prep) may have an empty paths array if no domain fits.
 4. Only when a genuine domain is missing from the tree, set isNewCategory and put the proposed path in paths.
 5. Return exactly one result object for EVERY id listed below — never omit an item.
+6. type "skill" is NARROW: ONLY a packaged skill / prompt-pack / agent instruction-set meant to be
+   installed into an AI coding assistant (Claude Code, Cursor, Codex, Gemini CLI, etc.). It is NOT:
+   Alexa/voice "skills", "skill tree" projects, career/coding skill guides, coding standards, or any
+   runnable app/platform/library. When unsure, prefer software/library/app/tutorial over skill.
 
 Existing category paths:
 `)
