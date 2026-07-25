@@ -65,7 +65,14 @@
       "tools-editor": "编辑器",
       "tools-ssg": "静态站点",
       "lang-compiler": "编译器"
-    }
+    },
+    "navDevelopers": "开发者",
+    "devTitle": "值得关注的开发者",
+    "devSubtitle": "按 AI 领域实绩排名，不看粉丝数",
+    "boardRising": "势头榜",
+    "boardMerit": "实力榜",
+    "devRepos": "个项目",
+    "devPerDay": "★/日"
   },
   "consent": {
     "title": "Cookie 使用说明",

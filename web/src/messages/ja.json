@@ -65,7 +65,14 @@
       "tools-editor": "エディタ",
       "tools-ssg": "静的サイト",
       "lang-compiler": "コンパイラ"
-    }
+    },
+    "navDevelopers": "開発者",
+    "devTitle": "注目の開発者",
+    "devSubtitle": "フォロワー数ではなく AI 分野の実績で順位付け",
+    "boardRising": "急上昇",
+    "boardMerit": "実力",
+    "devRepos": "リポジトリ",
+    "devPerDay": "★/日"
   },
   "consent": {
     "title": "Cookie について",

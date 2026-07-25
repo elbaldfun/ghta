@@ -65,7 +65,14 @@
       "tools-editor": "에디터",
       "tools-ssg": "정적 사이트",
       "lang-compiler": "컴파일러"
-    }
+    },
+    "navDevelopers": "개발자",
+    "devTitle": "주목할 개발자",
+    "devSubtitle": "팔로워 수가 아닌 AI 분야 실적으로 순위",
+    "boardRising": "급상승",
+    "boardMerit": "실력",
+    "devRepos": "저장소",
+    "devPerDay": "★/일"
   },
   "consent": {
     "title": "쿠키 안내",

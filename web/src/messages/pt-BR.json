@@ -65,7 +65,14 @@
       "tools-editor": "Editores",
       "tools-ssg": "Sites estáticos",
       "lang-compiler": "Compiladores"
-    }
+    },
+    "navDevelopers": "Desenvolvedores",
+    "devTitle": "Desenvolvedores para seguir",
+    "devSubtitle": "Classificados pelo que constroem em IA, não por seguidores",
+    "boardRising": "Em alta",
+    "boardMerit": "Destaques",
+    "devRepos": "repos",
+    "devPerDay": "★/dia"
   },
   "consent": {
     "title": "Aviso de cookies",

@@ -124,6 +124,43 @@ export async function getHot(since: HotWindow, limit = 12): Promise<HotRepo[]> {
   });
 }
 
+export interface RankedDeveloper {
+  login: string;
+  name?: string;
+  twitterUsername?: string;
+  followers: number;
+  company?: string;
+  avatarUrl?: string;
+  bio?: string;
+  repoCount: number;
+  totalStars: number;
+  topRepo?: string; // "owner/name" of their biggest repo
+  topRepoStars: number;
+  growth: number; // recent star gain (rising board)
+  score: number;
+}
+
+export type DeveloperBoard = 'rising' | 'merit';
+
+/**
+ * "Developers to follow" ranking. board 'rising' = recent growth of owned repos
+ * (dynamic, default); 'merit' = log-summed stars across owned repos. domain
+ * scopes to a classification subtree (default 'ai'). Organizations are excluded
+ * server-side. Returns an empty list on error so the page degrades gracefully.
+ */
+export async function getDevelopers(
+  board: DeveloperBoard,
+  domain: string,
+  limit = 30,
+): Promise<{ items: RankedDeveloper[]; total: number }> {
+  const res = await apiGet<{ data: RankedDeveloper[]; total: number }>(
+    `/developers?board=${board}&domain=${encodeURIComponent(domain)}&limit=${limit}`,
+    3600,
+  );
+  if (res.error !== null || !res.data) return { items: [], total: 0 };
+  return { items: res.data.data ?? [], total: res.data.total ?? 0 };
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)

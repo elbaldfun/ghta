@@ -65,7 +65,14 @@
       "tools-editor": "Editors",
       "tools-ssg": "Static Site",
       "lang-compiler": "Compilers"
-    }
+    },
+    "navDevelopers": "Developers",
+    "devTitle": "Developers to Follow",
+    "devSubtitle": "Ranked by what they build in AI, not by follower count",
+    "boardRising": "Rising",
+    "boardMerit": "All-time",
+    "devRepos": "repos",
+    "devPerDay": "★/day"
   },
   "consent": {
     "title": "Cookie notice",

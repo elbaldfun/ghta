@@ -65,7 +65,14 @@
       "tools-editor": "Editoren",
       "tools-ssg": "Static-Site",
       "lang-compiler": "Compiler"
-    }
+    },
+    "navDevelopers": "Entwickler",
+    "devTitle": "Entwickler, denen man folgen sollte",
+    "devSubtitle": "Nach ihren KI-Projekten bewertet, nicht nach Followern",
+    "boardRising": "Im Aufwind",
+    "boardMerit": "Bestenliste",
+    "devRepos": "Repos",
+    "devPerDay": "★/Tag"
   },
   "consent": {
     "title": "Cookie-Hinweis",
