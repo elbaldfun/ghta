@@ -25,23 +25,12 @@ export function RankHeader() {
             >
               {t('navRankings')}
             </Link>
+            {/* One AI entry point; the sub-boards are reachable from the hub. */}
             <Link
-              href="/developers"
+              href="/ai"
               className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
             >
-              {t('navDevelopers')}
-            </Link>
-            <Link
-              href="/topics"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navTopics')}
-            </Link>
-            <Link
-              href="/ecosystem"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navEcosystem')}
+              {t('navAi')}
             </Link>
             <Link
               href="/blog"

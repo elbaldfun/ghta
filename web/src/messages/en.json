@@ -85,7 +85,13 @@
     "ecoSkill": "Skill",
     "ecoAgent": "Agent",
     "ecoSortHot": "Trending",
-    "ecoSortPopular": "Popular"
+    "ecoSortPopular": "Popular",
+    "navAi": "AI",
+    "aiHubTitle": "AI Hub",
+    "aiHubSubtitle": "Where AI is moving right now — capabilities, builders and topics, ranked by momentum",
+    "aiAreasTitle": "AI areas",
+    "aiAreasSubtitle": "Which AI field is heating up",
+    "seeAll": "See all"
   },
   "consent": {
     "title": "Cookie notice",

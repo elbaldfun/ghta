@@ -85,7 +85,13 @@
     "ecoSkill": "스킬",
     "ecoAgent": "에이전트",
     "ecoSortHot": "급상승",
-    "ecoSortPopular": "인기"
+    "ecoSortPopular": "인기",
+    "navAi": "AI",
+    "aiHubTitle": "AI 허브",
+    "aiHubSubtitle": "지금 AI가 움직이는 방향 — 능력·개발자·주제를 기세순으로",
+    "aiAreasTitle": "AI 분야",
+    "aiAreasSubtitle": "어떤 AI 분야가 뜨는지",
+    "seeAll": "전체 보기"
   },
   "consent": {
     "title": "쿠키 안내",

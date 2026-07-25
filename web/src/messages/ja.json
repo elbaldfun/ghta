@@ -85,7 +85,13 @@
     "ecoSkill": "スキル",
     "ecoAgent": "エージェント",
     "ecoSortHot": "急上昇",
-    "ecoSortPopular": "人気"
+    "ecoSortPopular": "人気",
+    "navAi": "AI",
+    "aiHubTitle": "AI ハブ",
+    "aiHubSubtitle": "いまの AI の動き — 能力・開発者・トピックを勢い順に",
+    "aiAreasTitle": "AI 分野",
+    "aiAreasSubtitle": "どの AI 分野が伸びているか",
+    "seeAll": "すべて見る"
   },
   "consent": {
     "title": "Cookie について",

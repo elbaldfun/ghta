@@ -85,7 +85,13 @@
     "ecoSkill": "技能",
     "ecoAgent": "智能体",
     "ecoSortHot": "热度",
-    "ecoSortPopular": "热门"
+    "ecoSortPopular": "热门",
+    "navAi": "AI",
+    "aiHubTitle": "AI 中心",
+    "aiHubSubtitle": "AI 圈当下的动向 —— 能力、开发者与话题，按热度排",
+    "aiAreasTitle": "AI 细分领域",
+    "aiAreasSubtitle": "哪个 AI 方向在升温",
+    "seeAll": "查看全部"
   },
   "consent": {
     "title": "Cookie 使用说明",

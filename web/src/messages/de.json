@@ -85,7 +85,13 @@
     "ecoSkill": "Skill",
     "ecoAgent": "Agent",
     "ecoSortHot": "Im Trend",
-    "ecoSortPopular": "Beliebt"
+    "ecoSortPopular": "Beliebt",
+    "navAi": "KI",
+    "aiHubTitle": "KI-Hub",
+    "aiHubSubtitle": "Wohin sich KI gerade bewegt — Fähigkeiten, Entwickler und Themen nach Momentum",
+    "aiAreasTitle": "KI-Bereiche",
+    "aiAreasSubtitle": "Welches KI-Feld gerade wächst",
+    "seeAll": "Alle ansehen"
   },
   "consent": {
     "title": "Cookie-Hinweis",

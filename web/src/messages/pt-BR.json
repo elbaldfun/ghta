@@ -85,7 +85,13 @@
     "ecoSkill": "Skill",
     "ecoAgent": "Agente",
     "ecoSortHot": "Em alta",
-    "ecoSortPopular": "Popular"
+    "ecoSortPopular": "Popular",
+    "navAi": "IA",
+    "aiHubTitle": "Hub de IA",
+    "aiHubSubtitle": "Para onde a IA está indo agora — capacidades, devs e tópicos por impulso",
+    "aiAreasTitle": "Áreas de IA",
+    "aiAreasSubtitle": "Qual área de IA está aquecendo",
+    "seeAll": "Ver tudo"
   },
   "consent": {
     "title": "Aviso de cookies",
