@@ -77,7 +77,15 @@
     "topicsTitle": "AI 인기 주제",
     "topicsSubtitle": "지금 AI에서 뜨는 주제",
     "topicsSortHot": "급상승",
-    "topicsSortPopular": "프로젝트 수"
+    "topicsSortPopular": "프로젝트 수",
+    "navEcosystem": "AI 스택",
+    "ecoTitle": "AI 스택",
+    "ecoSubtitle": "스킬, MCP 서버, 에이전트 — 지금 뜨는 순",
+    "ecoAll": "전체",
+    "ecoSkill": "스킬",
+    "ecoAgent": "에이전트",
+    "ecoSortHot": "급상승",
+    "ecoSortPopular": "인기"
   },
   "consent": {
     "title": "쿠키 안내",

@@ -77,7 +77,15 @@
     "topicsTitle": "AI 热门话题",
     "topicsSubtitle": "AI 领域现在什么在涨",
     "topicsSortHot": "势头",
-    "topicsSortPopular": "项目最多"
+    "topicsSortPopular": "项目最多",
+    "navEcosystem": "AI 生态",
+    "ecoTitle": "AI 生态",
+    "ecoSubtitle": "技能、MCP 服务与智能体 —— 按当下涨得最快排",
+    "ecoAll": "全部",
+    "ecoSkill": "技能",
+    "ecoAgent": "智能体",
+    "ecoSortHot": "热度",
+    "ecoSortPopular": "热门"
   },
   "consent": {
     "title": "Cookie 使用说明",

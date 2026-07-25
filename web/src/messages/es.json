@@ -77,7 +77,15 @@
     "topicsTitle": "Tendencia en IA",
     "topicsSubtitle": "Lo que gana impulso en IA ahora",
     "topicsSortHot": "En alza",
-    "topicsSortPopular": "Más proyectos"
+    "topicsSortPopular": "Más proyectos",
+    "navEcosystem": "Stack de IA",
+    "ecoTitle": "El stack de IA",
+    "ecoSubtitle": "Skills, servidores MCP y agentes — ordenados por lo que crece ahora",
+    "ecoAll": "Todo",
+    "ecoSkill": "Skill",
+    "ecoAgent": "Agente",
+    "ecoSortHot": "Tendencia",
+    "ecoSortPopular": "Popular"
   },
   "consent": {
     "title": "Aviso de cookies",

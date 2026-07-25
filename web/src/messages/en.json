@@ -77,7 +77,15 @@
     "topicsTitle": "Hot in AI",
     "topicsSubtitle": "What's gaining momentum in AI right now",
     "topicsSortHot": "Rising",
-    "topicsSortPopular": "Most projects"
+    "topicsSortPopular": "Most projects",
+    "navEcosystem": "AI Stack",
+    "ecoTitle": "The AI Stack",
+    "ecoSubtitle": "Skills, MCP servers & agents — sorted by what's gaining stars now",
+    "ecoAll": "All",
+    "ecoSkill": "Skill",
+    "ecoAgent": "Agent",
+    "ecoSortHot": "Trending",
+    "ecoSortPopular": "Popular"
   },
   "consent": {
     "title": "Cookie notice",

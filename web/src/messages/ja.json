@@ -77,7 +77,15 @@
     "topicsTitle": "AI で話題",
     "topicsSubtitle": "いま AI で伸びているテーマ",
     "topicsSortHot": "急上昇",
-    "topicsSortPopular": "プロジェクト数"
+    "topicsSortPopular": "プロジェクト数",
+    "navEcosystem": "AI スタック",
+    "ecoTitle": "AI スタック",
+    "ecoSubtitle": "スキル・MCP サーバー・エージェント — 今伸びている順",
+    "ecoAll": "すべて",
+    "ecoSkill": "スキル",
+    "ecoAgent": "エージェント",
+    "ecoSortHot": "急上昇",
+    "ecoSortPopular": "人気"
   },
   "consent": {
     "title": "Cookie について",

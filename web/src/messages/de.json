@@ -77,7 +77,15 @@
     "topicsTitle": "Angesagt in KI",
     "topicsSubtitle": "Was in KI gerade an Fahrt gewinnt",
     "topicsSortHot": "Im Aufwind",
-    "topicsSortPopular": "Meiste Projekte"
+    "topicsSortPopular": "Meiste Projekte",
+    "navEcosystem": "AI-Stack",
+    "ecoTitle": "Der AI-Stack",
+    "ecoSubtitle": "Skills, MCP-Server & Agents — nach aktuellem Star-Zuwachs",
+    "ecoAll": "Alle",
+    "ecoSkill": "Skill",
+    "ecoAgent": "Agent",
+    "ecoSortHot": "Im Trend",
+    "ecoSortPopular": "Beliebt"
   },
   "consent": {
     "title": "Cookie-Hinweis",

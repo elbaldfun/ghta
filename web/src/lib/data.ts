@@ -187,6 +187,37 @@ export async function getTopics(domain: string, sort: TopicSort, limit = 40): Pr
   return res.data.data ?? [];
 }
 
+export interface EcoItem {
+  externalId: string;
+  name: string;
+  description?: string;
+  language?: string;
+  stars: number;
+  forks: number;
+  growth: number;
+  type?: string;
+  isSkill: boolean;
+  isMcp: boolean;
+  isAgent: boolean;
+}
+
+export type EcoPillar = 'all' | 'skill' | 'mcp' | 'agent';
+export type EcoSort = 'hot' | 'popular';
+
+/**
+ * The "AI stack" board: skills ∪ MCP servers ∪ agent repos, each tagged with the
+ * pillars it belongs to. sort 'hot' = recent star growth (default), 'popular' =
+ * total stars. Empty on error.
+ */
+export async function getEcosystem(pillar: EcoPillar, sort: EcoSort, limit = 45): Promise<EcoItem[]> {
+  const res = await apiGet<{ data: EcoItem[] }>(
+    `/ecosystem?pillar=${pillar}&sort=${sort}&limit=${limit}`,
+    3600,
+  );
+  if (res.error !== null || !res.data) return [];
+  return res.data.data ?? [];
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)
