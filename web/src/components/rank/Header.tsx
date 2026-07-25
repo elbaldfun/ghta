@@ -13,24 +13,41 @@ export function RankHeader() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-5 px-7 py-5">
-        <div className="flex items-center gap-3.5 whitespace-nowrap">
+        <div className="flex flex-wrap items-center gap-3.5">
           <Link href="/" className="flex items-baseline gap-2.5">
             <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
             <span className="text-xs text-muted">Explorer</span>
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex flex-wrap items-center gap-1">
             <Link
               href="/"
               className="rounded-lg bg-accent px-[13px] py-[7px] text-[12.5px] font-bold text-accent-fg"
             >
               {t('navRankings')}
             </Link>
-            {/* One AI entry point; the sub-boards are reachable from the hub. */}
             <Link
               href="/ai"
               className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
             >
               {t('navAi')}
+            </Link>
+            <Link
+              href="/ecosystem"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {t('navEcosystem')}
+            </Link>
+            <Link
+              href="/topics"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {t('navTopics')}
+            </Link>
+            <Link
+              href="/developers"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {t('navDevelopers')}
             </Link>
             <Link
               href="/blog"
