@@ -53,9 +53,11 @@ func main() {
 	}
 	slog.Info("connected to mongodb", "db", cfg.MongoDB)
 
-	// Source registry + adapters.
+	// Source registry + adapters. Keep the GitHub adapter handy for the live
+	// "newly created" search the API exposes.
 	registry := source.NewRegistry()
-	registry.Register(github.NewAdapter(cfg.GitHubToken, cfg.RateLimitBuffer, 50, logger))
+	ghAdapter := github.NewAdapter(cfg.GitHubToken, cfg.RateLimitBuffer, 50, logger)
+	registry.Register(ghAdapter)
 
 	fetcher := job.NewFetcher(store, registry, logger)
 
@@ -114,7 +116,7 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, metrics, starHistory, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -144,7 +146,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -161,6 +163,8 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.GET("/trending/item", trending.Item)
 
 	handler.NewStatsHandler(store).Register(r)
+	handler.NewNewReposHandler(ghAdapter).Register(r)
+	handler.NewHotReposHandler(store).Register(r) // GET /trending/hot — scraped weekly trending
 
 	categoryHandler := handler.NewCategoryHandler(service.NewCategoryService(store), facetOrder)
 	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
