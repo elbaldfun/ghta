@@ -130,6 +130,19 @@
 ```
 **开发者层是这一切的地基，现在不存在。**
 
+### 5.7 本轮决策与暂缓项（2026-07-25）
+
+**本轮开工——§5.6 步 1「开发者数据层」**：
+- 建 `developers` 集合，遍历全部 **45,028** 个 owner → GitHub `/users/{login}` → 存 `login/type/name/company/bio/location/blog/followers/following/publicRepos/twitterUsername/avatarUrl/ghCreatedAt/fetchedAt`。
+- **User 与 Organization 都存，靠 `type` 字段区分**——组织不丢弃，在数据层就把"公司怎么处理"解决掉（个人/公司两个产品共用这一层地基）。
+- 全量一次扫（~9h），受 GitHub 5000/时限速自然分批、可断点续跑（跳过已抓的），复用 `RateLimitBuffer`。
+
+**已讨论、本轮暂缓（记录在案，避免遗忘）**：
+- **公司 OSS 画像 / "公司×领域"榜单**：价值高、成本低（复用 99.7% 分类树 + 现有 owner 聚合，一条 aggregation 即得），但排名口径与前端值得单独打磨 → 独立一轮。裸的"公司按 star 总量排"无护城河（OSS Insight 已有），不做。
+- **"值得关注的开发者"排名产品**（按实绩非粉丝、过滤 Org、动态榜，§5.4）→ 数据层跑出来、验证 twitter 覆盖质量后单独一轮。
+- **深度贡献者数据**（commits、`repo_contributors`、谁在贡献）：贵（逐仓库 API）且属§四"仓库质量/刷 star"护城河范畴 → 与§四一起做，本轮不碰。
+- **X 侧富集**（第三方 API 补已知 handle 的粉丝数/活跃度，§5.6 步 3）→ 地基之后。
+
 ---
 
 ## 六、方向四：首页专区
