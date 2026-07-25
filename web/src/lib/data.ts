@@ -161,6 +161,32 @@ export async function getDevelopers(
   return { items: res.data.data ?? [], total: res.data.total ?? 0 };
 }
 
+export interface HotTopic {
+  topic: string;
+  repoCount: number;
+  totalStars: number;
+  growth: number;
+  topRepo?: string;
+  topRepoStars: number;
+  score: number;
+}
+
+export type TopicSort = 'hot' | 'popular';
+
+/**
+ * Hot author-topics within a domain. sort 'hot' = recent star growth of repos
+ * carrying the topic (default, "what's rising"); 'popular' = repo count. domain
+ * defaults to 'ai'. Empty on error.
+ */
+export async function getTopics(domain: string, sort: TopicSort, limit = 40): Promise<HotTopic[]> {
+  const res = await apiGet<{ data: HotTopic[] }>(
+    `/topics?domain=${encodeURIComponent(domain)}&sort=${sort}&limit=${limit}`,
+    3600,
+  );
+  if (res.error !== null || !res.data) return [];
+  return res.data.data ?? [];
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)

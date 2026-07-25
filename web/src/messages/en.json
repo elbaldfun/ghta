@@ -72,7 +72,12 @@
     "boardRising": "Rising",
     "boardMerit": "All-time",
     "devRepos": "repos",
-    "devPerDay": "★/day"
+    "devPerDay": "★/day",
+    "navTopics": "AI Topics",
+    "topicsTitle": "Hot in AI",
+    "topicsSubtitle": "What's gaining momentum in AI right now",
+    "topicsSortHot": "Rising",
+    "topicsSortPopular": "Most projects"
   },
   "consent": {
     "title": "Cookie notice",

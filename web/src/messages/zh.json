@@ -72,7 +72,12 @@
     "boardRising": "势头榜",
     "boardMerit": "实力榜",
     "devRepos": "个项目",
-    "devPerDay": "★/日"
+    "devPerDay": "★/日",
+    "navTopics": "AI 热点",
+    "topicsTitle": "AI 热门话题",
+    "topicsSubtitle": "AI 领域现在什么在涨",
+    "topicsSortHot": "势头",
+    "topicsSortPopular": "项目最多"
   },
   "consent": {
     "title": "Cookie 使用说明",

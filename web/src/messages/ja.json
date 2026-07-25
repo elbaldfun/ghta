@@ -72,7 +72,12 @@
     "boardRising": "急上昇",
     "boardMerit": "実力",
     "devRepos": "リポジトリ",
-    "devPerDay": "★/日"
+    "devPerDay": "★/日",
+    "navTopics": "AI トピック",
+    "topicsTitle": "AI で話題",
+    "topicsSubtitle": "いま AI で伸びているテーマ",
+    "topicsSortHot": "急上昇",
+    "topicsSortPopular": "プロジェクト数"
   },
   "consent": {
     "title": "Cookie について",

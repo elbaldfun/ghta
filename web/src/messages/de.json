@@ -72,7 +72,12 @@
     "boardRising": "Im Aufwind",
     "boardMerit": "Bestenliste",
     "devRepos": "Repos",
-    "devPerDay": "★/Tag"
+    "devPerDay": "★/Tag",
+    "navTopics": "KI-Themen",
+    "topicsTitle": "Angesagt in KI",
+    "topicsSubtitle": "Was in KI gerade an Fahrt gewinnt",
+    "topicsSortHot": "Im Aufwind",
+    "topicsSortPopular": "Meiste Projekte"
   },
   "consent": {
     "title": "Cookie-Hinweis",

@@ -72,7 +72,12 @@
     "boardRising": "Em alta",
     "boardMerit": "Destaques",
     "devRepos": "repos",
-    "devPerDay": "★/dia"
+    "devPerDay": "★/dia",
+    "navTopics": "Tópicos de IA",
+    "topicsTitle": "Em alta na IA",
+    "topicsSubtitle": "O que está ganhando força na IA agora",
+    "topicsSortHot": "Em alta",
+    "topicsSortPopular": "Mais projetos"
   },
   "consent": {
     "title": "Aviso de cookies",

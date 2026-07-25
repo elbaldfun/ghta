@@ -32,6 +32,12 @@ export function RankHeader() {
               {t('navDevelopers')}
             </Link>
             <Link
+              href="/topics"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {t('navTopics')}
+            </Link>
+            <Link
               href="/blog"
               className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
             >

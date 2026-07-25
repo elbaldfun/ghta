@@ -72,7 +72,12 @@
     "boardRising": "급상승",
     "boardMerit": "실력",
     "devRepos": "저장소",
-    "devPerDay": "★/일"
+    "devPerDay": "★/일",
+    "navTopics": "AI 토픽",
+    "topicsTitle": "AI 인기 주제",
+    "topicsSubtitle": "지금 AI에서 뜨는 주제",
+    "topicsSortHot": "급상승",
+    "topicsSortPopular": "프로젝트 수"
   },
   "consent": {
     "title": "쿠키 안내",
