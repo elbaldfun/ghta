@@ -88,6 +88,24 @@ func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem
 	return items, nil
 }
 
+// Search runs one search page for an arbitrary query (e.g. "created:>2026-07-17
+// sort:stars-desc") and returns up to `limit` mapped repositories. Unlike Fetch
+// it does not paginate — it is for small top-N lists, not full ingestion.
+func (a *Adapter) Search(ctx context.Context, query string, limit int) ([]domain.TrackedItem, error) {
+	if limit < 1 || limit > 100 {
+		limit = 30 // GitHub search returns at most 100 per page
+	}
+	resp, err := a.client.search(ctx, query, limit, "")
+	if err != nil {
+		return nil, err
+	}
+	items := make([]domain.TrackedItem, 0, len(resp.Data.Search.Edges))
+	for _, edge := range resp.Data.Search.Edges {
+		items = append(items, mapRepo(edge.Node))
+	}
+	return items, nil
+}
+
 type repoNode struct {
 	Name        string                 `json:"name"`
 	Owner       struct{ Login string } `json:"owner"`
