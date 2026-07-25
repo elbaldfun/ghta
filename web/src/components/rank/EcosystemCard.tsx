@@ -4,8 +4,20 @@ import type { EcoItem } from '@/lib/data';
 import { formatCompact, langColor } from '@/lib/rank-data';
 import { StarIcon } from './icons';
 
-/** One repo in the AI-stack board, tagged with its pillar(s). */
-export function EcosystemCard({ item, showGrowth = false }: { item: EcoItem; showGrowth?: boolean }) {
+/**
+ * One repo in the AI-stack board, tagged with its pillar(s). Both numbers always
+ * show: total stars answers "how established is this", daily growth answers "is
+ * it taking off right now" — the signal the incumbent skill/MCP directories
+ * lack. `highlightGrowth` only controls emphasis, so the field never disappears
+ * when the sort changes.
+ */
+export function EcosystemCard({
+  item,
+  highlightGrowth = false,
+}: {
+  item: EcoItem;
+  highlightGrowth?: boolean;
+}) {
   const t = useTranslations('rank');
   const dot = langColor(item.language);
   const [owner = '', name = ''] = item.externalId.split('/');
@@ -28,8 +40,12 @@ export function EcosystemCard({ item, showGrowth = false }: { item: EcoItem; sho
           />
           <span className="truncate text-sm font-bold">{item.externalId}</span>
         </div>
-        {showGrowth && item.growth > 0 && (
-          <span className="shrink-0 text-[11px] font-bold text-accent2">
+        {item.growth > 0 && (
+          <span
+            className={`shrink-0 text-[11px] ${
+              highlightGrowth ? 'font-bold text-accent2' : 'font-semibold text-muted'
+            }`}
+          >
             +{formatCompact(item.growth)} {t('devPerDay')}
           </span>
         )}

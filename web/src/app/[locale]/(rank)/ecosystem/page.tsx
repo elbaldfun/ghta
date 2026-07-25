@@ -87,7 +87,7 @@ export default async function EcosystemPage({
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(288px,1fr))] gap-3.5">
           {items.map((item) => (
-            <EcosystemCard key={item.externalId} item={item} showGrowth={sort === 'hot'} />
+            <EcosystemCard key={item.externalId} item={item} highlightGrowth={sort === 'hot'} />
           ))}
         </div>
       )}

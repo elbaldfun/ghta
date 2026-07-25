@@ -66,7 +66,7 @@ export default async function DevelopersPage({
               key={dev.login}
               dev={dev}
               rank={(page - 1) * PER_PAGE + i + 1}
-              showGrowth={board === 'rising'}
+              highlightGrowth={board === 'rising'}
             />
           ))}
         </div>

@@ -12,11 +12,12 @@ import { StarIcon } from './icons';
 export function DeveloperCard({
   dev,
   rank,
-  showGrowth = false,
+  highlightGrowth = false,
 }: {
   dev: RankedDeveloper;
   rank: number;
-  showGrowth?: boolean;
+  /** Emphasize the growth figure (it always shows) when that's the active sort. */
+  highlightGrowth?: boolean;
 }) {
   const t = useTranslations('rank');
   return (
@@ -62,8 +63,8 @@ export function DeveloperCard({
             <StarIcon size={11} className="text-accent2" />
             {formatCompact(dev.totalStars)}
           </span>
-          {showGrowth && dev.growth > 0 && (
-            <span className="font-bold text-accent2">
+          {dev.growth > 0 && (
+            <span className={highlightGrowth ? 'font-bold text-accent2' : 'font-semibold'}>
               +{formatCompact(dev.growth)} {t('devPerDay')}
             </span>
           )}

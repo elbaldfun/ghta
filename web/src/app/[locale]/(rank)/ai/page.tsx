@@ -98,7 +98,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
           />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(288px,1fr))] gap-3.5">
             {ecoRes.items.map((item) => (
-              <EcosystemCard key={item.externalId} item={item} showGrowth />
+              <EcosystemCard key={item.externalId} item={item} highlightGrowth />
             ))}
           </div>
         </section>
@@ -115,7 +115,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
           />
           <div className="grid gap-3.5 md:grid-cols-2">
             {devs.items.map((dev, i) => (
-              <DeveloperCard key={dev.login} dev={dev} rank={i + 1} showGrowth />
+              <DeveloperCard key={dev.login} dev={dev} rank={i + 1} highlightGrowth />
             ))}
           </div>
         </section>
