@@ -4,6 +4,14 @@
 > 已落地的内容见 [DEPLOY.md](DEPLOY.md)（部署）、[CONTENT-ROADMAP.md](CONTENT-ROADMAP.md)（选题）。
 > 相对时间已换算成绝对日期。
 
+> **更新（2026-07-25）**——自 07-24 讨论以来已落地：
+> - **分类收尾完成**：归类率 66% → **99.7%**（pending=0），failed/skill 全部重跑收敛。
+> - **「本周新爆款」全栈上线**：§八的后端已 commit + 部署；并**扩展**为爬 GitHub 官方周/月榜的 `/trending/hot`，前端「本周爆款 + 本月爆款」两条横条已上线（8 语言）。
+> - **超出原规划**：trending 榜里不在库的低星新仓库会**自动入库 → 分类**（补上了 <1000★ 抓取门槛的缺口）。
+> - **小红书卡片页**已部署。
+> - ⚠️ **核心护城河仍未动**：§四 刷 star 检测、§五 开发者层、§三 可嵌入徽章 —— 0 进度。已完成的都在"流量/首页专区"层。
+> - 下一步：开工 **§五 开发者层**（§5.6 步 1，地基）。各节内已就地标注 ✅/⏳/❌。
+
 ## 一、定位与核心矛盾
 
 **现状**：starrank.dev 是一个 GitHub 高星仓库的排名/发现站——8 语言、67k repo、66% 已归类、日增长数据、2 万仓库有十年 star 曲线、博客 + 统计端点齐全、后端在 droplet。
@@ -24,10 +32,10 @@
 
 | 资产 | 状态 |
 |---|---|
-| `tracked_items` | 67,627 repo，含 star/fork/issue/语言/topic/readme/license/pushedAt |
-| 已归类 | 44,667（66%，LLM 归类已跑通，走 `dragoncode.codes` grok 中转） |
+| `tracked_items` | ~67,693 repo（含 trending 自动入库的低星新仓库），含 star/fork/issue/语言/topic/readme/license/pushedAt |
+| 已归类 | **67,461（99.7%）✅**（07-25 收尾完成，pending=0；文档原记 66%）——走 `dragoncode.codes` grok 中转 |
 | `dailyIncrease` | 63,434 条有值 ✅ |
-| `weeklyIncrease` | **0**，约 **2026-07-26** 有值（需 7 天快照） |
+| `weeklyIncrease` | **0**，约 **2026-07-26** 有值（需 7 天快照）——注：首页「本周爆款」现走 GitHub 官方榜爬取，不依赖此字段 |
 | `monthlyIncrease` | **0**，约 **2026-08-17** 有值 |
 | `star_history` | 2 万仓库，回溯到 2015（GH Archive via ClickHouse playground） |
 | **开发者层** | **不存在**。`developers`/`repo_contributors` 未建 |
@@ -130,11 +138,11 @@
 
 | 专区 | 就绪度 | 说明 |
 |---|---|---|
-| 日趋势 | ✅ 现在 | `dailyIncrease` 齐，接口已存在 |
-| 周趋势 | ⏳ 约 07-26 | 数据一到自动亮，代码可先写 |
-| 月趋势 | ⏳ 约 08-17 | |
-| AI 热门 skills/topics | ✅ 现在（需新端点） | 从 AI 分类下 topic 聚合（llm/pytorch/chatgpt/openai…原料很好），呼应"深耕 AI 垂直" |
-| **本周新爆款仓库** | ✅ **本会话已建后端** | GitHub Search `created:>7天前 stars:>100 sort:stars-desc`，见 §八 |
+| 日趋势 | ✅ 数据齐 | `dailyIncrease` 齐；未单独做首页专区（爆款横条部分覆盖） |
+| 周趋势（自有快照） | ⏳ 约 07-26 | `weeklyIncrease` 数据一到自动亮；代码可先写 |
+| 月趋势（自有快照） | ⏳ 约 08-17 | 同上，护城河版；GitHub 官方月榜见下行 |
+| AI 热门 skills/topics | ❌（需新端点） | 从 AI 分类下 topic 聚合（llm/pytorch/chatgpt/openai…原料很好），呼应"深耕 AI 垂直"——未建 |
+| **本周/本月爆款仓库** | ✅ **已上线（前端+部署）** | 扩展为爬 GitHub 官方周/月榜 `/trending/hot`，非仅 Search API；不在库的新仓库自动入库。见 §八 |
 | 本周最新作者 | ❌ 需开发者层 | 与方向三同一地基 |
 
 **"周/月增长"数据来源之争**：GitHub 官方 API **给不了**增长量（无历史字段）。能给的是 GH Archive（已接，但用免费 ClickHouse playground，不可靠、会 500）。**结论：首页周/月榜等自己的快照（免费+可靠+是护城河），GH Archive 只留给单 repo 详情页的深度曲线。**
@@ -151,25 +159,26 @@
 
 ---
 
-## 八、本会话已产出、未上线的改动
+## 八、原"已产出未上线"改动 —— ✅ 已全部上线（2026-07-25）
 
-⚠️ **以下都在本地工作区，未 commit、未部署**（用户暂停：droplet 上有定时任务在更新数据，勿重启容器打断）。
+原文档写于暂停期（等 droplet 定时任务），列的改动当时未 commit/未部署。**现已全部放行上线**：
 
-- **「本周新爆款」后端**（编译通过）：
-  - `internal/source/github/adapter.go` — 加公开 `Search(query, limit)` 方法
-  - `internal/handler/newrepos.go` — `GET /trending/new?days=7&limit=N`，**1 小时内存缓存 + 失败降级**（GitHub search 限流 30/分，不能每访问都打）
-  - `cmd/api/main.go` — 路由接线
-  - **未做**：前端专区、i18n、卡片外链到 GitHub（新 repo 不在库，详情页会 404）、测试、部署
-- **小红书卡片渲染页**（本地验证可用，未部署）：`web/src/app/[locale]/(bare)/card/[owner]/[name]/page.tsx` + bare layout。3:4 竖版海报，`?growth=N&tag=xxx`。
+- **「本周新爆款」后端** ✅ 已 commit + 部署：
+  - `internal/source/github/adapter.go` — 公开 `Search(query, limit)` 方法 ✅
+  - `internal/handler/newrepos.go` — `GET /trending/new?days=7&limit=N`，1 小时缓存 + 失败降级 ✅（线上 HTTP 200）
+  - `cmd/api/main.go` — 路由接线 ✅
+  - 原"未做"清单**全部完成**：前端专区 ✅、i18n(8 语言) ✅、卡片外链到 GitHub(非语料新仓库) ✅、fixture 测试 ✅、部署 ✅
+  - **并扩展**：新增 `/trending/hot`（爬 GitHub 官方周/月榜，比 Search API 更贴切、天然覆盖低星），前端「本周/本月爆款」两条横条，且不在库仓库**自动入库→分类**（超出原规划）
+- **小红书卡片渲染页** ✅ 已部署：`web/src/app/[locale]/(bare)/card/[owner]/[name]/page.tsx`（线上 HTTP 200）。3:4 竖版海报，`?growth=N&tag=xxx`。
 
-> 注：本会话进行中，另有并行改动（`NewHotReposHandler`/本周本月爆款 i18n/grok relay IP pin/LLM 并发）已进入代码库——非本文档规划范围，但说明"爆款"方向已在推进。
+> 相关提交：`110c110`(/trending/new)、`b642d7a`(/trending/hot 后端)、`780b14f`(前端横条)、`7274a3e`(新仓库入库)、`a011530`(本月爆款)。grok relay IP pin / LLM 并发 也已随分类收尾一并部署。
 
 ---
 
 ## 九、建议推进顺序
 
-1. **等定时任务跑完** → 放行 §八 的「本周新爆款」上线（数据齐、差异化好、零等待）
-2. **建开发者层**（§5.6 步骤 1）—— 是"值得关注的人"和"最新作者专区"的共同地基，免费
+1. ~~等定时任务跑完 → 放行「本周新爆款」上线~~ **✅ 已完成（并扩展为周/月爆款 + 自动入库）**
+2. **建开发者层**（§5.6 步骤 1）—— 🔨 **当前进行中**。是"值得关注的人"和"最新作者专区"的共同地基，免费
 3. **AI skills 热度榜** + **周趋势专区**（07-26 数据到）
 4. **刷 star 检测原型**（§四）—— 差异化+传播+选品+变现四合一
 5. **可嵌入排名徽章**（§三）—— 有了流量后的增长放大器
