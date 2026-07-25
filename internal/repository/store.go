@@ -22,6 +22,7 @@ const (
 	CollSnapshots   = "metric_snapshots"
 	CollSuggestions = "category_suggestions"
 	CollStarHistory = "star_history"
+	CollDevelopers  = "developers"
 )
 
 type Store struct {
@@ -51,6 +52,7 @@ func (s *Store) FetchRuns() *mongo.Collection   { return s.DB.Collection(CollFet
 func (s *Store) Snapshots() *mongo.Collection   { return s.DB.Collection(CollSnapshots) }
 func (s *Store) Suggestions() *mongo.Collection { return s.DB.Collection(CollSuggestions) }
 func (s *Store) StarHistory() *mongo.Collection { return s.DB.Collection(CollStarHistory) }
+func (s *Store) Developers() *mongo.Collection  { return s.DB.Collection(CollDevelopers) }
 
 // EnsureSchema creates the time-series snapshot collection (if absent) and all
 // indexes. It is idempotent and safe to run on every startup.
@@ -147,6 +149,20 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		Options: options.Index().SetName("snapshot_lookup"),
 	}); err != nil {
 		return fmt.Errorf("snapshot indexes: %w", err)
+	}
+
+	devIndexes := []mongo.IndexModel{
+		{
+			Keys:    bson.D{{Key: "login", Value: 1}},
+			Options: options.Index().SetUnique(true).SetName("uniq_developer_login"),
+		},
+		{Keys: bson.D{{Key: "type", Value: 1}}},                                 // filter User vs Organization
+		{Keys: bson.D{{Key: "followers", Value: -1}}},                           // rank by reach
+		{Keys: bson.D{{Key: "fetchedAt", Value: 1}}},                            // find stale/unfetched for refresh
+		{Keys: bson.D{{Key: "twitterUsername", Value: 1}}, Options: options.Index().SetSparse(true)},
+	}
+	if _, err := s.Developers().Indexes().CreateMany(ctx, devIndexes); err != nil {
+		return fmt.Errorf("developer indexes: %w", err)
 	}
 	return nil
 }

@@ -37,6 +37,7 @@ type Config struct {
 	// Fetch scheduling
 	FetchCron       string
 	CategorizeCron  string
+	DevSyncCron     string
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
 
 	CategorizeBatchSize int // items per AI categorization call
@@ -70,6 +71,7 @@ func Load() (*Config, error) {
 		LMStudioAPIKey:  os.Getenv("LMSTUDIO_API_KEY"),
 		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
 		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
+		DevSyncCron:     getEnv("DEVSYNC_CRON", "0 0 4 * * *"),
 	}
 
 	// PORT

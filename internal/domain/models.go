@@ -190,3 +190,32 @@ type MetricSnapshot struct {
 	Metrics    map[string]float64 `bson:"metrics" json:"metrics"`
 	CapturedAt time.Time          `bson:"capturedAt" json:"capturedAt"`
 }
+
+// Developer type facets (GitHub account type).
+const (
+	DeveloperUser = "User"
+	DeveloperOrg  = "Organization"
+)
+
+// Developer is a GitHub account (User or Organization) that owns tracked repos.
+// The devsync job populates it from GitHub's /users/{login} profile: `login` is
+// the canonical account id taken from repo ownership (never name-matched), and
+// every field below is what the account self-declares on its GitHub profile —
+// notably TwitterUsername, the clean self-declared X handle.
+type Developer struct {
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Login           string             `bson:"login" json:"login"`
+	Type            string             `bson:"type" json:"type"` // User | Organization
+	Name            string             `bson:"name,omitempty" json:"name,omitempty"`
+	Company         string             `bson:"company,omitempty" json:"company,omitempty"`
+	Blog            string             `bson:"blog,omitempty" json:"blog,omitempty"`
+	Location        string             `bson:"location,omitempty" json:"location,omitempty"`
+	Bio             string             `bson:"bio,omitempty" json:"bio,omitempty"`
+	TwitterUsername string             `bson:"twitterUsername,omitempty" json:"twitterUsername,omitempty"`
+	Followers       int                `bson:"followers" json:"followers"`
+	Following       int                `bson:"following" json:"following"`
+	PublicRepos     int                `bson:"publicRepos" json:"publicRepos"`
+	AvatarURL       string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty"`
+	GHCreatedAt     time.Time          `bson:"ghCreatedAt,omitempty" json:"ghCreatedAt,omitempty"`
+	FetchedAt       time.Time          `bson:"fetchedAt" json:"fetchedAt"`
+}

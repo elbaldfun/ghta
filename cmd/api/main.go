@@ -89,6 +89,7 @@ func main() {
 	// AI categorization pipeline: type facet + domain (rules -> LLM).
 	aiService := service.NewAIService(store, provider.New(cfg, logger))
 	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency, logger)
+	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
@@ -105,6 +106,10 @@ func main() {
 		slog.Error("invalid CATEGORIZE_CRON", "err", err)
 		os.Exit(1)
 	}
+	if _, err := scheduler.AddFunc(cfg.DevSyncCron, func() { devSync.Run(rootCtx) }); err != nil {
+		slog.Error("invalid DEVSYNC_CRON", "err", err)
+		os.Exit(1)
+	}
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -116,7 +121,7 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -146,7 +151,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -207,6 +212,14 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		}
 		go categorizer.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "categorize started", "concurrency": categorizer.Concurrency()})
+	})
+
+	// Internal: build/refresh the developer layer — fetch each repo owner's
+	// GitHub account profile into `developers`. Full sweep, self-pacing to the
+	// API budget, resumable (skips accounts fetched within the refresh window).
+	admin.POST("/internal/dev-sync", func(c *gin.Context) {
+		go devSync.Run(jobCtx)
+		c.JSON(http.StatusAccepted, gin.H{"status": "dev-sync started"})
 	})
 
 	// Internal (change 12 migration): reset done/failed items back to pending so
