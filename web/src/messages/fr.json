@@ -6,6 +6,9 @@
   "rank": {
     "homeTitle": "Classement des étoiles GitHub",
     "homeSubtitle": "Découvrez les projets open source les plus populaires au monde",
+    "hotTitle": "Tendances de la semaine",
+    "hotSubtitle": "Les plus fortes progressions d'étoiles sur GitHub cette semaine",
+    "thisWeek": "cette semaine",
     "navRankings": "Classement",
     "footerTagline": "Classement des étoiles GitHub et tendances de croissance",
     "footerDataSource": "Données de GitHub",

@@ -6,6 +6,9 @@
   "rank": {
     "homeTitle": "GitHub スターランキング",
     "homeSubtitle": "世界で最も人気のあるオープンソースプロジェクトを発見",
+    "hotTitle": "今週の急上昇",
+    "hotSubtitle": "今週 GitHub で最もスターを集めたリポジトリ",
+    "thisWeek": "今週",
     "navRankings": "ランキング",
     "footerTagline": "GitHub スターランキングと成長トレンド",
     "footerDataSource": "データ提供: GitHub",

@@ -6,9 +6,11 @@ import {
   getCategoryTree,
   getFacets,
   getTotalCount,
+  getWeeklyHot,
   searchRepos,
 } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
+import { Carousel } from '@/components/rank/Carousel';
 import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';
 import { Pagination } from '@/components/rank/Pagination';
@@ -50,7 +52,16 @@ export default async function RankHome({
     : 'stars';
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const [tree, facets, total, searchRes] = await Promise.all([
+  // The "hot this week" strip only makes sense on the unfiltered landing view.
+  const isLanding =
+    !searchParams.category &&
+    !searchParams.type &&
+    !searchParams.q &&
+    !searchParams.lang &&
+    !searchParams.license &&
+    page === 1;
+
+  const [tree, facets, total, searchRes, hot] = await Promise.all([
     getCategoryTree(),
     getFacets(),
     getTotalCount(),
@@ -64,6 +75,7 @@ export default async function RankHome({
       page,
       perPage: PER_PAGE,
     }),
+    isLanding ? getWeeklyHot(12) : Promise.resolve([]),
   ]);
 
   const activeNode = searchParams.category ? findCategory(tree, searchParams.category) : undefined;
@@ -74,8 +86,31 @@ export default async function RankHome({
   const breadcrumb = parentNode ? categoryLabel(parentNode, locale) : null;
 
   return (
-    <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
-      <CategoryTree tree={tree} total={total} />
+    <>
+      {isLanding && hot.length > 0 && (
+        <section
+          className="border-b border-border px-[26px] pb-5 pt-[22px]"
+          aria-label={t('hotTitle')}
+        >
+          <div className="mb-3 flex items-baseline gap-2.5">
+            <h2 className="font-display text-lg font-extrabold">🔥 {t('hotTitle')}</h2>
+            <span className="text-xs text-muted">{t('hotSubtitle')}</span>
+          </div>
+          <Carousel ariaLabel={t('hotTitle')}>
+            {hot.map((h) => (
+              <RepoCard
+                key={h.repo.fullName}
+                repo={h.repo}
+                fixedWidth
+                trendStars={h.starsThisWeek}
+                externalHref={h.inCorpus ? undefined : h.repo.htmlUrl}
+              />
+            ))}
+          </Carousel>
+        </section>
+      )}
+      <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
+        <CategoryTree tree={tree} total={total} />
 
       <div className="px-[26px] py-[22px]">
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
@@ -124,5 +159,6 @@ export default async function RankHome({
         )}
       </div>
     </div>
+    </>
   );
 }

@@ -6,6 +6,9 @@
   "rank": {
     "homeTitle": "Ranking de estrelas do GitHub",
     "homeSubtitle": "Descubra os projetos de código aberto mais populares do mundo",
+    "hotTitle": "Em alta esta semana",
+    "hotSubtitle": "Maiores ganhos de estrelas no GitHub nesta semana",
+    "thisWeek": "esta semana",
     "navRankings": "Ranking",
     "footerTagline": "Ranking de estrelas e tendências de crescimento do GitHub",
     "footerDataSource": "Dados do GitHub",

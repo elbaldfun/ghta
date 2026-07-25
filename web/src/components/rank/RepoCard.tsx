@@ -21,12 +21,19 @@ export function RepoCard({
   repo,
   showUpdated = false,
   fixedWidth = false,
+  trendStars,
+  externalHref,
 }: {
   repo: RepoSummary;
   /** true when the active sort is "recently updated" (design swaps footer right side). */
   showUpdated?: boolean;
   /** carousel items are fixed 290px and don't shrink. */
   fixedWidth?: boolean;
+  /** stars gained this week — shown as a "🔥 +N this week" footer badge (trending strip). */
+  trendStars?: number;
+  /** when set, the card links here (external, new tab) instead of the internal
+   * repo page — used for trending newcomers we don't track. */
+  externalHref?: string;
 }) {
   const t = useTranslations('rank');
   const locale = useLocale();
@@ -34,13 +41,12 @@ export function RepoCard({
   const artifact = artifactOf(repo.language);
   const host = homepageHost(repo.homepage);
 
-  return (
-    <Link
-      href={`/repo/${repo.owner}/${repo.name}`}
-      className={`group flex cursor-pointer flex-col gap-2.5 rounded-card border border-border bg-surface p-4 transition-[box-shadow,border-color] hover:border-accent hover:shadow-card-hover ${
-        fixedWidth ? 'w-[290px] shrink-0' : ''
-      }`}
-    >
+  const cardClass = `group flex cursor-pointer flex-col gap-2.5 rounded-card border border-border bg-surface p-4 transition-[box-shadow,border-color] hover:border-accent hover:shadow-card-hover ${
+    fixedWidth ? 'w-[290px] shrink-0' : ''
+  }`;
+
+  const inner = (
+    <>
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <span className="inline-block h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: dot }} />
@@ -106,13 +112,31 @@ export function RepoCard({
             {formatCompact(repo.forks)}
           </span>
         </div>
-        {showUpdated && (
+        {trendStars != null && trendStars > 0 ? (
+          <span className="flex items-center gap-1 text-[11px] font-bold text-accent2">
+            <StarIcon size={12} className="text-accent2" />
+            +{formatCompact(trendStars)} {t('thisWeek')}
+          </span>
+        ) : showUpdated ? (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-accent">
             <ClockIcon size={12} />
             {updatedLabel(repo.pushedAt, locale)}
           </span>
-        )}
+        ) : null}
       </div>
+    </>
+  );
+
+  if (externalHref) {
+    return (
+      <a href={externalHref} target="_blank" rel="noopener noreferrer" className={cardClass}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <Link href={`/repo/${repo.owner}/${repo.name}`} className={cardClass}>
+      {inner}
     </Link>
   );
 }

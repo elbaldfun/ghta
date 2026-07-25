@@ -80,6 +80,48 @@ async function apiGet<T>(path: string, revalidate: number): Promise<Fetched<T>> 
   }
 }
 
+export interface HotRepo {
+  repo: RepoSummary;
+  starsThisWeek: number;
+  inCorpus: boolean; // true when we already track & classify it; false = GitHub-only newcomer
+}
+
+/**
+ * This week's breakout repos from GitHub's own weekly trending (scraped by the
+ * backend, cached ~1h). Repos we track are enriched with our classification;
+ * low-star newcomers we don't track are shown with GitHub's data. Returns [] on
+ * error so the section simply hides instead of breaking the page.
+ */
+export async function getWeeklyHot(limit = 12): Promise<HotRepo[]> {
+  const res = await apiGet<{ data: any[] }>(`/trending/hot?since=weekly&limit=${limit}`, 3600);
+  if (res.error !== null || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map((it) => {
+    const [owner = '', name = ''] = String(it.externalId ?? '').split('/');
+    return {
+      starsThisWeek: Number(it.starsThisPeriod) || 0,
+      inCorpus: Boolean(it.inCorpus),
+      repo: {
+        owner,
+        name: name || it.name,
+        fullName: it.externalId,
+        description: it.description || null,
+        language: it.language || null,
+        stars: Number(it.stars) || 0,
+        forks: Number(it.forks) || 0,
+        openIssues: 0,
+        license: null,
+        homepage: null,
+        topics: [],
+        type: it.type || null,
+        categoryPath: Array.isArray(it.categoryPath) ? it.categoryPath : [],
+        pushedAt: '',
+        createdAt: null,
+        htmlUrl: it.url || `https://github.com/${it.externalId}`,
+      },
+    };
+  });
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)
