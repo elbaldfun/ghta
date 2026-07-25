@@ -158,6 +158,20 @@
 | **本周/本月爆款仓库** | ✅ **已上线（前端+部署）** | 扩展为爬 GitHub 官方周/月榜 `/trending/hot`，非仅 Search API；不在库的新仓库自动入库。见 §八 |
 | 本周最新作者 | ❌ 需开发者层 | 与方向三同一地基 |
 
+### 「AI 生态」专区定义（2026-07-26 锁定，宽口径）
+
+用户找"给 AI/agent 加能力、连工具、搭智能体"的东西时是一个心智，不分我们内部的 type/domain 轴。故按用户意图框成一个 umbrella + 三支柱（并集去重 ≈ 2,480，默认按 star 增速排）：
+
+| 支柱 | 成员规则 | 规模 |
+|---|---|---|
+| ① 技能 Skills | `type=skill` | 485 |
+| ② MCP 服务 | `topic ∈ {mcp, mcp-server, model-context-protocol}` | 553 |
+| ③ 智能体 Agents | `domain=ai/agents`（宽口径，含成品应用） | 1,765 |
+
+- 实现走 **A（跨轴 `$or` 查询，不动分类器/不重跑）**，同话题榜的 service+缓存机制；差异化点是所有对手都缺的 **star 增速/momentum**（PulseMCP 连 star 都没有）。
+- 定位：**不做"第 9 个 skill 目录"**（赛道已卷、我们 skill 数据薄），做"**本周最火的能力/MCP/agent**"——用增速切一个别人没占的角度（§一 反"又一个列表"）。
+- 路由 `/ecosystem`，Header 入口「AI 生态」。
+
 **"周/月增长"数据来源之争**：GitHub 官方 API **给不了**增长量（无历史字段）。能给的是 GH Archive（已接，但用免费 ClickHouse playground，不可靠、会 500）。**结论：首页周/月榜等自己的快照（免费+可靠+是护城河），GH Archive 只留给单 repo 详情页的深度曲线。**
 
 ---

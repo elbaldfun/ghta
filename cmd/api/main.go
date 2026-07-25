@@ -172,6 +172,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	handler.NewHotReposHandler(store, ghAdapter).Register(r) // GET /trending/hot — scraped weekly trending, ingests newcomers
 	handler.NewDeveloperHandler(service.NewDeveloperService(store)).Register(r) // GET /developers — merit/rising ranking
 	handler.NewTopicHandler(service.NewTopicService(store)).Register(r)         // GET /topics — hot topics per domain
+	handler.NewEcosystemHandler(service.NewEcosystemService(store)).Register(r) // GET /ecosystem — AI stack (skills/mcp/agents)
 
 	categoryHandler := handler.NewCategoryHandler(service.NewCategoryService(store), facetOrder)
 	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
