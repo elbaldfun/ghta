@@ -29,8 +29,10 @@ export default async function TopicsPage({
   const tab = (key: TopicSort, label: string) => (
     <Link
       href={`/topics?sort=${key}`}
-      className={`rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold ${
-        sort === key ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'
+      className={`rounded-lg border px-[13px] py-[7px] text-[12.5px] font-bold ${
+        sort === key
+          ? 'border-accent bg-accent/10 text-accent'
+          : 'border-transparent text-muted hover:text-fg'
       }`}
     >
       {label}

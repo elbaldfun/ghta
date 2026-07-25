@@ -43,7 +43,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
-  const [tree, eco, devs, topics] = await Promise.all([
+  const [tree, ecoRes, devs, topics] = await Promise.all([
     getCategoryTree(),
     getEcosystem('all', 'hot', 8),
     getDevelopers('rising', 'ai', 6),
@@ -88,7 +88,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
       )}
 
       {/* 2. The AI stack: skills / MCP / agents, by momentum. */}
-      {eco.length > 0 && (
+      {ecoRes.items.length > 0 && (
         <section className="mb-8">
           <SectionHead
             title={t('ecoTitle')}
@@ -97,7 +97,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
             more={t('seeAll')}
           />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(288px,1fr))] gap-3.5">
-            {eco.map((item) => (
+            {ecoRes.items.map((item) => (
               <EcosystemCard key={item.externalId} item={item} showGrowth />
             ))}
           </div>

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getDevelopers, type DeveloperBoard } from '@/lib/data';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
+import { Pagination } from '@/components/rank/Pagination';
 
 export async function generateMetadata({
   params: { locale },
@@ -13,25 +14,32 @@ export async function generateMetadata({
   return { title: t('devTitle'), description: t('devSubtitle') };
 }
 
+// The backend computes a top-500 board per board+domain; page within that.
+const PER_PAGE = 30;
+const BOARD_CAP = 500;
+
 export default async function DevelopersPage({
   params: { locale },
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { board?: string };
+  searchParams: { board?: string; page?: string };
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
   const board: DeveloperBoard = searchParams.board === 'merit' ? 'merit' : 'rising';
   const domain = 'ai'; // launch focus
-  const { items } = await getDevelopers(board, domain, 30);
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  const { items, total } = await getDevelopers(board, domain, PER_PAGE, page);
 
   const tab = (key: DeveloperBoard, label: string) => (
     <Link
       href={`/developers?board=${key}`}
-      className={`rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold ${
-        board === key ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'
+      className={`rounded-lg border px-[13px] py-[7px] text-[12.5px] font-bold ${
+        board === key
+          ? 'border-accent bg-accent/10 text-accent'
+          : 'border-transparent text-muted hover:text-fg'
       }`}
     >
       {label}
@@ -54,9 +62,24 @@ export default async function DevelopersPage({
       ) : (
         <div className="grid gap-3.5 md:grid-cols-2">
           {items.map((dev, i) => (
-            <DeveloperCard key={dev.login} dev={dev} rank={i + 1} showGrowth={board === 'rising'} />
+            <DeveloperCard
+              key={dev.login}
+              dev={dev}
+              rank={(page - 1) * PER_PAGE + i + 1}
+              showGrowth={board === 'rising'}
+            />
           ))}
         </div>
+      )}
+      {items.length > 0 && (
+        <Pagination
+          page={page}
+          perPage={PER_PAGE}
+          totalCount={total}
+          basePath="/developers"
+          cap={BOARD_CAP}
+          params={{ board }}
+        />
       )}
     </div>
   );

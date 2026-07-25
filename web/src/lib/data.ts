@@ -152,9 +152,10 @@ export async function getDevelopers(
   board: DeveloperBoard,
   domain: string,
   limit = 30,
+  page = 1,
 ): Promise<{ items: RankedDeveloper[]; total: number }> {
   const res = await apiGet<{ data: RankedDeveloper[]; total: number }>(
-    `/developers?board=${board}&domain=${encodeURIComponent(domain)}&limit=${limit}`,
+    `/developers?board=${board}&domain=${encodeURIComponent(domain)}&limit=${limit}&page=${page}`,
     3600,
   );
   if (res.error !== null || !res.data) return { items: [], total: 0 };
@@ -209,13 +210,18 @@ export type EcoSort = 'hot' | 'popular';
  * pillars it belongs to. sort 'hot' = recent star growth (default), 'popular' =
  * total stars. Empty on error.
  */
-export async function getEcosystem(pillar: EcoPillar, sort: EcoSort, limit = 45): Promise<EcoItem[]> {
-  const res = await apiGet<{ data: EcoItem[] }>(
-    `/ecosystem?pillar=${pillar}&sort=${sort}&limit=${limit}`,
+export async function getEcosystem(
+  pillar: EcoPillar,
+  sort: EcoSort,
+  limit = 45,
+  page = 1,
+): Promise<{ items: EcoItem[]; total: number }> {
+  const res = await apiGet<{ data: EcoItem[]; total: number }>(
+    `/ecosystem?pillar=${pillar}&sort=${sort}&limit=${limit}&page=${page}`,
     3600,
   );
-  if (res.error !== null || !res.data) return [];
-  return res.data.data ?? [];
+  if (res.error !== null || !res.data) return { items: [], total: 0 };
+  return { items: res.data.data ?? [], total: res.data.total ?? 0 };
 }
 
 export interface SearchParamsIn {

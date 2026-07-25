@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getEcosystem, type EcoPillar, type EcoSort } from '@/lib/data';
 import { EcosystemCard } from '@/components/rank/EcosystemCard';
+import { Pagination } from '@/components/rank/Pagination';
 
 export async function generateMetadata({
   params: { locale },
@@ -14,13 +15,16 @@ export async function generateMetadata({
 }
 
 const PILLARS: EcoPillar[] = ['all', 'skill', 'mcp', 'agent'];
+// The backend computes a top-300 board per pillar+sort; page within that.
+const PER_PAGE = 30;
+const BOARD_CAP = 300;
 
 export default async function EcosystemPage({
   params: { locale },
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { pillar?: string; sort?: string };
+  searchParams: { pillar?: string; sort?: string; page?: string };
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('rank');
@@ -29,7 +33,8 @@ export default async function EcosystemPage({
     ? (searchParams.pillar as EcoPillar)
     : 'all';
   const sort: EcoSort = searchParams.sort === 'popular' ? 'popular' : 'hot';
-  const items = await getEcosystem(pillar, sort, 45);
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  const { items, total } = await getEcosystem(pillar, sort, PER_PAGE, page);
 
   const pillarLabel: Record<EcoPillar, string> = {
     all: t('ecoAll'),
@@ -42,8 +47,10 @@ export default async function EcosystemPage({
     <Link
       key={key}
       href={`/ecosystem?pillar=${key}&sort=${sort}`}
-      className={`rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold ${
-        pillar === key ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'
+      className={`rounded-lg border px-[13px] py-[7px] text-[12.5px] font-bold ${
+        pillar === key
+          ? 'border-accent bg-accent/10 text-accent'
+          : 'border-transparent text-muted hover:text-fg'
       }`}
     >
       {pillarLabel[key]}
@@ -83,6 +90,16 @@ export default async function EcosystemPage({
             <EcosystemCard key={item.externalId} item={item} showGrowth={sort === 'hot'} />
           ))}
         </div>
+      )}
+      {items.length > 0 && (
+        <Pagination
+          page={page}
+          perPage={PER_PAGE}
+          totalCount={total}
+          basePath="/ecosystem"
+          cap={BOARD_CAP}
+          params={{ pillar, sort }}
+        />
       )}
     </div>
   );
