@@ -5,14 +5,15 @@ import {
   findCategory,
   getCategoryTree,
   getFacets,
+  getHot,
   getTotalCount,
-  getWeeklyHot,
   searchRepos,
+  type HotRepo,
 } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
-import { Carousel } from '@/components/rank/Carousel';
 import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';
+import { HotStrip } from '@/components/rank/HotStrip';
 import { Pagination } from '@/components/rank/Pagination';
 import { RepoCard } from '@/components/rank/RepoCard';
 
@@ -61,7 +62,7 @@ export default async function RankHome({
     !searchParams.license &&
     page === 1;
 
-  const [tree, facets, total, searchRes, hot] = await Promise.all([
+  const [tree, facets, total, searchRes, hotWeekly, hotMonthly] = await Promise.all([
     getCategoryTree(),
     getFacets(),
     getTotalCount(),
@@ -75,7 +76,8 @@ export default async function RankHome({
       page,
       perPage: PER_PAGE,
     }),
-    isLanding ? getWeeklyHot(12) : Promise.resolve([]),
+    isLanding ? getHot('weekly', 12) : Promise.resolve([] as HotRepo[]),
+    isLanding ? getHot('monthly', 12) : Promise.resolve([] as HotRepo[]),
   ]);
 
   const activeNode = searchParams.category ? findCategory(tree, searchParams.category) : undefined;
@@ -87,27 +89,21 @@ export default async function RankHome({
 
   return (
     <>
-      {isLanding && hot.length > 0 && (
-        <section
-          className="border-b border-border px-[26px] pb-5 pt-[22px]"
-          aria-label={t('hotTitle')}
-        >
-          <div className="mb-3 flex items-baseline gap-2.5">
-            <h2 className="font-display text-lg font-extrabold">🔥 {t('hotTitle')}</h2>
-            <span className="text-xs text-muted">{t('hotSubtitle')}</span>
-          </div>
-          <Carousel ariaLabel={t('hotTitle')}>
-            {hot.map((h) => (
-              <RepoCard
-                key={h.repo.fullName}
-                repo={h.repo}
-                fixedWidth
-                trendStars={h.starsThisWeek}
-                externalHref={h.inCorpus ? undefined : h.repo.htmlUrl}
-              />
-            ))}
-          </Carousel>
-        </section>
+      {isLanding && (
+        <>
+          <HotStrip
+            title={t('hotTitle')}
+            subtitle={t('hotSubtitle')}
+            trendLabel={t('thisWeek')}
+            items={hotWeekly}
+          />
+          <HotStrip
+            title={t('hotMonthTitle')}
+            subtitle={t('hotMonthSubtitle')}
+            trendLabel={t('thisMonth')}
+            items={hotMonthly}
+          />
+        </>
       )}
       <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
         <CategoryTree tree={tree} total={total} />

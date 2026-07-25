@@ -80,25 +80,27 @@ async function apiGet<T>(path: string, revalidate: number): Promise<Fetched<T>> 
   }
 }
 
+export type HotWindow = 'daily' | 'weekly' | 'monthly';
+
 export interface HotRepo {
   repo: RepoSummary;
-  starsThisWeek: number;
+  starsGained: number; // stars gained during the window
   inCorpus: boolean; // true when we already track & classify it; false = GitHub-only newcomer
 }
 
 /**
- * This week's breakout repos from GitHub's own weekly trending (scraped by the
- * backend, cached ~1h). Repos we track are enriched with our classification;
- * low-star newcomers we don't track are shown with GitHub's data. Returns [] on
- * error so the section simply hides instead of breaking the page.
+ * Breakout repos from GitHub's own trending for a window (daily|weekly|monthly),
+ * scraped by the backend and cached ~1h. Repos we track are enriched with our
+ * classification; low-star newcomers we don't track are shown with GitHub's
+ * data. Returns [] on error so the section simply hides instead of breaking.
  */
-export async function getWeeklyHot(limit = 12): Promise<HotRepo[]> {
-  const res = await apiGet<{ data: any[] }>(`/trending/hot?since=weekly&limit=${limit}`, 3600);
+export async function getHot(since: HotWindow, limit = 12): Promise<HotRepo[]> {
+  const res = await apiGet<{ data: any[] }>(`/trending/hot?since=${since}&limit=${limit}`, 3600);
   if (res.error !== null || !Array.isArray(res.data?.data)) return [];
   return res.data.data.map((it) => {
     const [owner = '', name = ''] = String(it.externalId ?? '').split('/');
     return {
-      starsThisWeek: Number(it.starsThisPeriod) || 0,
+      starsGained: Number(it.starsThisPeriod) || 0,
       inCorpus: Boolean(it.inCorpus),
       repo: {
         owner,

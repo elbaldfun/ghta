@@ -22,6 +22,7 @@ export function RepoCard({
   showUpdated = false,
   fixedWidth = false,
   trendStars,
+  trendLabel,
   externalHref,
 }: {
   repo: RepoSummary;
@@ -29,8 +30,10 @@ export function RepoCard({
   showUpdated?: boolean;
   /** carousel items are fixed 290px and don't shrink. */
   fixedWidth?: boolean;
-  /** stars gained this week — shown as a "🔥 +N this week" footer badge (trending strip). */
+  /** stars gained in the trend window — shown as a "🔥 +N <label>" footer badge. */
   trendStars?: number;
+  /** period label for the trend badge (e.g. "this week" / "this month"). */
+  trendLabel?: string;
   /** when set, the card links here (external, new tab) instead of the internal
    * repo page — used for trending newcomers we don't track. */
   externalHref?: string;
@@ -115,7 +118,7 @@ export function RepoCard({
         {trendStars != null && trendStars > 0 ? (
           <span className="flex items-center gap-1 text-[11px] font-bold text-accent2">
             <StarIcon size={12} className="text-accent2" />
-            +{formatCompact(trendStars)} {t('thisWeek')}
+            +{formatCompact(trendStars)} {trendLabel ?? t('thisWeek')}
           </span>
         ) : showUpdated ? (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-accent">
