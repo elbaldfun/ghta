@@ -164,7 +164,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	handler.NewStatsHandler(store).Register(r)
 	handler.NewNewReposHandler(ghAdapter).Register(r)
-	handler.NewHotReposHandler(store).Register(r) // GET /trending/hot — scraped weekly trending
+	handler.NewHotReposHandler(store, ghAdapter).Register(r) // GET /trending/hot — scraped weekly trending, ingests newcomers
 
 	categoryHandler := handler.NewCategoryHandler(service.NewCategoryService(store), facetOrder)
 	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation

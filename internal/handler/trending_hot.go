@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"sync"
@@ -16,6 +17,10 @@ import (
 	"github.com/elbaldfun/ghta/internal/source/github"
 )
 
+// ingestTimeout bounds the background fetch+upsert of trending newcomers so a
+// slow GitHub call can't leak a goroutine.
+const ingestTimeout = 90 * time.Second
+
 // hotReposTTL bounds how often we scrape github.com/trending. One scrape per
 // (window, language) serves every visitor from cache, so traffic never hits
 // GitHub per-request.
@@ -28,10 +33,13 @@ const hotReposTTL = time.Hour
 // which only ingests >=1000-star repos).
 type HotReposHandler struct {
 	store *repository.Store
+	gh    *github.Adapter // full-fetches trending newcomers so they enter the corpus
 	hc    *http.Client
 
 	mu    sync.Mutex
 	cache map[string]cachedHot // keyed by "since|lang"
+
+	ingesting sync.Map // externalId -> struct{}, dedupes concurrent ingest attempts
 }
 
 type cachedHot struct {
@@ -47,9 +55,10 @@ type HotRepo struct {
 	InCorpus     bool            `json:"inCorpus"`
 }
 
-func NewHotReposHandler(store *repository.Store) *HotReposHandler {
+func NewHotReposHandler(store *repository.Store, gh *github.Adapter) *HotReposHandler {
 	return &HotReposHandler{
 		store: store,
+		gh:    gh,
 		hc:    github.NewTrendingClient(),
 		cache: map[string]cachedHot{},
 	}
@@ -115,7 +124,56 @@ func (h *HotReposHandler) get(ctx context.Context, since, lang string) ([]HotRep
 
 	items := h.enrich(ctx, scraped)
 	h.cache[key] = cachedHot{items: items, fetchedAt: time.Now()}
+
+	// Ingest trending repos we don't track yet so they get classified,
+	// snapshotted, and a working detail page. Background + best-effort: the
+	// response is served from the scrape regardless of ingest outcome.
+	var newcomers []string
+	for _, it := range items {
+		if !it.InCorpus {
+			newcomers = append(newcomers, it.ExternalID)
+		}
+	}
+	go h.ingestNewcomers(newcomers)
+
 	return items, nil
+}
+
+// ingestNewcomers full-fetches trending repos not yet in our corpus and upserts
+// them. UpsertItems marks freshly-inserted items analysisStatus=pending, so the
+// categorizer classifies them on its next pass; AppendSnapshots starts their
+// star history. Best-effort and deduped so overlapping hourly refreshes don't
+// double-fetch the same repo from GitHub.
+func (h *HotReposHandler) ingestNewcomers(externalIDs []string) {
+	if h.gh == nil || len(externalIDs) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), ingestTimeout)
+	defer cancel()
+
+	var items []domain.TrackedItem
+	for _, id := range externalIDs {
+		if _, busy := h.ingesting.LoadOrStore(id, struct{}{}); busy {
+			continue // another goroutine is already fetching this repo
+		}
+		found, err := h.gh.Search(ctx, "repo:"+id, 1)
+		h.ingesting.Delete(id)
+		if err != nil || len(found) == 0 {
+			continue
+		}
+		items = append(items, found[0])
+	}
+	if len(items) == 0 {
+		return
+	}
+	if _, err := h.store.UpsertItems(ctx, items); err != nil {
+		slog.Warn("trending ingest: upsert failed", "count", len(items), "err", err)
+		return
+	}
+	if _, err := h.store.AppendSnapshots(ctx, items); err != nil {
+		slog.Warn("trending ingest: snapshot failed", "err", err)
+	}
+	slog.Info("trending newcomers ingested", "count", len(items))
 }
 
 // enrich joins scraped repos to our corpus, attaching domain classification for
