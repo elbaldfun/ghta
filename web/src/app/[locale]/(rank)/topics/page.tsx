@@ -54,28 +54,49 @@ export default async function TopicsPage({
         <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
       ) : (
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((tp, i) => (
-            <Link
-              key={tp.topic}
-              href={`/?q=${encodeURIComponent(tp.topic)}`}
-              className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 shrink-0 text-right text-[11px] font-bold text-muted">{i + 1}</span>
-                  <span className="truncate text-sm font-bold">{tp.topic}</span>
+          {topics.map((tp, i) => {
+            const pct = tp.totalStars > 0 ? (tp.growth / tp.totalStars) * 100 : 0;
+            const heat =
+              pct >= 4
+                ? 'rgb(var(--heat4))'
+                : pct >= 2
+                  ? 'rgb(var(--heat3))'
+                  : pct >= 0.8
+                    ? 'rgb(var(--heat2))'
+                    : pct >= 0.2
+                      ? 'rgb(var(--heat1))'
+                      : 'rgb(var(--heat0))';
+            return (
+              <Link
+                key={tp.topic}
+                href={`/?q=${encodeURIComponent(tp.topic)}`}
+                className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-5 shrink-0 text-right font-mono text-[11px] font-bold tabular-nums"
+                      style={{ color: i < 3 ? heat : 'rgb(var(--muted))' }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="truncate text-sm font-bold">{tp.topic}</span>
+                  </div>
+                  <div className="mt-0.5 pl-7 font-mono text-[11px] tabular-nums text-muted">
+                    {tp.repoCount} {t('devRepos')} · {formatCompact(tp.totalStars)}★
+                  </div>
                 </div>
-                <div className="mt-0.5 pl-7 text-[11px] text-muted">
-                  {tp.repoCount} {t('devRepos')} · {formatCompact(tp.totalStars)}★
-                </div>
-              </div>
-              {sort === 'hot' && tp.growth > 0 && (
-                <span className="shrink-0 text-[11px] font-bold text-accent2">
-                  +{formatCompact(tp.growth)} {t('devPerDay')}
-                </span>
-              )}
-            </Link>
-          ))}
+                {tp.growth > 0 && (
+                  <span
+                    className="shrink-0 font-mono text-[12px] font-bold tabular-nums"
+                    style={{ color: sort === 'hot' ? heat : 'rgb(var(--muted))' }}
+                  >
+                    +{formatCompact(tp.growth)} {t('devPerDay')}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
