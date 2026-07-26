@@ -70,6 +70,13 @@ const (
 
 // TrackedItem is the source-agnostic main document. Every adapter normalizes its
 // raw data into this shape; source-specific fields live under SourceData.
+// Alternative is a commercial/paid product an open-source app can replace.
+type Alternative struct {
+	Name string `bson:"name" json:"name"`                     // canonical product name, e.g. "Notion"
+	Slug string `bson:"slug" json:"slug"`                     // url-safe key for /alternatives/<slug>
+	Kind string `bson:"kind,omitempty" json:"kind,omitempty"` // product category, e.g. "note-taking"
+}
+
 type TrackedItem struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Source       Source             `bson:"source" json:"source"`
@@ -95,8 +102,14 @@ type TrackedItem struct {
 	// GeneratedTopics are LLM-derived tags for no-topic repos (change 12). A
 	// TOP-LEVEL field, not under sourceData, because the fetcher fully replaces
 	// sourceData each pass and would otherwise wipe these.
-	GeneratedTopics []string       `bson:"generatedTopics,omitempty" json:"generatedTopics,omitempty"`
-	SourceData      map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
+	GeneratedTopics []string `bson:"generatedTopics,omitempty" json:"generatedTopics,omitempty"`
+	// AlternativeTo names the commercial products this app is an open-source
+	// alternative to (change 13, LLM-inferred). AltStatus marks the item as
+	// processed so empty results aren't retried forever. Both TOP-LEVEL for the
+	// same reason as GeneratedTopics — the fetcher replaces sourceData wholesale.
+	AlternativeTo []Alternative  `bson:"alternativeTo,omitempty" json:"alternativeTo,omitempty"`
+	AltStatus     string         `bson:"altStatus,omitempty" json:"altStatus,omitempty"`
+	SourceData    map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
 
 	FetchedAt time.Time `bson:"fetchedAt" json:"fetchedAt"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`

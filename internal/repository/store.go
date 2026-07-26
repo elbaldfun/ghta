@@ -112,6 +112,7 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},
 		{Keys: bson.D{{Key: "sourceData.platforms", Value: 1}}},                  // app directory: filter by OS
 		{Keys: bson.D{{Key: "sourceData.latestRelease.publishedAt", Value: -1}}}, // app directory: "new" sort
+		{Keys: bson.D{{Key: "alternativeTo.slug", Value: 1}}},                    // app directory: /alternatives/<slug> reverse lookup
 	}
 	if _, err := s.Items().Indexes().CreateMany(ctx, itemIndexes); err != nil {
 		return fmt.Errorf("item indexes: %w", err)

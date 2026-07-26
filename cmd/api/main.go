@@ -87,9 +87,11 @@ func main() {
 	slog.Info("taxonomy synced", "categories", len(taxNodes), "topicRules", len(rules.Topics), "typeFacets", len(facets.Type))
 
 	// AI categorization pipeline: type facet + domain (rules -> LLM).
-	aiService := service.NewAIService(store, provider.New(cfg, logger))
+	aiProvider := provider.New(cfg, logger)
+	aiService := service.NewAIService(store, aiProvider)
 	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency, logger)
 	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
+	altFinder := job.NewAltFinder(store, aiProvider, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
@@ -121,7 +123,7 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, altFinder, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -158,7 +160,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -234,6 +236,13 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	admin.POST("/internal/dev-sync", func(c *gin.Context) {
 		go devSync.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "dev-sync started"})
+	})
+
+	// Internal: infer "open-source alternative to <paid product>" for the app
+	// corpus (LLM), most-popular-first, resumable. Background.
+	admin.POST("/internal/alt-find", func(c *gin.Context) {
+		go altFinder.Run(jobCtx)
+		c.JSON(http.StatusAccepted, gin.H{"status": "alt-find started"})
 	})
 
 	// Internal (change 12 migration): reset done/failed items back to pending so

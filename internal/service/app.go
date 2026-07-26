@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/repository"
 )
 
@@ -35,23 +36,24 @@ type AppDownload struct {
 // with the platforms it ships for, a primary download per platform, and the
 // trust signals (stars, license) shown as secondary context.
 type AppItem struct {
-	ExternalID      string        `json:"externalId"`
-	Name            string        `json:"name"`
-	Description     string        `json:"description,omitempty"`
-	Language        string        `json:"language,omitempty"`
-	Homepage        string        `json:"homepage,omitempty"`
-	License         string        `json:"license,omitempty"`
-	Stars           int           `json:"stars"`
-	Forks           int           `json:"forks"`
-	Growth          int           `json:"growth"`
-	Type            string        `json:"type,omitempty"`
-	Kind            string        `json:"kind"` // app | cli
-	Platforms       []string      `json:"platforms"`
-	PlatformSource  string        `json:"platformSource,omitempty"`
-	CategoryPath    []string      `json:"categoryPath,omitempty"`
-	LatestReleaseAt *time.Time    `json:"latestReleaseAt,omitempty"`
-	Downloads       []AppDownload `json:"downloads,omitempty"`
-	HasDownloads    bool          `json:"hasDownloads"`
+	ExternalID      string               `json:"externalId"`
+	Name            string               `json:"name"`
+	Description     string               `json:"description,omitempty"`
+	Language        string               `json:"language,omitempty"`
+	Homepage        string               `json:"homepage,omitempty"`
+	License         string               `json:"license,omitempty"`
+	Stars           int                  `json:"stars"`
+	Forks           int                  `json:"forks"`
+	Growth          int                  `json:"growth"`
+	Type            string               `json:"type,omitempty"`
+	Kind            string               `json:"kind"` // app | cli
+	Platforms       []string             `json:"platforms"`
+	PlatformSource  string               `json:"platformSource,omitempty"`
+	CategoryPath    []string             `json:"categoryPath,omitempty"`
+	LatestReleaseAt *time.Time           `json:"latestReleaseAt,omitempty"`
+	Downloads       []AppDownload        `json:"downloads,omitempty"`
+	AlternativeTo   []domain.Alternative `json:"alternativeTo,omitempty"`
+	HasDownloads    bool                 `json:"hasDownloads"`
 }
 
 // downloadPriority ranks asset extensions per platform so the button points at
@@ -208,6 +210,7 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
 			"homepage":        "$sourceData.homepageUrl",
 			"license":         "$sourceData.license",
+			"alternativeTo":   1,
 			"releaseAssets":   bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}},
 			"assetCount":      bson.M{"$size": bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}}},
 		}}},
@@ -245,6 +248,7 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			CategoryPath:    r.CategoryPath,
 			LatestReleaseAt: r.LatestReleaseAt,
 			Downloads:       primaryDownloads(r.ReleaseAssets),
+			AlternativeTo:   r.AlternativeTo,
 			HasDownloads:    r.AssetCount > 0,
 		})
 	}
@@ -252,22 +256,23 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 }
 
 type appRow struct {
-	ExternalID      string     `bson:"externalId"`
-	Name            string     `bson:"name"`
-	Description     string     `bson:"description"`
-	Language        string     `bson:"language"`
-	Homepage        string     `bson:"homepage"`
-	License         string     `bson:"license"`
-	Stars           float64    `bson:"stars"`
-	Forks           float64    `bson:"forks"`
-	Growth          float64    `bson:"growth"`
-	Type            string     `bson:"type"`
-	Platforms       []string   `bson:"platforms"`
-	PlatformSource  string     `bson:"platformSource"`
-	CategoryPath    []string   `bson:"categoryPath"`
-	LatestReleaseAt *time.Time `bson:"latestReleaseAt"`
-	ReleaseAssets   []assetRow `bson:"releaseAssets"`
-	AssetCount      int        `bson:"assetCount"`
+	ExternalID      string               `bson:"externalId"`
+	Name            string               `bson:"name"`
+	Description     string               `bson:"description"`
+	Language        string               `bson:"language"`
+	Homepage        string               `bson:"homepage"`
+	License         string               `bson:"license"`
+	Stars           float64              `bson:"stars"`
+	Forks           float64              `bson:"forks"`
+	Growth          float64              `bson:"growth"`
+	Type            string               `bson:"type"`
+	Platforms       []string             `bson:"platforms"`
+	PlatformSource  string               `bson:"platformSource"`
+	CategoryPath    []string             `bson:"categoryPath"`
+	LatestReleaseAt *time.Time           `bson:"latestReleaseAt"`
+	AlternativeTo   []domain.Alternative `bson:"alternativeTo"`
+	ReleaseAssets   []assetRow           `bson:"releaseAssets"`
+	AssetCount      int                  `bson:"assetCount"`
 }
 
 type assetRow struct {
