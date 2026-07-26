@@ -117,7 +117,10 @@
     "mapSortVelocity": "Vitesse",
     "mapSortRelative": "Relatif",
     "mapSortStars": "Étoiles",
-    "mapColorBy": "Couleur"
+    "mapColorBy": "Couleur",
+    "hotBarTitle": "Tendances",
+    "hotBarWeek": "Semaine",
+    "hotBarMonth": "Mois"
   },
   "consent": {
     "title": "Avis sur les cookies",

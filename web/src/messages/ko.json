@@ -117,7 +117,10 @@
     "mapSortVelocity": "속도",
     "mapSortRelative": "상대 증가",
     "mapSortStars": "스타",
-    "mapColorBy": "색상"
+    "mapColorBy": "색상",
+    "hotBarTitle": "인기",
+    "hotBarWeek": "주",
+    "hotBarMonth": "월"
   },
   "consent": {
     "title": "쿠키 안내",

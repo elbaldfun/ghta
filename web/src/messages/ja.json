@@ -117,7 +117,10 @@
     "mapSortVelocity": "速度",
     "mapSortRelative": "相対増加",
     "mapSortStars": "スター",
-    "mapColorBy": "色"
+    "mapColorBy": "色",
+    "hotBarTitle": "急上昇",
+    "hotBarWeek": "週",
+    "hotBarMonth": "月"
   },
   "consent": {
     "title": "Cookie について",

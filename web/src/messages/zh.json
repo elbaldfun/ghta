@@ -117,7 +117,10 @@
     "mapSortVelocity": "速度",
     "mapSortRelative": "相对增速",
     "mapSortStars": "总星标",
-    "mapColorBy": "颜色"
+    "mapColorBy": "颜色",
+    "hotBarTitle": "本周热榜",
+    "hotBarWeek": "周",
+    "hotBarMonth": "月"
   },
   "consent": {
     "title": "Cookie 使用说明",
