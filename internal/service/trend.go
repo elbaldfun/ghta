@@ -219,6 +219,17 @@ func (s *TrendService) Item(ctx context.Context, source, externalID string) (*do
 		return nil, nil, err
 	}
 
+	// The README lives in item_content (split off the hot collection). Re-attach it
+	// under sourceData so the API shape is unchanged. Fall back to any blob still
+	// embedded on a not-yet-migrated item, so this is safe to deploy before the
+	// backfill finishes.
+	if readme, rErr := s.store.Readme(ctx, domain.Source(source), externalID); rErr == nil && readme != "" {
+		if item.SourceData == nil {
+			item.SourceData = map[string]any{}
+		}
+		item.SourceData["readme"] = readme
+	}
+
 	cur, err := s.store.Snapshots().Find(ctx,
 		bson.M{"meta.source": source, "meta.externalId": externalID},
 		options.Find().SetSort(bson.D{{Key: "capturedAt", Value: 1}}),

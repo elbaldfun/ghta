@@ -20,6 +20,15 @@ func (s *Store) UpsertItems(ctx context.Context, items []domain.TrackedItem) (in
 	if len(items) == 0 {
 		return 0, nil
 	}
+
+	// Split the heavyweight README into item_content FIRST, so a crash between the
+	// two writes leaves the README safely stored (the items write below just omits
+	// it) rather than lost. tracked_items then carries only the small fields the
+	// board queries scan.
+	if err := s.upsertReadmes(ctx, items); err != nil {
+		return 0, err
+	}
+
 	now := time.Now().UTC()
 	models := make([]mongo.WriteModel, 0, len(items))
 	for _, it := range items {
@@ -32,7 +41,7 @@ func (s *Store) UpsertItems(ctx context.Context, items []domain.TrackedItem) (in
 			"primaryMetric":   it.PrimaryMetric,
 			"metricDirection": it.MetricDirection,
 			"metrics":         it.Metrics,
-			"sourceData":      it.SourceData,
+			"sourceData":      sourceDataWithoutReadme(it.SourceData),
 			"fetchedAt":       now,
 			"updatedAt":       now,
 		}
@@ -112,6 +121,23 @@ func (s *Store) AppendSnapshots(ctx context.Context, items []domain.TrackedItem)
 		return 0, fmt.Errorf("insert snapshots: %w", err)
 	}
 	return len(docs), nil
+}
+
+// sourceDataWithoutReadme returns a shallow copy of sd with the README removed,
+// so the blob lives only in item_content and never bloats tracked_items. The
+// original map is left untouched (the caller may still read it).
+func sourceDataWithoutReadme(sd map[string]any) map[string]any {
+	if _, ok := sd["readme"]; !ok {
+		return sd
+	}
+	out := make(map[string]any, len(sd))
+	for k, v := range sd {
+		if k == "readme" {
+			continue
+		}
+		out[k] = v
+	}
+	return out
 }
 
 func startOfUTCDay(t time.Time) time.Time {
