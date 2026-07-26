@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getEcosystem, getTrends, type EcoPillar, type EcoSort } from '@/lib/data';
-import { RankRow } from '@/components/rank/RankRow';
+import { RankTable } from '@/components/rank/RankTable';
 import { Pagination } from '@/components/rank/Pagination';
 
 export async function generateMetadata({
@@ -86,23 +86,22 @@ export default async function EcosystemPage({
       {items.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
       ) : (
-        <div className="overflow-hidden rounded-card border border-border bg-surface">
-          <div className="grid grid-cols-[36px_1fr_86px] items-center gap-2.5 border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted sm:gap-3.5 sm:px-4 md:grid-cols-[40px_1fr_92px_100px_84px]">
-            <div>#</div>
-            <div>{t('mapColRepo')}</div>
-            <div className="hidden md:block">{t('mapColTrend')}</div>
-            <div className="text-right">{t('mapColVelocity')}</div>
-            <div className="hidden text-right md:block">{t('mapColStars')}</div>
-          </div>
-          {items.map((item, i) => (
-            <RankRow
-              key={item.externalId}
-              item={item}
-              rank={(page - 1) * PER_PAGE + i + 1}
-              series={trends[item.externalId]}
-            />
-          ))}
-        </div>
+        <RankTable
+          header={
+            <div className="grid grid-cols-[36px_1fr_86px] items-center gap-2.5 border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted sm:gap-3.5 sm:px-4 md:grid-cols-[40px_1fr_92px_100px_84px]">
+              <div>#</div>
+              <div>{t('mapColRepo')}</div>
+              <div className="hidden md:block">{t('mapColTrend')}</div>
+              <div className="text-right">{t('mapColVelocity')}</div>
+              <div className="hidden text-right md:block">{t('mapColStars')}</div>
+            </div>
+          }
+          entries={items.map((item, i) => ({
+            item,
+            rank: (page - 1) * PER_PAGE + i + 1,
+            series: trends[item.externalId],
+          }))}
+        />
       )}
       {items.length > 0 && (
         <Pagination

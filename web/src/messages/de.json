@@ -121,7 +121,10 @@
     "hotBarTitle": "Angesagt",
     "hotBarWeek": "Woche",
     "hotBarMonth": "Monat",
-    "trendDaysSuffix": " T"
+    "trendDaysSuffix": " T",
+    "detailWeekly": "Woche (geschätzt)",
+    "detailOpenGithub": "Auf GitHub öffnen",
+    "detailDetailPage": "Details"
   },
   "consent": {
     "title": "Cookie-Hinweis",

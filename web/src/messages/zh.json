@@ -121,7 +121,10 @@
     "hotBarTitle": "本周热榜",
     "hotBarWeek": "周",
     "hotBarMonth": "月",
-    "trendDaysSuffix": "天"
+    "trendDaysSuffix": "天",
+    "detailWeekly": "周增(推算)",
+    "detailOpenGithub": "在 GitHub 打开",
+    "detailDetailPage": "详情页"
   },
   "consent": {
     "title": "Cookie 使用说明",

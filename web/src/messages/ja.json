@@ -121,7 +121,10 @@
     "hotBarTitle": "急上昇",
     "hotBarWeek": "週",
     "hotBarMonth": "月",
-    "trendDaysSuffix": "日"
+    "trendDaysSuffix": "日",
+    "detailWeekly": "週間(推定)",
+    "detailOpenGithub": "GitHub で開く",
+    "detailDetailPage": "詳細"
   },
   "consent": {
     "title": "Cookie について",

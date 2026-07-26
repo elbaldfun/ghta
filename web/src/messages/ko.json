@@ -121,7 +121,10 @@
     "hotBarTitle": "인기",
     "hotBarWeek": "주",
     "hotBarMonth": "월",
-    "trendDaysSuffix": "일"
+    "trendDaysSuffix": "일",
+    "detailWeekly": "주간(추정)",
+    "detailOpenGithub": "GitHub에서 열기",
+    "detailDetailPage": "상세"
   },
   "consent": {
     "title": "쿠키 안내",

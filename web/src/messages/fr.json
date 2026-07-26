@@ -121,7 +121,10 @@
     "hotBarTitle": "Tendances",
     "hotBarWeek": "Semaine",
     "hotBarMonth": "Mois",
-    "trendDaysSuffix": " j"
+    "trendDaysSuffix": " j",
+    "detailWeekly": "Semaine (est.)",
+    "detailOpenGithub": "Ouvrir sur GitHub",
+    "detailDetailPage": "Détails"
   },
   "consent": {
     "title": "Avis sur les cookies",
