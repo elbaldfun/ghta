@@ -33,29 +33,27 @@ export function ConsentBanner() {
     <div
       role="dialog"
       aria-label={t('title')}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 p-3 backdrop-blur sm:inset-x-auto sm:bottom-4 sm:right-4 sm:max-w-[300px] sm:rounded-card sm:border sm:shadow-card-hover"
     >
-      <div className="mx-auto flex max-w-screen-xl flex-col gap-3 px-7 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-relaxed text-muted">
-          {t('message')}{' '}
-          <Link href="/privacy" className="font-semibold text-accent hover:underline">
-            {t('learnMore')}
-          </Link>
-        </p>
-        <div className="flex shrink-0 gap-2">
-          <button
-            onClick={() => choose('denied')}
-            className="rounded-lg border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-fg"
-          >
-            {t('reject')}
-          </button>
-          <button
-            onClick={() => choose('granted')}
-            className="rounded-lg bg-accent px-3.5 py-1.5 text-xs font-bold text-accent-fg"
-          >
-            {t('accept')}
-          </button>
-        </div>
+      <p className="text-[11.5px] leading-relaxed text-muted">
+        {t('message')}{' '}
+        <Link href="/privacy" className="font-semibold text-accent hover:underline">
+          {t('learnMore')}
+        </Link>
+      </p>
+      <div className="mt-2.5 flex shrink-0 justify-end gap-2">
+        <button
+          onClick={() => choose('denied')}
+          className="rounded-lg border border-border px-3 py-1 text-[11.5px] font-semibold text-muted hover:text-fg"
+        >
+          {t('reject')}
+        </button>
+        <button
+          onClick={() => choose('granted')}
+          className="rounded-lg bg-accent px-3 py-1 text-[11.5px] font-bold text-accent-fg"
+        >
+          {t('accept')}
+        </button>
       </div>
     </div>
   );
