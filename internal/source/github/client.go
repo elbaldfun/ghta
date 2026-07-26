@@ -86,7 +86,10 @@ query($q: String!, $first: Int!, $after: String) {
           licenseInfo { name }
           repositoryTopics(first: 20) { edges { node { topic { name } url } } }
           releases(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) {
-            edges { node { name tagName isPrerelease isLatest isDraft publishedAt } }
+            edges { node {
+              name tagName isPrerelease isLatest isDraft publishedAt
+              releaseAssets(first: 40) { nodes { name downloadUrl size } }
+            } }
           }
           readme: object(expression: "HEAD:README.md") { ... on Blob { text } }
         }

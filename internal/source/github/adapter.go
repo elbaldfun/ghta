@@ -133,12 +133,19 @@ type repoNode struct {
 	Releases struct {
 		Edges []struct {
 			Node struct {
-				Name         string     `json:"name"`
-				TagName      string     `json:"tagName"`
-				IsPrerelease bool       `json:"isPrerelease"`
-				IsLatest     bool       `json:"isLatest"`
-				IsDraft      bool       `json:"isDraft"`
-				PublishedAt  *time.Time `json:"publishedAt"`
+				Name          string     `json:"name"`
+				TagName       string     `json:"tagName"`
+				IsPrerelease  bool       `json:"isPrerelease"`
+				IsLatest      bool       `json:"isLatest"`
+				IsDraft       bool       `json:"isDraft"`
+				PublishedAt   *time.Time `json:"publishedAt"`
+				ReleaseAssets struct {
+					Nodes []struct {
+						Name        string `json:"name"`
+						DownloadURL string `json:"downloadUrl"`
+						Size        int64  `json:"size"`
+					} `json:"nodes"`
+				} `json:"releaseAssets"`
 			} `json:"node"`
 		} `json:"edges"`
 	} `json:"releases"`
@@ -183,6 +190,36 @@ func mapRepo(n repoNode) domain.TrackedItem {
 		})
 	}
 
+	// Platform detection: parse the assets of the release we'd point a user at —
+	// the one flagged latest, else the most recent non-draft (edges are
+	// CREATED_AT desc). The type-dependent web heuristic is intentionally off here
+	// (type isn't known until categorization); the asset + topic layers, which
+	// include explicit web topics, are type-independent and refresh every fetch.
+	chosen := -1
+	for i := range n.Releases.Edges {
+		nd := n.Releases.Edges[i].Node
+		if nd.IsDraft {
+			continue
+		}
+		if nd.IsLatest {
+			chosen = i
+			break
+		}
+		if chosen == -1 {
+			chosen = i
+		}
+	}
+	var assets []ReleaseAsset
+	var latestRelease map[string]any
+	if chosen >= 0 {
+		nd := n.Releases.Edges[chosen].Node
+		for _, a := range nd.ReleaseAssets.Nodes {
+			assets = append(assets, ReleaseAsset{Name: a.Name, DownloadURL: a.DownloadURL, Size: a.Size})
+		}
+		latestRelease = map[string]any{"tag": nd.TagName, "publishedAt": nd.PublishedAt}
+	}
+	plat := DetectPlatforms(assets, topicNames, "", externalID, n.HomepageURL, language)
+
 	return domain.TrackedItem{
 		Source:          domain.SourceGitHub,
 		ExternalID:      externalID,
@@ -197,15 +234,29 @@ func mapRepo(n repoNode) domain.TrackedItem {
 			"openIssues": float64(n.Issues.TotalCount),
 		},
 		SourceData: map[string]any{
-			"owner":       n.Owner.Login,
-			"url":         n.URL,
-			"homepageUrl": n.HomepageURL,
-			"license":     license,
-			"pushedAt":    n.PushedAt,
-			"topics":      topics,
-			"topicNames":  topicNames,
-			"releases":    releases,
-			"readme":      readme,
+			"owner":          n.Owner.Login,
+			"url":            n.URL,
+			"homepageUrl":    n.HomepageURL,
+			"license":        license,
+			"pushedAt":       n.PushedAt,
+			"topics":         topics,
+			"topicNames":     topicNames,
+			"releases":       releases,
+			"readme":         readme,
+			"platforms":      platformStrings(plat.Platforms),
+			"platformSource": plat.Source,
+			"releaseAssets":  plat.Assets,
+			"latestRelease":  latestRelease,
 		},
 	}
+}
+
+// platformStrings converts the detected platform set to plain strings for
+// storage and querying.
+func platformStrings(ps []Platform) []string {
+	out := make([]string, len(ps))
+	for i, p := range ps {
+		out[i] = string(p)
+	}
+	return out
 }

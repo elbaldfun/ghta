@@ -29,10 +29,10 @@ type ReleaseAsset struct {
 // AssetMatch is a release asset that resolved to a platform — the raw material
 // for the detail-page "download for your OS" section.
 type AssetMatch struct {
-	Name     string   `json:"name"`
-	Platform Platform `json:"platform"`
-	URL      string   `json:"url,omitempty"`
-	Size     int64    `json:"size,omitempty"`
+	Name     string   `json:"name" bson:"name"`
+	Platform Platform `json:"platform" bson:"platform"`
+	URL      string   `json:"url,omitempty" bson:"url,omitempty"`
+	Size     int64    `json:"size,omitempty" bson:"size,omitempty"`
 }
 
 // PlatformResult is the outcome of platform detection for one repo.
