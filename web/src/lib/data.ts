@@ -8,7 +8,12 @@ import { LICENSE_NAMES, type SortOption } from './rank-data';
 
 // Server-only on purpose: without the NEXT_PUBLIC_ prefix the backend address
 // is never inlined into the browser bundle. Every caller below runs on the server.
-const API = process.env.API_URL || 'http://localhost:3000';
+const API =
+  process.env.API_URL ||
+  // A production build without API_URL (e.g. a preview deploy that only has the
+  // variable set for Production) would otherwise call localhost and render every
+  // page empty. Fall back to the public API there; keep localhost for dev.
+  (process.env.NODE_ENV === 'production' ? 'https://api.starrank.dev' : 'http://localhost:3000');
 
 export interface RepoSummary {
   owner: string;
@@ -222,6 +227,28 @@ export async function getEcosystem(
   );
   if (res.error !== null || !res.data) return { items: [], total: 0 };
   return { items: res.data.data ?? [], total: res.data.total ?? 0 };
+}
+
+export interface HeatCell {
+  path: string;
+  name: string;
+  nameEn?: string;
+  repos: number;
+  stars: number;
+  growth: number;
+  intensity: number; // daily stars per repo — the heat signal
+  children?: HeatCell[];
+}
+
+/**
+ * The ecosystem map: every domain with its scale (repos) and current velocity
+ * (growth, intensity). Scale and heat are separate signals — the largest field
+ * is usually not the one moving. Empty on error.
+ */
+export async function getHeatmap(): Promise<HeatCell[]> {
+  const res = await apiGet<{ data: HeatCell[] }>(`/category/heat`, 3600);
+  if (res.error !== null || !res.data) return [];
+  return res.data.data ?? [];
 }
 
 export interface SearchParamsIn {

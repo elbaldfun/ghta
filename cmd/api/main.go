@@ -174,8 +174,10 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	handler.NewTopicHandler(service.NewTopicService(store)).Register(r)         // GET /topics — hot topics per domain
 	handler.NewEcosystemHandler(service.NewEcosystemService(store)).Register(r) // GET /ecosystem — AI stack (skills/mcp/agents)
 
-	categoryHandler := handler.NewCategoryHandler(service.NewCategoryService(store), facetOrder)
+	categoryService := service.NewCategoryService(store)
+	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)
 	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
+	handler.NewHeatmapHandler(service.NewHeatmapService(store, categoryService)).Register(r) // GET /category/heat
 
 	// ---- Admin: bearer-token guarded ----
 	// These mutate data, expose user records, or start quota-burning jobs, so

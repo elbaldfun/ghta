@@ -13,7 +13,7 @@ import {
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
 import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';
-import { HotStrip } from '@/components/rank/HotStrip';
+import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
 import { RepoCard } from '@/components/rank/RepoCard';
 
@@ -89,22 +89,7 @@ export default async function RankHome({
 
   return (
     <>
-      {isLanding && (
-        <>
-          <HotStrip
-            title={t('hotTitle')}
-            subtitle={t('hotSubtitle')}
-            trendLabel={t('thisWeek')}
-            items={hotWeekly}
-          />
-          <HotStrip
-            title={t('hotMonthTitle')}
-            subtitle={t('hotMonthSubtitle')}
-            trendLabel={t('thisMonth')}
-            items={hotMonthly}
-          />
-        </>
-      )}
+      {isLanding && <HotBar weekly={hotWeekly} monthly={hotMonthly} />}
       <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
         <CategoryTree tree={tree} total={total} />
 
