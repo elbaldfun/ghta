@@ -63,10 +63,14 @@ export default async function RankHome({
     !searchParams.license &&
     page === 1;
 
-  const [tree, facets, total, searchRes, hotWeekly, hotMonthly] = await Promise.all([
+  const [tree, facets, corpusTotal, searchRes, hotWeekly, hotMonthly] = await Promise.all([
     getCategoryTree(),
     getFacets(),
-    getTotalCount(),
+    // The corpus total feeds the sidebar "browse all" badge. On the landing view
+    // it equals the unfiltered board total we're already fetching, so reuse that
+    // (below) instead of issuing a second full-count request; only filtered views
+    // (where the board total is the filtered count) still need it.
+    isLanding ? Promise.resolve<number | null>(null) : getTotalCount(),
     searchRepos({
       category: searchParams.category,
       type: searchParams.type,
@@ -80,6 +84,8 @@ export default async function RankHome({
     isLanding ? getHot('weekly', 12) : Promise.resolve([] as HotRepo[]),
     isLanding ? getHot('monthly', 12) : Promise.resolve([] as HotRepo[]),
   ]);
+
+  const total = isLanding ? (searchRes.data?.totalCount ?? null) : corpusTotal;
 
   const activeNode = searchParams.category ? findCategory(tree, searchParams.category) : undefined;
   const heading = activeNode ? categoryLabel(activeNode, locale) : t('homeTitle');

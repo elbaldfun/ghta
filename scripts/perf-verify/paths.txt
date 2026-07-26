@@ -1,0 +1,39 @@
+# One API path per line. Blank lines and #comments are ignored.
+# These are the read endpoints the website consumes; extend as needed.
+# The goal is coverage of every filter/sort/pagination shape a perf change touches.
+
+# --- main board: sorts ---
+/trending?source=github&sort=stars:desc&limit=24
+/trending?source=github&sort=forks:desc&limit=24
+/trending?source=github&sort=updated:desc&limit=24
+
+# --- main board: filters (each exercises a different index path) ---
+/trending?source=github&type=cli&sort=stars:desc&limit=24
+/trending?source=github&language=Python&sort=stars:desc&limit=24
+/trending?source=github&category=ai/agents&sort=stars:desc&limit=24
+/trending?source=github&category=ai&sort=stars:desc&limit=24
+
+# --- search (the regex -> index migration; watch this diff closely) ---
+/trending?source=github&q=mcp&limit=24
+/trending?source=github&q=agent&limit=24
+/trending?source=github&q=react&limit=24
+
+# --- pagination (skip depth) ---
+/trending?source=github&sort=stars:desc&limit=24&page=1
+/trending?source=github&sort=stars:desc&limit=24&page=5
+
+# --- rising windows ---
+/trending/rising?window=daily&limit=24
+/trending/rising?window=weekly&limit=24
+
+# --- cached board endpoints ---
+/ecosystem?pillar=all&sort=hot&limit=30
+/ecosystem?pillar=mcp&sort=hot&limit=30
+/ecosystem?pillar=skill&sort=popular&limit=30
+/developers?board=merit&domain=ai&limit=24
+/developers?board=rising&domain=ai&limit=24
+/topics?domain=ai&sort=hot&limit=40
+/category
+/category/facets
+/category/heat
+/stats/languages?limit=12

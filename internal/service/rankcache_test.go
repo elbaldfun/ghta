@@ -89,6 +89,28 @@ func TestTTLCacheReturnsErrorWhenNoStale(t *testing.T) {
 	}
 }
 
+// Characterization of CURRENT behavior: once an entry is stale, get() BLOCKS the
+// triggering caller on the full recompute and returns the fresh value (never the
+// stale one). This is the latency cliff the stale-while-revalidate work targets:
+// after SWR lands, a stale hit should return the OLD value immediately and
+// refresh in the background — at which point this test is updated to assert the
+// new contract (stale value returned, compute observed asynchronously).
+func TestTTLCacheBlocksOnStaleRecompute(t *testing.T) {
+	c := newTTLCache[int](time.Nanosecond) // entries are stale almost immediately
+	if _, err := c.get(context.Background(), "k", func(context.Context) (int, error) { return 1, nil }); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	time.Sleep(time.Millisecond) // ensure TTL elapsed
+
+	v, err := c.get(context.Background(), "k", func(context.Context) (int, error) { return 2, nil })
+	if err != nil {
+		t.Fatalf("recompute: %v", err)
+	}
+	if v != 2 {
+		t.Fatalf("stale hit returned %d, want 2 (current contract: caller blocks for fresh value)", v)
+	}
+}
+
 func TestTTLCacheCapsKeySpace(t *testing.T) {
 	c := newTTLCache[int](time.Minute)
 	total := maxRankCacheKeys + 50
