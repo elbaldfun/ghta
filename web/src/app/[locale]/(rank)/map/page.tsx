@@ -80,10 +80,9 @@ export default async function MapPage({
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-surface">
-            <div className="grid grid-cols-[42px_1fr_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted md:grid-cols-[42px_1fr_92px_100px_84px]">
+            <div className="grid grid-cols-[40px_1fr_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">
               <div>#</div>
               <div>{t('mapColRepo')}</div>
-              <div className="hidden md:block">{t('mapColTrend')}</div>
               <div className="text-right">{t('mapColVelocity')}</div>
               <div className="text-right">{t('mapColStars')}</div>
             </div>
