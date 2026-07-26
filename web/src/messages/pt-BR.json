@@ -153,7 +153,9 @@
     "altIndexTitle": "Alternativas open-source",
     "altIndexSubtitle": "Encontre alternativas open-source a softwares pagos",
     "altCount": "{count} alternativas",
-    "altEmpty": "Nenhuma alternativa encontrada"
+    "altEmpty": "Nenhuma alternativa encontrada",
+    "tabList": "Ranking",
+    "tabDirectory": "Diretório"
   },
   "consent": {
     "title": "Aviso de cookies",

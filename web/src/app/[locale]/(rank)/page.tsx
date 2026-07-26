@@ -16,6 +16,7 @@ import { FilterBar } from '@/components/rank/FilterBar';
 import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
 import { RepoRow } from '@/components/rank/RepoRow';
+import { PageTabs } from '@/components/rank/PageTabs';
 
 const PER_PAGE = 24;
 
@@ -94,6 +95,7 @@ export default async function RankHome({
         <CategoryTree tree={tree} total={total} />
 
       <div className="px-[26px] py-[22px]">
+        <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
           <div>
             {breadcrumb && (

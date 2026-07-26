@@ -153,7 +153,9 @@
     "altIndexTitle": "开源替代",
     "altIndexSubtitle": "为付费软件找免费开源的替代品",
     "altCount": "{count} 个替代",
-    "altEmpty": "暂未发现开源替代"
+    "altEmpty": "暂未发现开源替代",
+    "tabList": "榜单",
+    "tabDirectory": "目录"
   },
   "consent": {
     "title": "Cookie 使用说明",

@@ -153,7 +153,9 @@
     "altIndexTitle": "オープンソース代替",
     "altIndexSubtitle": "有料ソフトの無料OSS代替を探す",
     "altCount": "{count} 件",
-    "altEmpty": "代替はまだ見つかりません"
+    "altEmpty": "代替はまだ見つかりません",
+    "tabList": "ランキング",
+    "tabDirectory": "ディレクトリ"
   },
   "consent": {
     "title": "Cookie について",

@@ -5,6 +5,7 @@ import { getApps, getCategoryTree, type AppSort, type OS } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
 import { FilterDropdown } from '@/components/rank/FilterDropdown';
 import { Pagination } from '@/components/rank/Pagination';
+import { PageTabs } from '@/components/rank/PageTabs';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
 // build where the backend is unreachable.
@@ -91,6 +92,7 @@ export default async function AppsPage({
 
   return (
     <div className="px-[26px] py-[22px]">
+      <PageTabs items={[{ href: '/apps', label: t('tabDirectory') }, { href: '/alternatives', label: t('navAlternatives') }]} />
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('appsTitle')}</h1>
         <span className="text-xs text-muted">{t('appsSubtitle')}</span>

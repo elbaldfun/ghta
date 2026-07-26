@@ -5,6 +5,7 @@ import { getEcosystem, getHeatmap, getTrends } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankTable } from '@/components/rank/RankTable';
+import { PageTabs } from '@/components/rank/PageTabs';
 
 // Render per request rather than at build time: the map's data comes from the
 // backend, and a build that can't reach it (e.g. a preview deploy without
@@ -46,6 +47,7 @@ export default async function MapPage({
 
   return (
     <div className="px-[26px] py-[22px]">
+      <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
       <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-display text-xl font-extrabold">{t('mapTitle')}</h1>
         <span className="font-mono text-[11.5px] tabular-nums text-muted">

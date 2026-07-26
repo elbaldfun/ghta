@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { NavLink } from './NavLink';
+import { NavDropdown } from './NavDropdown';
 import { SearchBox } from './SearchBox';
 import { LocaleMenu } from './LocaleMenu';
 import { ThemePill } from './ThemePill';
@@ -22,11 +23,14 @@ export function RankHeader() {
           <nav className="flex flex-wrap items-center gap-1">
             <NavLink href="/" label={t('navRankings')} />
             <NavLink href="/breakout" label={t('navBreakout')} />
-            <NavLink href="/map" label={t('navMap')} />
-            <NavLink href="/ecosystem" label={t('navEcosystem')} />
+            <NavDropdown
+              label={t('navAi')}
+              items={[
+                { href: '/ecosystem', label: t('navEcosystem') },
+                { href: '/topics', label: t('navTopics') },
+              ]}
+            />
             <NavLink href="/apps" label={t('navApps')} />
-            <NavLink href="/alternatives" label={t('navAlternatives')} />
-            <NavLink href="/topics" label={t('navTopics')} />
             <NavLink href="/developers" label={t('navDevelopers')} />
             <NavLink href="/blog" label={tb('nav')} />
           </nav>

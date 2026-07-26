@@ -153,7 +153,9 @@
     "altIndexTitle": "오픈소스 대체",
     "altIndexSubtitle": "유료 소프트웨어의 무료 오픈소스 대체 찾기",
     "altCount": "{count}개",
-    "altEmpty": "아직 대체를 찾지 못했습니다"
+    "altEmpty": "아직 대체를 찾지 못했습니다",
+    "tabList": "순위",
+    "tabDirectory": "디렉터리"
   },
   "consent": {
     "title": "쿠키 안내",
