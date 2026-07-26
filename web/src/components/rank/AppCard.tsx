@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { AppItem, OS } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
+import { AppIcon } from './AppIcon';
 import { StarIcon } from './icons';
 
 const OS_SHORT: Record<OS, string> = {
@@ -43,15 +44,7 @@ export function AppCard({ app }: { app: AppItem }) {
     <div className="flex items-start gap-3.5 border-b border-border px-3 py-3.5 transition-colors last:border-b-0 hover:bg-surface2 sm:gap-4 sm:px-4">
       {/* icon */}
       <Link href={`/repo/${owner}/${name}`} className="shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`https://github.com/${owner}.png?size=88`}
-          alt=""
-          loading="lazy"
-          width={44}
-          height={44}
-          className="h-11 w-11 rounded-[10px] border border-border bg-surface2 object-cover"
-        />
+        <AppIcon iconUrl={app.iconUrl} owner={owner} title={title} />
       </Link>
 
       {/* identity + trust */}

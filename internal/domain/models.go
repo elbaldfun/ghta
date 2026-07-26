@@ -107,9 +107,13 @@ type TrackedItem struct {
 	// alternative to (change 13, LLM-inferred). AltStatus marks the item as
 	// processed so empty results aren't retried forever. Both TOP-LEVEL for the
 	// same reason as GeneratedTopics — the fetcher replaces sourceData wholesale.
-	AlternativeTo []Alternative  `bson:"alternativeTo,omitempty" json:"alternativeTo,omitempty"`
-	AltStatus     string         `bson:"altStatus,omitempty" json:"altStatus,omitempty"`
-	SourceData    map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
+	AlternativeTo []Alternative `bson:"alternativeTo,omitempty" json:"alternativeTo,omitempty"`
+	AltStatus     string        `bson:"altStatus,omitempty" json:"altStatus,omitempty"`
+	// IconURL is the app's brand icon extracted from its homepage (change 13).
+	// IconStatus marks the item as processed. TOP-LEVEL, same reason as above.
+	IconURL    string         `bson:"iconUrl,omitempty" json:"iconUrl,omitempty"`
+	IconStatus string         `bson:"iconStatus,omitempty" json:"iconStatus,omitempty"`
+	SourceData map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
 
 	FetchedAt time.Time `bson:"fetchedAt" json:"fetchedAt"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`

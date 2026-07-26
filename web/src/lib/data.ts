@@ -240,6 +240,7 @@ export interface AppItem {
   name: string;
   description?: string;
   language?: string;
+  iconUrl?: string;
   homepage?: string;
   license?: string;
   stars: number;
