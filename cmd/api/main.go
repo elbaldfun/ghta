@@ -284,6 +284,28 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		c.JSON(http.StatusOK, gin.H{"status": "reset", "count": n})
 	})
 
+	// Internal (P2 storage split): migrate embedded READMEs out of tracked_items
+	// into item_content. ?limit=N stages the rollout (default 500; 0 = all).
+	// Operator loops until it returns count 0. Idempotent and safe while serving —
+	// the detail read falls back to the embedded blob until an item is migrated.
+	admin.POST("/internal/split-content", func(c *gin.Context) {
+		limit := 500
+		if v := c.Query("limit"); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be >= 0"})
+				return
+			}
+			limit = n
+		}
+		n, err := service.SplitContent(c.Request.Context(), store, limit)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "split", "count": n})
+	})
+
 	// Internal: warm up the star-history cache for the top-N repos by stars,
 	// in the background. Already-backfilled repos are skipped; remote queries
 	// are paced to stay polite to the public datasets.

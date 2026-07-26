@@ -26,6 +26,9 @@
 /trending/rising?window=daily&limit=24
 /trending/rising?window=weekly&limit=24
 
+# --- detail page (README lives in item_content post-split; must re-attach) ---
+/trending/item?source=github&externalId=codecrafters-io/build-your-own-x
+
 # --- cached board endpoints ---
 /ecosystem?pillar=all&sort=hot&limit=30
 /ecosystem?pillar=mcp&sort=hot&limit=30

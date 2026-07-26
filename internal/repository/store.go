@@ -16,6 +16,7 @@ import (
 
 const (
 	CollItems       = "tracked_items"
+	CollItemContent = "item_content" // large README blobs, split off the hot items collection
 	CollCategories  = "categories"
 	CollUsers       = "users"
 	CollFetchRuns   = "fetch_runs"
@@ -46,6 +47,7 @@ func Connect(ctx context.Context, cfg *config.Config) (*Store, error) {
 }
 
 func (s *Store) Items() *mongo.Collection       { return s.DB.Collection(CollItems) }
+func (s *Store) ItemContent() *mongo.Collection { return s.DB.Collection(CollItemContent) }
 func (s *Store) Categories() *mongo.Collection  { return s.DB.Collection(CollCategories) }
 func (s *Store) Users() *mongo.Collection       { return s.DB.Collection(CollUsers) }
 func (s *Store) FetchRuns() *mongo.Collection   { return s.DB.Collection(CollFetchRuns) }
@@ -142,6 +144,14 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		"fetchedAt_-1", "dailyIncrease_-1", "weeklyIncrease_-1", "monthlyIncrease_-1",
 	} {
 		_, _ = s.Items().Indexes().DropOne(ctx, name)
+	}
+
+	// item_content holds the split-off README blobs, keyed to its parent item.
+	if _, err := s.ItemContent().Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "source", Value: 1}, {Key: "externalId", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("uniq_content_source_externalId"),
+	}); err != nil {
+		return fmt.Errorf("item content indexes: %w", err)
 	}
 
 	if _, err := s.Categories().Indexes().CreateOne(ctx, mongo.IndexModel{
