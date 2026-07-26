@@ -23,7 +23,9 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-paths_file="$here/paths.txt"
+# PERF_PATHS overrides the path list, e.g. to focus a run on the endpoints a
+# change actually touches. Defaults to the full paths.txt next to this script.
+paths_file="${PERF_PATHS:-$here/paths.txt}"
 
 die() { echo "error: $*" >&2; exit 1; }
 command -v curl >/dev/null || die "curl not found"
