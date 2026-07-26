@@ -81,12 +81,12 @@ export default async function MapPage({
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-surface">
-            <div className="grid grid-cols-[40px_1fr_92px_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">
+            <div className="grid grid-cols-[36px_1fr_86px] items-center gap-2.5 border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted sm:gap-3.5 sm:px-4 md:grid-cols-[40px_1fr_92px_100px_84px]">
               <div>#</div>
               <div>{t('mapColRepo')}</div>
-              <div>{t('mapColTrend')}</div>
+              <div className="hidden md:block">{t('mapColTrend')}</div>
               <div className="text-right">{t('mapColVelocity')}</div>
-              <div className="text-right">{t('mapColStars')}</div>
+              <div className="hidden text-right md:block">{t('mapColStars')}</div>
             </div>
             {items.map((item, i) => (
               <RankRow key={item.externalId} item={item} rank={i + 1} series={trends[item.externalId]} />

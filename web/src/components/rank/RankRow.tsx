@@ -51,7 +51,7 @@ export function RankRow({ item, rank, series }: { item: EcoItem; rank: number; s
   return (
     <Link
       href={`/repo/${owner}/${name}`}
-      className="grid grid-cols-[40px_1fr_92px_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2.5 transition-colors last:border-b-0 hover:bg-surface2"
+      className="grid grid-cols-[36px_1fr_86px] items-center gap-2.5 border-b border-border px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface2 sm:gap-3.5 sm:px-4 md:grid-cols-[40px_1fr_92px_100px_84px]"
     >
       <span
         className="font-mono text-[15px] font-bold tabular-nums tracking-tight"
@@ -83,7 +83,7 @@ export function RankRow({ item, rank, series }: { item: EcoItem; rank: number; s
         </span>
       </span>
 
-      <span title={hasTrend ? `${values.length}${t('trendDaysSuffix')}` : ''}>
+      <span className="hidden md:block" title={hasTrend ? `${values.length}${t('trendDaysSuffix')}` : ''}>
         {hasTrend && (
           <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true" className="block">
             <defs>
@@ -117,7 +117,7 @@ export function RankRow({ item, rank, series }: { item: EcoItem; rank: number; s
         </span>
       </span>
 
-      <span className="text-right font-mono text-[13px] tabular-nums text-fg">
+      <span className="hidden text-right font-mono text-[13px] tabular-nums text-fg md:block">
         {formatCompact(item.stars)}
         <span className="text-[9.5px] text-muted"> ★</span>
       </span>
