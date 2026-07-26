@@ -120,7 +120,8 @@
     "mapColorBy": "颜色",
     "hotBarTitle": "本周热榜",
     "hotBarWeek": "周",
-    "hotBarMonth": "月"
+    "hotBarMonth": "月",
+    "trendDaysSuffix": "天"
   },
   "consent": {
     "title": "Cookie 使用说明",

@@ -251,6 +251,26 @@ export async function getHeatmap(): Promise<HeatCell[]> {
   return res.data.data ?? [];
 }
 
+export interface TrendPoint {
+  t: number; // unix ms
+  v: number; // stars
+}
+
+/**
+ * Real per-repo star series from the snapshot history (never interpolated), for
+ * board/detail sparklines. Repos with no snapshots in the window are absent from
+ * the map. Empty on error.
+ */
+export async function getTrends(ids: string[], days = 30): Promise<Record<string, TrendPoint[]>> {
+  if (ids.length === 0) return {};
+  const res = await apiGet<{ data: Record<string, TrendPoint[]> }>(
+    `/trend?ids=${ids.map(encodeURIComponent).join(',')}&days=${days}`,
+    3600,
+  );
+  if (res.error !== null || !res.data) return {};
+  return res.data.data ?? {};
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)

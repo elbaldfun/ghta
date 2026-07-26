@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { EcoItem } from '@/lib/data';
+import type { EcoItem, TrendPoint } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 
 function heatColor(pct: number): string {
@@ -11,13 +11,27 @@ function heatColor(pct: number): string {
   return 'rgb(var(--heat0))';
 }
 
+function sparkPath(data: number[], w: number, h: number, pad = 2) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const rng = max - min || 1;
+  return data
+    .map((d, i) => {
+      const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+      const y = h - pad - ((d - min) / rng) * (h - pad * 2);
+      return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
 /**
  * One dense leaderboard row: rank, identity, and velocity as the visually
  * dominant number — the signal every competing directory lacks — with total
- * stars secondary. (A per-repo trend sparkline goes here once the snapshot
- * history is deep enough to be a real 30-day series rather than a guess.)
+ * stars secondary. The trend column shows the repo's real snapshot series when
+ * there are at least three points; too few and it's left blank rather than
+ * faked into a line.
  */
-export function RankRow({ item, rank }: { item: EcoItem; rank: number }) {
+export function RankRow({ item, rank, series }: { item: EcoItem; rank: number; series?: TrendPoint[] }) {
   const t = useTranslations('rank');
   const [owner = '', name = ''] = item.externalId.split('/');
   const pct = item.stars > 0 ? (item.growth / item.stars) * 100 : 0;
@@ -28,10 +42,16 @@ export function RankRow({ item, rank }: { item: EcoItem; rank: number }) {
   if (item.isMcp) badges.push('MCP');
   if (item.isAgent) badges.push(t('ecoAgent'));
 
+  const values = (series ?? []).map((p) => p.v);
+  const hasTrend = values.length >= 3;
+  const w = 92;
+  const h = 30;
+  const gid = `sp-${item.externalId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
   return (
     <Link
       href={`/repo/${owner}/${name}`}
-      className="grid grid-cols-[40px_1fr_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2.5 transition-colors last:border-b-0 hover:bg-surface2"
+      className="grid grid-cols-[40px_1fr_92px_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2.5 transition-colors last:border-b-0 hover:bg-surface2"
     >
       <span
         className="font-mono text-[15px] font-bold tabular-nums tracking-tight"
@@ -61,6 +81,28 @@ export function RankRow({ item, rank }: { item: EcoItem; rank: number }) {
             </span>
           )}
         </span>
+      </span>
+
+      <span title={hasTrend ? `${values.length}${t('trendDaysSuffix')}` : ''}>
+        {hasTrend && (
+          <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true" className="block">
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+                <stop offset="100%" stopColor={color} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={`${sparkPath(values, w, h)} L${w - 2},${h} L2,${h} Z`} fill={`url(#${gid})`} />
+            <path
+              d={sparkPath(values, w, h)}
+              fill="none"
+              stroke={color}
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
       </span>
 
       <span className="text-right">

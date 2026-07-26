@@ -178,6 +178,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)
 	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
 	handler.NewHeatmapHandler(service.NewHeatmapService(store, categoryService)).Register(r) // GET /category/heat
+	handler.NewTrendHandler(store).Register(r)                                               // GET /trend — real per-repo star series
 
 	// ---- Admin: bearer-token guarded ----
 	// These mutate data, expose user records, or start quota-burning jobs, so

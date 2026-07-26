@@ -120,7 +120,8 @@
     "mapColorBy": "Couleur",
     "hotBarTitle": "Tendances",
     "hotBarWeek": "Semaine",
-    "hotBarMonth": "Mois"
+    "hotBarMonth": "Mois",
+    "trendDaysSuffix": " j"
   },
   "consent": {
     "title": "Avis sur les cookies",

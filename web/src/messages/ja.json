@@ -120,7 +120,8 @@
     "mapColorBy": "色",
     "hotBarTitle": "急上昇",
     "hotBarWeek": "週",
-    "hotBarMonth": "月"
+    "hotBarMonth": "月",
+    "trendDaysSuffix": "日"
   },
   "consent": {
     "title": "Cookie について",

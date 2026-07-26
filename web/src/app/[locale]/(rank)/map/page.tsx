@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getEcosystem, getHeatmap } from '@/lib/data';
+import { getEcosystem, getHeatmap, getTrends } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankRow } from '@/components/rank/RankRow';
@@ -39,6 +39,7 @@ export default async function MapPage({
       sort === 'stars' ? b.stars - a.stars : sort === 'rel' ? rel(b) - rel(a) : b.growth - a.growth,
     )
     .slice(0, 20);
+  const trends = await getTrends(items.map((i) => i.externalId), 30);
 
   const totalRepos = cells.reduce((s, c) => s + c.repos, 0);
   const totalGrowth = cells.reduce((s, c) => s + c.growth, 0);
@@ -80,14 +81,15 @@ export default async function MapPage({
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-surface">
-            <div className="grid grid-cols-[40px_1fr_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">
+            <div className="grid grid-cols-[40px_1fr_92px_100px_84px] items-center gap-3.5 border-b border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">
               <div>#</div>
               <div>{t('mapColRepo')}</div>
+              <div>{t('mapColTrend')}</div>
               <div className="text-right">{t('mapColVelocity')}</div>
               <div className="text-right">{t('mapColStars')}</div>
             </div>
             {items.map((item, i) => (
-              <RankRow key={item.externalId} item={item} rank={i + 1} />
+              <RankRow key={item.externalId} item={item} rank={i + 1} series={trends[item.externalId]} />
             ))}
           </div>
         </section>

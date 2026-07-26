@@ -120,7 +120,8 @@
     "mapColorBy": "색상",
     "hotBarTitle": "인기",
     "hotBarWeek": "주",
-    "hotBarMonth": "월"
+    "hotBarMonth": "월",
+    "trendDaysSuffix": "일"
   },
   "consent": {
     "title": "쿠키 안내",
