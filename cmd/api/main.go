@@ -180,6 +180,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	handler.NewDeveloperHandler(service.NewDeveloperService(store)).Register(r) // GET /developers — merit/rising ranking
 	handler.NewTopicHandler(service.NewTopicService(store)).Register(r)         // GET /topics — hot topics per domain
 	handler.NewEcosystemHandler(service.NewEcosystemService(store)).Register(r) // GET /ecosystem — AI stack (skills/mcp/agents)
+	handler.NewAppHandler(service.NewAppService(store)).Register(r)             // GET /apps — open-source app directory (filter by OS)
 
 	categoryService := service.NewCategoryService(store)
 	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)
