@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getApps, getCategoryTree, type AppSort, type OS } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
+import { FilterDropdown } from '@/components/rank/FilterDropdown';
 import { Pagination } from '@/components/rank/Pagination';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
@@ -110,29 +111,19 @@ export default async function AppsPage({
             {smallTab(kind === 'cli', `/apps?${qp({ kind: 'cli', page: '1' })}`, t('appsKindCli'))}
           </div>
           {domains.length > 0 && (
-            <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted hover:text-fg">
-                <span className={activeDomain ? 'text-accent' : ''}>{activeDomain?.label ?? t('appsAllDomains')}</span>
-                <span className="text-[9px]">▾</span>
-              </summary>
-              <div className="absolute left-0 top-full z-20 mt-1 max-h-[320px] w-[200px] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-card-hover">
-                <Link
-                  href={`/apps?${qp({ category: '', page: '1' })}`}
-                  className={`block rounded-md px-2.5 py-1.5 text-[12px] font-semibold hover:bg-surface2 ${category === '' ? 'text-accent' : 'text-muted'}`}
-                >
-                  {t('appsAllDomains')}
-                </Link>
-                {domains.map((d) => (
-                  <Link
-                    key={d.path}
-                    href={`/apps?${qp({ category: d.path, page: '1' })}`}
-                    className={`block rounded-md px-2.5 py-1.5 text-[12px] font-semibold hover:bg-surface2 ${category === d.path ? 'text-accent' : 'text-fg'}`}
-                  >
-                    {d.label}
-                  </Link>
-                ))}
-              </div>
-            </details>
+            <FilterDropdown
+              label={activeDomain?.label ?? t('appsAllDomains')}
+              active={!!activeDomain}
+              items={[
+                { key: 'all', label: t('appsAllDomains'), href: `/apps?${qp({ category: '', page: '1' })}`, active: category === '' },
+                ...domains.map((d) => ({
+                  key: d.path,
+                  label: d.label,
+                  href: `/apps?${qp({ category: d.path, page: '1' })}`,
+                  active: category === d.path,
+                })),
+              ]}
+            />
           )}
         </div>
         <div className="flex items-center gap-1">

@@ -29,7 +29,7 @@
     "noResults": "Nenhum repositório encontrado",
     "loadError": "Não foi possível carregar os dados",
     "rangeText": "Mostrando {start}–{end} de {total}",
-    "back": "Voltar ao ranking",
+    "back": "Voltar",
     "stars": "Estrelas",
     "forks": "Forks",
     "weeklyIncrease": "Crescimento semanal",

@@ -29,7 +29,7 @@
     "noResults": "No repositories found",
     "loadError": "Couldn't load data from GitHub",
     "rangeText": "Showing {start}–{end} of {total}",
-    "back": "Back to rankings",
+    "back": "Back",
     "stars": "Stars",
     "forks": "Forks",
     "weeklyIncrease": "Weekly Growth",

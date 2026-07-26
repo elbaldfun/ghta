@@ -29,7 +29,7 @@
     "noResults": "未找到匹配的仓库",
     "loadError": "GitHub 数据加载失败",
     "rangeText": "显示第 {start}–{end} 条，共 {total} 条",
-    "back": "返回排行榜",
+    "back": "返回",
     "stars": "Star",
     "forks": "Forks",
     "weeklyIncrease": "周增长",

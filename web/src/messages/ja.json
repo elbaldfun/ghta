@@ -29,7 +29,7 @@
     "noResults": "該当するリポジトリが見つかりません",
     "loadError": "データを読み込めませんでした",
     "rangeText": "{total} 件中 {start}–{end} 件を表示",
-    "back": "ランキングに戻る",
+    "back": "戻る",
     "stars": "スター",
     "forks": "フォーク",
     "weeklyIncrease": "週間成長",

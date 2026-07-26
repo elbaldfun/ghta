@@ -29,7 +29,7 @@
     "noResults": "저장소를 찾을 수 없습니다",
     "loadError": "데이터를 불러오지 못했습니다",
     "rangeText": "전체 {total}개 중 {start}–{end}",
-    "back": "랭킹으로 돌아가기",
+    "back": "뒤로",
     "stars": "스타",
     "forks": "포크",
     "weeklyIncrease": "주간 성장",

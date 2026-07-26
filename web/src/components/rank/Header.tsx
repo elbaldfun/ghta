@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { NavLink } from './NavLink';
 import { SearchBox } from './SearchBox';
 import { LocaleMenu } from './LocaleMenu';
 import { ThemePill } from './ThemePill';
@@ -19,66 +20,15 @@ export function RankHeader() {
             <span className="text-xs text-muted">Explorer</span>
           </Link>
           <nav className="flex flex-wrap items-center gap-1">
-            <Link
-              href="/"
-              className="rounded-lg bg-accent px-[13px] py-[7px] text-[12.5px] font-bold text-accent-fg"
-            >
-              {t('navRankings')}
-            </Link>
-            <Link
-              href="/breakout"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navBreakout')}
-            </Link>
-            <Link
-              href="/map"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navMap')}
-            </Link>
-            <Link
-              href="/ai"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navAi')}
-            </Link>
-            <Link
-              href="/ecosystem"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navEcosystem')}
-            </Link>
-            <Link
-              href="/apps"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navApps')}
-            </Link>
-            <Link
-              href="/alternatives"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navAlternatives')}
-            </Link>
-            <Link
-              href="/topics"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navTopics')}
-            </Link>
-            <Link
-              href="/developers"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {t('navDevelopers')}
-            </Link>
-            <Link
-              href="/blog"
-              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
-            >
-              {tb('nav')}
-            </Link>
+            <NavLink href="/" label={t('navRankings')} />
+            <NavLink href="/breakout" label={t('navBreakout')} />
+            <NavLink href="/map" label={t('navMap')} />
+            <NavLink href="/ecosystem" label={t('navEcosystem')} />
+            <NavLink href="/apps" label={t('navApps')} />
+            <NavLink href="/alternatives" label={t('navAlternatives')} />
+            <NavLink href="/topics" label={t('navTopics')} />
+            <NavLink href="/developers" label={t('navDevelopers')} />
+            <NavLink href="/blog" label={tb('nav')} />
           </nav>
         </div>
         <Suspense>

@@ -29,7 +29,7 @@
     "noResults": "Aucun dépôt trouvé",
     "loadError": "Impossible de charger les données",
     "rangeText": "{start}–{end} sur {total}",
-    "back": "Retour au classement",
+    "back": "Retour",
     "stars": "Étoiles",
     "forks": "Forks",
     "weeklyIncrease": "Croissance hebdomadaire",
