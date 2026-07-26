@@ -60,7 +60,7 @@ export default async function DevelopersPage({
       {items.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
       ) : (
-        <div className="grid gap-3.5 md:grid-cols-2">
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
           {items.map((dev, i) => (
             <DeveloperCard
               key={dev.login}

@@ -4,10 +4,21 @@ import type { RankedDeveloper } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 import { StarIcon } from './icons';
 
+// Growth intensity relative to the developer's total stars, on the heat ramp —
+// same visual language as the repo boards.
+function heatColor(dev: RankedDeveloper): string {
+  const pct = dev.totalStars > 0 ? (dev.growth / dev.totalStars) * 100 : 0;
+  if (pct >= 4) return 'rgb(var(--heat4))';
+  if (pct >= 2) return 'rgb(var(--heat3))';
+  if (pct >= 0.8) return 'rgb(var(--heat2))';
+  if (pct >= 0.2) return 'rgb(var(--heat1))';
+  return 'rgb(var(--heat0))';
+}
+
 /**
- * One row of a "developers to follow" board: the person, their flagship repo and
- * merit stats, with the self-declared X handle as a trailing badge (context, not
- * the ranking basis).
+ * One dense leaderboard row for a developer: prominent rank, avatar, identity and
+ * flagship repo, with recent growth as a heat-coloured figure. The X handle rides
+ * along as context, never the ranking basis.
  */
 export function DeveloperCard({
   dev,
@@ -16,37 +27,44 @@ export function DeveloperCard({
 }: {
   dev: RankedDeveloper;
   rank: number;
-  /** Emphasize the growth figure (it always shows) when that's the active sort. */
   highlightGrowth?: boolean;
 }) {
   const t = useTranslations('rank');
+  const color = heatColor(dev);
+
   return (
-    <div className="flex gap-3.5 rounded-card border border-border bg-surface p-4">
-      <div className="w-6 shrink-0 pt-0.5 text-center font-display text-sm font-extrabold text-muted">
+    <div className="grid grid-cols-[40px_auto_1fr_auto] items-center gap-x-3.5 gap-y-1 border-b border-border px-3 py-3 transition-colors last:border-b-0 hover:bg-surface2 sm:px-4">
+      <span
+        className="row-span-2 self-start pt-0.5 font-mono text-[16px] font-bold tabular-nums tracking-tight"
+        style={{ color: rank <= 3 ? color : undefined }}
+      >
         {rank}
-      </div>
-      {dev.avatarUrl && (
+      </span>
+
+      {dev.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={dev.avatarUrl} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full" />
+        <img src={dev.avatarUrl} alt="" loading="lazy" className="row-span-2 h-10 w-10 shrink-0 self-start rounded-full" />
+      ) : (
+        <span className="row-span-2 h-10 w-10 shrink-0 self-start rounded-full bg-surface2" />
       )}
-      <div className="min-w-0 flex-1">
+
+      <div className="min-w-0">
         <div className="flex items-baseline gap-2">
           <a
             href={`https://github.com/${dev.login}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate text-sm font-bold hover:text-accent"
+            className="truncate text-[13.5px] font-bold hover:text-accent"
           >
             {dev.name || dev.login}
           </a>
           <span className="truncate text-[11px] text-muted">@{dev.login}</span>
+          {dev.company && <span className="hidden truncate text-[11px] text-muted sm:inline">· {dev.company}</span>}
         </div>
-        {dev.company && <div className="mt-0.5 truncate text-[11px] text-muted">{dev.company}</div>}
-
         {dev.topRepo && (
           <Link
             href={`/repo/${dev.topRepo}`}
-            className="mt-1.5 flex items-center gap-1 truncate text-[12px] font-semibold text-accent hover:underline"
+            className="mt-0.5 flex items-center gap-1 truncate text-[12px] font-semibold text-accent hover:underline"
           >
             <StarIcon size={11} className="shrink-0 text-accent2" />
             <span className="truncate">
@@ -54,33 +72,37 @@ export function DeveloperCard({
             </span>
           </Link>
         )}
-
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
-          <span>
-            {dev.repoCount} {t('devRepos')}
-          </span>
-          <span className="flex items-center gap-1">
-            <StarIcon size={11} className="text-accent2" />
-            {formatCompact(dev.totalStars)}
-          </span>
-          {dev.growth > 0 && (
-            <span className={highlightGrowth ? 'font-bold text-accent2' : 'font-semibold'}>
-              +{formatCompact(dev.growth)} {t('devPerDay')}
-            </span>
-          )}
-          {dev.twitterUsername && (
-            <a
-              href={`https://x.com/${dev.twitterUsername}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-accent hover:underline"
-            >
-              𝕏 @{dev.twitterUsername}
-              {dev.followers ? ` · ${formatCompact(dev.followers)}` : ''}
-            </a>
-          )}
-        </div>
       </div>
+
+      <div className="text-right">
+        {dev.growth > 0 && (
+          <span
+            className="block font-mono text-[15px] font-bold leading-none tabular-nums tracking-tight"
+            style={{ color: highlightGrowth ? color : undefined }}
+          >
+            +{formatCompact(dev.growth)}
+            <span className="text-[9.5px] font-medium text-muted"> ★/{t('devPerDay')}</span>
+          </span>
+        )}
+        <span className="mt-1 block font-mono text-[11px] tabular-nums text-muted">
+          {dev.repoCount} {t('devRepos')} · {formatCompact(dev.totalStars)} ★
+        </span>
+      </div>
+
+      {/* second row under identity: X badge */}
+      <span className="col-start-3 -mt-0.5">
+        {dev.twitterUsername && (
+          <a
+            href={`https://x.com/${dev.twitterUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[11px] font-semibold text-accent hover:underline"
+          >
+            𝕏 @{dev.twitterUsername}
+            {dev.followers ? ` · ${formatCompact(dev.followers)}` : ''}
+          </a>
+        )}
+      </span>
     </div>
   );
 }
