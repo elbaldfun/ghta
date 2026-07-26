@@ -26,7 +26,7 @@ func (h *HeatmapHandler) Register(r gin.IRoutes) {
 func (h *HeatmapHandler) List(c *gin.Context) {
 	cells, err := h.svc.Map(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": cells})

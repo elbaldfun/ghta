@@ -100,8 +100,15 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "categoryPath", Value: 1}}},
 		{Keys: bson.D{{Key: "type", Value: 1}}},
 		{Keys: bson.D{{Key: "analysisStatus", Value: 1}}},
+		// Every server-side sort field on the ranking/trend boards needs its own
+		// index — an unindexed sort loads the whole matching set into memory and
+		// hard-fails once it exceeds MongoDB's 32 MB in-memory sort limit.
+		{Keys: bson.D{{Key: "dailyIncrease", Value: -1}}},
 		{Keys: bson.D{{Key: "weeklyIncrease", Value: -1}}},
+		{Keys: bson.D{{Key: "monthlyIncrease", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.stars", Value: -1}}},
+		{Keys: bson.D{{Key: "metrics.forks", Value: -1}}},
+		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}}},
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},
 	}
 	if _, err := s.Items().Indexes().CreateMany(ctx, itemIndexes); err != nil {
@@ -156,9 +163,9 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 			Keys:    bson.D{{Key: "login", Value: 1}},
 			Options: options.Index().SetUnique(true).SetName("uniq_developer_login"),
 		},
-		{Keys: bson.D{{Key: "type", Value: 1}}},                                 // filter User vs Organization
-		{Keys: bson.D{{Key: "followers", Value: -1}}},                           // rank by reach
-		{Keys: bson.D{{Key: "fetchedAt", Value: 1}}},                            // find stale/unfetched for refresh
+		{Keys: bson.D{{Key: "type", Value: 1}}},       // filter User vs Organization
+		{Keys: bson.D{{Key: "followers", Value: -1}}}, // rank by reach
+		{Keys: bson.D{{Key: "fetchedAt", Value: 1}}},  // find stale/unfetched for refresh
 		{Keys: bson.D{{Key: "twitterUsername", Value: 1}}, Options: options.Index().SetSparse(true)},
 	}
 	if _, err := s.Developers().Indexes().CreateMany(ctx, devIndexes); err != nil {

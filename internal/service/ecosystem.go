@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,17 +40,11 @@ type EcosystemItem struct {
 // by momentum. Results are cached per pillar+sort.
 type EcosystemService struct {
 	store *repository.Store
-	mu    sync.Mutex
-	cache map[string]cachedEco
-}
-
-type cachedEco struct {
-	rows []EcosystemItem
-	at   time.Time
+	cache *ttlCache[[]EcosystemItem]
 }
 
 func NewEcosystemService(store *repository.Store) *EcosystemService {
-	return &EcosystemService{store: store, cache: map[string]cachedEco{}}
+	return &EcosystemService{store: store, cache: newTTLCache[[]EcosystemItem](ecosystemTTL)}
 }
 
 // pillarFilter returns the mongo filter for one pillar, or the full union for
@@ -107,23 +100,9 @@ func (s *EcosystemService) Ranking(ctx context.Context, pillar, sort string, lim
 }
 
 func (s *EcosystemService) board(ctx context.Context, pillar, sort string) ([]EcosystemItem, error) {
-	key := pillar + "|" + sort
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if c, ok := s.cache[key]; ok && time.Since(c.at) < ecosystemTTL {
-		return c.rows, nil
-	}
-
-	rows, err := s.compute(ctx, pillar, sort)
-	if err != nil {
-		if c, ok := s.cache[key]; ok {
-			return c.rows, nil
-		}
-		return nil, err
-	}
-	s.cache[key] = cachedEco{rows: rows, at: time.Now()}
-	return rows, nil
+	return s.cache.get(ctx, pillar+"|"+sort, func(ctx context.Context) ([]EcosystemItem, error) {
+		return s.compute(ctx, pillar, sort)
+	})
 }
 
 func (s *EcosystemService) compute(ctx context.Context, pillar, sort string) ([]EcosystemItem, error) {

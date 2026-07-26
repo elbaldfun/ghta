@@ -42,7 +42,7 @@ func (h *TopicHandler) List(c *gin.Context) {
 
 	rows, err := h.svc.Ranking(c.Request.Context(), domain, sort, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows, "domain": domain, "sort": sort})

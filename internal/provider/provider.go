@@ -5,8 +5,10 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -146,9 +148,37 @@ func (p *chatProvider) AnalyzeJSON(ctx context.Context, systemPrompt, userPrompt
 			select {
 			case <-ctx.Done():
 				return "", ctx.Err()
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
+			case <-time.After(backoffDelay(attempt, err)):
 			}
 		}
 	}
 	return "", fmt.Errorf("ai failed after %d attempts: %w", maxAttempts, lastErr)
+}
+
+// backoffDelay computes an exponential backoff with equal jitter. The jitter is
+// essential: the categorizer fires many batches concurrently, so a fixed delay
+// makes every 429'd batch retry in lockstep and re-trigger the relay's
+// concurrency limit — the known avalanche. Rate-limit responses back off harder
+// to actually relieve the upstream rather than just probing it again.
+func backoffDelay(attempt int, err error) time.Duration {
+	base := time.Duration(1<<uint(attempt)) * time.Second // 2s, 4s, 8s, …
+	if isRateLimit(err) {
+		base *= 3
+	}
+	// Equal jitter: half fixed (guarantees real relief) + half random (spreads
+	// concurrent retries apart so they stop colliding).
+	half := base / 2
+	return half + time.Duration(rand.Int63n(int64(half)+1))
+}
+
+// isRateLimit reports whether err is an upstream 429 / concurrency-limit signal.
+func isRateLimit(err error) bool {
+	var apiErr *openai.APIError
+	if errors.As(err, &apiErr) && apiErr.HTTPStatusCode == 429 {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "429") ||
+		strings.Contains(msg, "rate limit") ||
+		strings.Contains(msg, "concurrency limit")
 }

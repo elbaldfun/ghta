@@ -54,7 +54,7 @@ func (h *DeveloperHandler) List(c *gin.Context) {
 
 	rows, total, err := h.svc.Ranking(c.Request.Context(), board, domain, limit, page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

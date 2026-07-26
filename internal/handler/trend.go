@@ -63,7 +63,7 @@ func (h *TrendHandler) List(c *gin.Context) {
 	from := time.Now().UTC().AddDate(0, 0, -days)
 	series, err := h.store.SnapshotSeries(c.Request.Context(), domain.SourceGitHub, ids, from)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": series})

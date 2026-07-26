@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,24 +40,18 @@ type RankedDeveloper struct {
 	TotalStars      int     `json:"totalStars"`
 	TopRepo         string  `json:"topRepo,omitempty"`
 	TopRepoStars    int     `json:"topRepoStars"`
-	Growth          int     `json:"growth"`         // recent star gain (rising board)
-	Score           float64 `json:"score"`          // the board's sort value
+	Growth          int     `json:"growth"` // recent star gain (rising board)
+	Score           float64 `json:"score"`  // the board's sort value
 }
 
 // DeveloperService ranks repo owners by merit. Results are cached per board+domain.
 type DeveloperService struct {
 	store *repository.Store
-	mu    sync.Mutex
-	cache map[string]cachedRank
-}
-
-type cachedRank struct {
-	rows []RankedDeveloper
-	at   time.Time
+	cache *ttlCache[[]RankedDeveloper]
 }
 
 func NewDeveloperService(store *repository.Store) *DeveloperService {
-	return &DeveloperService{store: store, cache: map[string]cachedRank{}}
+	return &DeveloperService{store: store, cache: newTTLCache[[]RankedDeveloper](developerRankTTL)}
 }
 
 // Ranking returns one page of a board. board is "rising" (recent growth of owned
@@ -97,25 +90,11 @@ func (s *DeveloperService) Ranking(ctx context.Context, board, domain string, li
 }
 
 // board returns the full cached top-N list for a board+domain, recomputing past
-// the TTL.
+// the TTL. Recompute happens outside the cache lock (see ttlCache).
 func (s *DeveloperService) board(ctx context.Context, board, domain string) ([]RankedDeveloper, error) {
-	key := board + "|" + domain
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if c, ok := s.cache[key]; ok && time.Since(c.at) < developerRankTTL {
-		return c.rows, nil
-	}
-
-	rows, err := s.compute(ctx, board, domain)
-	if err != nil {
-		if c, ok := s.cache[key]; ok {
-			return c.rows, nil // serve stale rather than fail
-		}
-		return nil, err
-	}
-	s.cache[key] = cachedRank{rows: rows, at: time.Now()}
-	return rows, nil
+	return s.cache.get(ctx, board+"|"+domain, func(ctx context.Context) ([]RankedDeveloper, error) {
+		return s.compute(ctx, board, domain)
+	})
 }
 
 func (s *DeveloperService) compute(ctx context.Context, board, domain string) ([]RankedDeveloper, error) {
@@ -124,8 +103,11 @@ func (s *DeveloperService) compute(ctx context.Context, board, domain string) ([
 	// Only count the owner's repos within the requested domain, so "AI builders"
 	// ranks people by their AI work, not their unrelated projects.
 	if domain != "" {
+		// Anchor on "domain/" so a domain never over-matches a sibling whose
+		// name shares its prefix (e.g. "ml" must not match "mlops/…", "web" must
+		// not match "web3/…").
 		pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{
-			"categoryPath": bson.M{"$regex": "^" + regexp.QuoteMeta(domain)},
+			"categoryPath": bson.M{"$regex": "^" + regexp.QuoteMeta(domain) + "/"},
 		}}})
 	}
 

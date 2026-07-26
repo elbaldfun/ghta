@@ -57,7 +57,7 @@ func (h *EcosystemHandler) List(c *gin.Context) {
 
 	rows, total, err := h.svc.Ranking(c.Request.Context(), pillar, sort, limit, page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows, "total": total, "pillar": pillar, "sort": sort, "page": page})

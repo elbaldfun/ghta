@@ -45,7 +45,7 @@ func (h *StatsHandler) Staleness(c *gin.Context) {
 	src := domain.Source(c.DefaultQuery("source", string(domain.SourceGitHub)))
 	buckets, repos, err := h.store.Staleness(c.Request.Context(), src, examples)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 
@@ -72,7 +72,7 @@ func (h *StatsHandler) Languages(c *gin.Context) {
 	src := domain.Source(c.DefaultQuery("source", string(domain.SourceGitHub)))
 	stats, err := h.store.LanguageStats(c.Request.Context(), src, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": stats})

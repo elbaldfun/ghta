@@ -127,6 +127,13 @@ func main() {
 		Addr:              ":" + strconv.Itoa(cfg.Port),
 		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second,
+		// Bound the full request/response lifecycle and idle keep-alives so a
+		// slow or stalled client can't pin goroutines/FDs (Slowloris) on the
+		// small single-vCPU container. Read covers a dribbled body; Write caps
+		// slow readers; Idle reaps parked keep-alive connections.
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  90 * time.Second,
 	}
 
 	go func() {
@@ -169,14 +176,14 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	handler.NewStatsHandler(store).Register(r)
 	handler.NewNewReposHandler(ghAdapter).Register(r)
-	handler.NewHotReposHandler(store, ghAdapter).Register(r) // GET /trending/hot — scraped weekly trending, ingests newcomers
+	handler.NewHotReposHandler(store, ghAdapter).Register(r)                    // GET /trending/hot — scraped weekly trending, ingests newcomers
 	handler.NewDeveloperHandler(service.NewDeveloperService(store)).Register(r) // GET /developers — merit/rising ranking
 	handler.NewTopicHandler(service.NewTopicService(store)).Register(r)         // GET /topics — hot topics per domain
 	handler.NewEcosystemHandler(service.NewEcosystemService(store)).Register(r) // GET /ecosystem — AI stack (skills/mcp/agents)
 
 	categoryService := service.NewCategoryService(store)
 	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)
-	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
+	categoryHandler.RegisterPublic(r)                                                        // read-only tree + facets for navigation
 	handler.NewHeatmapHandler(service.NewHeatmapService(store, categoryService)).Register(r) // GET /category/heat
 	handler.NewTrendHandler(store).Register(r)                                               // GET /trend — real per-repo star series
 

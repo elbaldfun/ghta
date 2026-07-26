@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,17 +35,11 @@ type HotTopic struct {
 // domain+sort.
 type TopicService struct {
 	store *repository.Store
-	mu    sync.Mutex
-	cache map[string]cachedTopics
-}
-
-type cachedTopics struct {
-	rows []HotTopic
-	at   time.Time
+	cache *ttlCache[[]HotTopic]
 }
 
 func NewTopicService(store *repository.Store) *TopicService {
-	return &TopicService{store: store, cache: map[string]cachedTopics{}}
+	return &TopicService{store: store, cache: newTTLCache[[]HotTopic](topicRankTTL)}
 }
 
 // Ranking returns hot topics for a domain. sort "hot" (recent growth — default,
@@ -74,30 +67,18 @@ func (s *TopicService) Ranking(ctx context.Context, domain, sort string, limit i
 }
 
 func (s *TopicService) board(ctx context.Context, domain, sort string) ([]HotTopic, error) {
-	key := domain + "|" + sort
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if c, ok := s.cache[key]; ok && time.Since(c.at) < topicRankTTL {
-		return c.rows, nil
-	}
-
-	rows, err := s.compute(ctx, domain, sort)
-	if err != nil {
-		if c, ok := s.cache[key]; ok {
-			return c.rows, nil
-		}
-		return nil, err
-	}
-	s.cache[key] = cachedTopics{rows: rows, at: time.Now()}
-	return rows, nil
+	return s.cache.get(ctx, domain+"|"+sort, func(ctx context.Context) ([]HotTopic, error) {
+		return s.compute(ctx, domain, sort)
+	})
 }
 
 func (s *TopicService) compute(ctx context.Context, domain, sort string) ([]HotTopic, error) {
 	pipeline := mongo.Pipeline{}
 	if domain != "" {
+		// Anchor on "domain/" so a domain never over-matches a sibling whose
+		// name shares its prefix (e.g. "ml" must not match "mlops/…").
 		pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{
-			"categoryPath": bson.M{"$regex": "^" + regexp.QuoteMeta(domain)},
+			"categoryPath": bson.M{"$regex": "^" + regexp.QuoteMeta(domain) + "/"},
 		}}})
 	}
 	pipeline = append(pipeline,

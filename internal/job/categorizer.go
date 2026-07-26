@@ -35,6 +35,7 @@ type Categorizer struct {
 	batchSize   int
 	maxLabels   int
 	concurrency atomic.Int64 // LLM batches in flight; retunable at runtime
+	running     atomic.Bool  // guards against overlapping runs (cron + manual)
 	log         *slog.Logger
 }
 
@@ -74,8 +75,17 @@ type pending struct {
 	ftype string
 }
 
-// Run categorizes up to maxItemsPerRun pending items.
+// Run categorizes up to maxItemsPerRun pending items. Re-entrant runs are
+// rejected: a cron trigger overlapping a manual/admin trigger would otherwise
+// query the same pending items before either writes, double-processing them
+// (double grok cost) and amplifying any rate-limit pressure.
 func (c *Categorizer) Run(ctx context.Context) {
+	if !c.running.CompareAndSwap(false, true) {
+		c.log.Warn("categorizer: run already in progress, skipping")
+		return
+	}
+	defer c.running.Store(false)
+
 	cats, idByPath, err := c.loadTaxonomy(ctx)
 	if err != nil {
 		c.log.Error("categorizer: load taxonomy failed", "err", err)
@@ -189,10 +199,14 @@ func (c *Categorizer) processBatch(ctx context.Context, cats []domain.Category, 
 	}
 	results, err := c.ai.AnalyzeBatch(ctx, cats, trackedBatch)
 	if err != nil {
-		c.log.Warn("categorize batch failed", "err", err, "size", len(batch))
-		for _, p := range batch {
-			c.failOrTypeOnly(ctx, p)
-		}
+		// A non-nil error means the WHOLE call/parse failed (relay down, timeout,
+		// 429-exhausted, unparseable) — not that these items are unclassifiable.
+		// Leave them pending so a later run retries them. Counting a transient
+		// upstream outage as a per-item failure would bury classifiable repos as
+		// AnalysisFailed after a few bad nights, permanently: Run's filter
+		// excludes AnalysisFailed forever. (Model-omitted single items inside a
+		// SUCCESSFUL call are still handled as real per-item failures below.)
+		c.log.Warn("categorize batch call failed; leaving items pending for retry", "err", err, "size", len(batch))
 		return
 	}
 	for _, p := range batch {
@@ -317,10 +331,23 @@ func (c *Categorizer) markDone(ctx context.Context, id interface{}, catIDs, path
 }
 
 func (c *Categorizer) markFailed(ctx context.Context, item domain.TrackedItem) {
-	newCount := item.AnalysisFailCount + 1
-	set := bson.M{"analysisFailCount": newCount}
-	if newCount >= maxAnalysisFail {
-		set["analysisStatus"] = domain.AnalysisFailed
+	// Atomic increment + threshold check in a single server-side pipeline update.
+	// Computing newCount from the in-memory snapshot and writing it via $set lets
+	// two overlapping runs both read count=1 and both write 2, losing a failure
+	// (so the item never reaches the threshold and is retried forever). The
+	// pipeline increments the stored value and flips status off the NEW count,
+	// with no lost updates.
+	update := bson.A{
+		bson.D{{Key: "$set", Value: bson.M{
+			"analysisFailCount": bson.M{"$add": bson.A{bson.M{"$ifNull": bson.A{"$analysisFailCount", 0}}, 1}},
+		}}},
+		bson.D{{Key: "$set", Value: bson.M{
+			"analysisStatus": bson.M{"$cond": bson.A{
+				bson.M{"$gte": bson.A{"$analysisFailCount", maxAnalysisFail}},
+				domain.AnalysisFailed,
+				"$analysisStatus",
+			}},
+		}}},
 	}
-	_, _ = c.store.Items().UpdateByID(ctx, item.ID, bson.M{"$set": set})
+	_, _ = c.store.Items().UpdateByID(ctx, item.ID, update)
 }

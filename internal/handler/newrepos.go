@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/source/github"
@@ -31,6 +32,7 @@ type NewReposHandler struct {
 
 	mu    sync.Mutex
 	cache map[int]cachedRepos // keyed by lookback days
+	sf    singleflight.Group  // collapses concurrent misses for one window into one search
 }
 
 type cachedRepos struct {
@@ -69,7 +71,7 @@ func (h *NewReposHandler) List(c *gin.Context) {
 
 	items, err := h.get(c.Request.Context(), days)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondErr(c, err)
 		return
 	}
 	if len(items) > limit {
@@ -82,22 +84,37 @@ func (h *NewReposHandler) List(c *gin.Context) {
 // A stale cache is served if a refresh fails, so a GitHub hiccup never empties
 // the section.
 func (h *NewReposHandler) get(ctx context.Context, days int) ([]domain.TrackedItem, error) {
+	// Fast path: fresh cache, lock held only for the map read.
 	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	if c, ok := h.cache[days]; ok && time.Since(c.fetchedAt) < newReposTTL {
+		h.mu.Unlock()
 		return c.items, nil
 	}
+	h.mu.Unlock()
 
-	since := time.Now().UTC().AddDate(0, 0, -days).Format("2006-01-02")
-	query := fmt.Sprintf("created:>%s stars:>%d sort:stars-desc", since, newReposStarFloor)
-	items, err := h.gh.Search(ctx, query, 50)
-	if err != nil {
-		if c, ok := h.cache[days]; ok {
-			return c.items, nil // serve stale rather than fail
+	// Miss: hit GitHub OUTSIDE the lock, collapsing concurrent misses for the
+	// same window into one search call. Holding the mutex across the search
+	// would serialize every caller behind one upstream round-trip.
+	v, err, _ := h.sf.Do(strconv.Itoa(days), func() (any, error) {
+		since := time.Now().UTC().AddDate(0, 0, -days).Format("2006-01-02")
+		query := fmt.Sprintf("created:>%s stars:>%d sort:stars-desc", since, newReposStarFloor)
+		items, err := h.gh.Search(ctx, query, 50)
+		if err != nil {
+			h.mu.Lock()
+			c, ok := h.cache[days]
+			h.mu.Unlock()
+			if ok {
+				return c.items, nil // serve stale rather than fail
+			}
+			return nil, err
 		}
+		h.mu.Lock()
+		h.cache[days] = cachedRepos{items: items, fetchedAt: time.Now()}
+		h.mu.Unlock()
+		return items, nil
+	})
+	if err != nil {
 		return nil, err
 	}
-	h.cache[days] = cachedRepos{items: items, fetchedAt: time.Now()}
-	return items, nil
+	return v.([]domain.TrackedItem), nil
 }

@@ -16,6 +16,12 @@ import { Carousel } from '@/components/rank/Carousel';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
 import { RankTable } from '@/components/rank/RankTable';
 
+// Rendered per request (backend caches upstream). Without this the hub is
+// prerendered at build time and bakes an empty page whenever the backend is
+// unreachable during the build — the same reason /map and /breakout opt out of
+// static generation.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({
   params: { locale },
 }: {

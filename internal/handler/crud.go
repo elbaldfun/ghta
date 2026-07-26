@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,10 @@ import (
 	"github.com/elbaldfun/ghta/internal/service"
 )
 
-// respondErr maps service errors to HTTP status codes.
+// respondErr maps service errors to HTTP status codes. Internal errors are
+// logged server-side but never returned to the client verbatim — a driver error
+// would otherwise leak collection names, query shapes, and topology details to
+// the public internet.
 func respondErr(c *gin.Context, err error) {
 	var inputErr service.InputError
 	switch {
@@ -18,6 +22,7 @@ func respondErr(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 	default:
+		slog.Error("handler internal error", "path", c.FullPath(), "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 	}
 }

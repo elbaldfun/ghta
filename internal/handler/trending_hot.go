@@ -11,11 +11,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/repository"
 	"github.com/elbaldfun/ghta/internal/source/github"
 )
+
+// maxHotCacheKeys bounds the (since|lang) cache. `lang` is an unvalidated query
+// param, so without a cap a client could enumerate distinct values and grow the
+// map without limit.
+const maxHotCacheKeys = 64
 
 // ingestTimeout bounds the background fetch+upsert of trending newcomers so a
 // slow GitHub call can't leak a goroutine.
@@ -38,6 +44,7 @@ type HotReposHandler struct {
 
 	mu    sync.Mutex
 	cache map[string]cachedHot // keyed by "since|lang"
+	sf    singleflight.Group   // collapses concurrent misses for one key into one scrape
 
 	ingesting sync.Map // externalId -> struct{}, dedupes concurrent ingest attempts
 }
@@ -92,7 +99,8 @@ func (h *HotReposHandler) List(c *gin.Context) {
 
 	items, err := h.get(c.Request.Context(), since, lang)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		slog.Warn("trending/hot upstream failed", "since", since, "err", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "upstream unavailable"})
 		return
 	}
 	if len(items) > limit {
@@ -107,36 +115,70 @@ func (h *HotReposHandler) List(c *gin.Context) {
 func (h *HotReposHandler) get(ctx context.Context, since, lang string) ([]HotRepo, error) {
 	key := since + "|" + lang
 
+	// Fast path: a fresh cached scrape, under the lock only for the map read.
 	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	if c, ok := h.cache[key]; ok && time.Since(c.fetchedAt) < hotReposTTL {
+		h.mu.Unlock()
 		return c.items, nil
 	}
+	h.mu.Unlock()
 
-	scraped, err := github.FetchTrending(ctx, h.hc, since, lang)
-	if err != nil {
-		if c, ok := h.cache[key]; ok {
-			return c.items, nil // serve stale rather than fail
+	// Miss: scrape OUTSIDE the lock, collapsing concurrent misses for the same
+	// key into one GitHub round-trip (singleflight). Holding the mutex across the
+	// multi-second scrape+enrich would serialize every caller of every window.
+	v, err, _ := h.sf.Do(key, func() (any, error) {
+		scraped, err := github.FetchTrending(ctx, h.hc, since, lang)
+		if err != nil {
+			h.mu.Lock()
+			c, ok := h.cache[key]
+			h.mu.Unlock()
+			if ok {
+				return c.items, nil // serve stale rather than fail
+			}
+			return nil, err
 		}
+
+		items := h.enrich(ctx, scraped)
+
+		h.mu.Lock()
+		if _, exists := h.cache[key]; !exists && len(h.cache) >= maxHotCacheKeys {
+			evictOldestHot(h.cache)
+		}
+		h.cache[key] = cachedHot{items: items, fetchedAt: time.Now()}
+		h.mu.Unlock()
+
+		// Ingest trending repos we don't track yet so they get classified,
+		// snapshotted, and a working detail page. Background + best-effort: the
+		// response is served from the scrape regardless of ingest outcome.
+		var newcomers []string
+		for _, it := range items {
+			if !it.InCorpus {
+				newcomers = append(newcomers, it.ExternalID)
+			}
+		}
+		go h.ingestNewcomers(newcomers)
+
+		return items, nil
+	})
+	if err != nil {
 		return nil, err
 	}
+	return v.([]HotRepo), nil
+}
 
-	items := h.enrich(ctx, scraped)
-	h.cache[key] = cachedHot{items: items, fetchedAt: time.Now()}
-
-	// Ingest trending repos we don't track yet so they get classified,
-	// snapshotted, and a working detail page. Background + best-effort: the
-	// response is served from the scrape regardless of ingest outcome.
-	var newcomers []string
-	for _, it := range items {
-		if !it.InCorpus {
-			newcomers = append(newcomers, it.ExternalID)
+// evictOldestHot drops the least-recently-refreshed entry. Caller holds h.mu.
+func evictOldestHot(cache map[string]cachedHot) {
+	var oldestKey string
+	var oldestAt time.Time
+	first := true
+	for k, c := range cache {
+		if first || c.fetchedAt.Before(oldestAt) {
+			oldestKey, oldestAt, first = k, c.fetchedAt, false
 		}
 	}
-	go h.ingestNewcomers(newcomers)
-
-	return items, nil
+	if !first {
+		delete(cache, oldestKey)
+	}
 }
 
 // ingestNewcomers full-fetches trending repos not yet in our corpus and upserts

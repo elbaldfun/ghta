@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,32 +35,20 @@ type HeatCell struct {
 type HeatmapService struct {
 	store *repository.Store
 	cats  *CategoryService
-	mu    sync.Mutex
-	cache []HeatCell
-	at    time.Time
+	cache *ttlCache[[]HeatCell]
 }
 
 func NewHeatmapService(store *repository.Store, cats *CategoryService) *HeatmapService {
-	return &HeatmapService{store: store, cats: cats}
+	return &HeatmapService{store: store, cats: cats, cache: newTTLCache[[]HeatCell](heatmapTTL)}
 }
 
 // Map returns the top-level domains, each with its children, sorted by growth.
+// The single cached value recomputes outside the lock (see ttlCache), so a slow
+// rebuild doesn't block concurrent callers.
 func (s *HeatmapService) Map(ctx context.Context) ([]HeatCell, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.cache != nil && time.Since(s.at) < heatmapTTL {
-		return s.cache, nil
-	}
-
-	cells, err := s.compute(ctx)
-	if err != nil {
-		if s.cache != nil {
-			return s.cache, nil // serve stale rather than fail
-		}
-		return nil, err
-	}
-	s.cache, s.at = cells, time.Now()
-	return cells, nil
+	return s.cache.get(ctx, "", func(ctx context.Context) ([]HeatCell, error) {
+		return s.compute(ctx)
+	})
 }
 
 func (s *HeatmapService) compute(ctx context.Context) ([]HeatCell, error) {
