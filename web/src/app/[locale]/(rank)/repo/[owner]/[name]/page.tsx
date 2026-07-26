@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
 import { getReadme, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
 import { Carousel } from '@/components/rank/Carousel';
 import { GrowthChart } from '@/components/rank/GrowthChart';
 import { ReadmeBlock } from '@/components/rank/ReadmeBlock';
 import { RepoCard } from '@/components/rank/RepoCard';
-import { BackIcon, BoxIcon, GlobeIcon } from '@/components/rank/icons';
+import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
+import { BackLink } from '@/components/rank/BackLink';
 
 interface Params {
   locale: string;
@@ -57,13 +57,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   return (
     // px-7 matches RankHeader's inner container, so content lines up with the brand/nav above.
     <div className="px-7 py-[22px]">
-      <Link
-        href="/"
-        className="mb-4 flex w-fit items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg"
-      >
-        <BackIcon size={14} />
-        {t('back')}
-      </Link>
+      <BackLink />
 
       <div className="mb-2 flex flex-wrap items-center gap-2.5">
         <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dot }} />

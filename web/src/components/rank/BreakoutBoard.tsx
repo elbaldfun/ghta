@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { HotRepo, HotWindow } from '@/lib/data';
@@ -111,7 +112,23 @@ export function BreakoutBoard({
   initial?: HotWindow;
 }) {
   const t = useTranslations('rank');
-  const [win, setWin] = useState<HotWindow>(initial);
+  // URL is the source of truth for the active window, so a Back-navigation into
+  // this page (which remounts the component from the router cache) restores the
+  // board the visitor left rather than the server-baked default. Falls back to
+  // the server-resolved initial when there is no ?since= yet.
+  const params = useSearchParams();
+  const fromUrl = params.get('since');
+  const start: HotWindow = fromUrl === 'daily' || fromUrl === 'weekly' || fromUrl === 'monthly' ? fromUrl : initial;
+  const [win, setWin] = useState<HotWindow>(start);
+
+  // Mirror the active window into the URL (?since=…) without a navigation or
+  // refetch — all three windows are already in props. This keeps the tab in the
+  // history entry, so returning here from a repo detail page (via Back) lands on
+  // the same board the visitor left. 'weekly' is the default, so it stays clean.
+  useEffect(() => {
+    const url = win === 'weekly' ? window.location.pathname : `${window.location.pathname}?since=${win}`;
+    window.history.replaceState(window.history.state, '', url);
+  }, [win]);
 
   const sets: Record<HotWindow, HotRepo[]> = { daily, weekly, monthly };
   const gainLabels: Record<HotWindow, string> = {
