@@ -93,29 +93,55 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 			Keys:    bson.D{{Key: "source", Value: 1}, {Key: "externalId", Value: 1}},
 			Options: options.Index().SetUnique(true).SetName("uniq_source_externalId"),
 		},
-		{Keys: bson.D{{Key: "source", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}}}, // source-only filter + the board's cached count
 		{Keys: bson.D{{Key: "language", Value: 1}}},
-		{Keys: bson.D{{Key: "fetchedAt", Value: -1}}},
 		{Keys: bson.D{{Key: "categoryId", Value: 1}}},
 		{Keys: bson.D{{Key: "categoryPath", Value: 1}}},
 		{Keys: bson.D{{Key: "type", Value: 1}}},
 		{Keys: bson.D{{Key: "analysisStatus", Value: 1}}},
-		// Every server-side sort field on the ranking/trend boards needs its own
-		// index — an unindexed sort loads the whole matching set into memory and
-		// hard-fails once it exceeds MongoDB's 32 MB in-memory sort limit.
-		{Keys: bson.D{{Key: "dailyIncrease", Value: -1}}},
-		{Keys: bson.D{{Key: "weeklyIncrease", Value: -1}}},
-		{Keys: bson.D{{Key: "monthlyIncrease", Value: -1}}},
-		{Keys: bson.D{{Key: "metrics.stars", Value: -1}}},
-		{Keys: bson.D{{Key: "metrics.forks", Value: -1}}},
-		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}}},
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},
 		{Keys: bson.D{{Key: "sourceData.platforms", Value: 1}}},                  // app directory: filter by OS
 		{Keys: bson.D{{Key: "sourceData.latestRelease.publishedAt", Value: -1}}}, // app directory: "new" sort
 		{Keys: bson.D{{Key: "alternativeTo.slug", Value: 1}}},                    // app directory: /alternatives/<slug> reverse lookup
+
+		// Board sorts. Each sort field carries an _id tiebreaker in the SAME
+		// direction. That does two things at once: (1) it gives every board a
+		// total, deterministic order, so skip-paginating over tied sort values
+		// (common at the low-star tail) can't duplicate or drop rows across pages;
+		// (2) because _id is in the index, the sort {field, _id} stays fully
+		// index-satisfied — no blocking in-memory sort, and one index still serves
+		// both directions (forward = desc, reverse = asc). An unindexed sort would
+		// otherwise load the whole match into memory and hard-fail past 32 MB.
+		{Keys: bson.D{{Key: "metrics.stars", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_stars")},
+		{Keys: bson.D{{Key: "metrics.forks", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_forks")},
+		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_issues")},
+		{Keys: bson.D{{Key: "fetchedAt", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_fetchedAt")},
+		{Keys: bson.D{{Key: "dailyIncrease", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_daily")},
+		{Keys: bson.D{{Key: "weeklyIncrease", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_weekly")},
+		{Keys: bson.D{{Key: "monthlyIncrease", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_monthly")},
+
+		// Filtered boards: the two primary navigation filters (category tree, type
+		// facet) compounded with the default stars sort, so a filtered board seeks
+		// straight to its slice instead of walking the whole stars-ordered index
+		// and discarding non-matches. source leads because the site always scopes
+		// to source=github.
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "categoryPath", Value: 1}, {Key: "metrics.stars", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_category_stars")},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "type", Value: 1}, {Key: "metrics.stars", Value: -1}, {Key: "_id", Value: -1}}, Options: options.Index().SetName("board_type_stars")},
 	}
 	if _, err := s.Items().Indexes().CreateMany(ctx, itemIndexes); err != nil {
 		return fmt.Errorf("item indexes: %w", err)
+	}
+
+	// Reclaim the RAM held by the pre-tiebreaker single-field sort indexes now
+	// superseded by the _id-terminated board_* indexes above (each board_* index
+	// has the old key as a prefix, so it serves every query the old one did).
+	// Best-effort and idempotent: a fresh database never had these, so a
+	// "not found" here is expected and ignored.
+	for _, name := range []string{
+		"metrics.stars_-1", "metrics.forks_-1", "metrics.openIssues_-1",
+		"fetchedAt_-1", "dailyIncrease_-1", "weeklyIncrease_-1", "monthlyIncrease_-1",
+	} {
+		_, _ = s.Items().Indexes().DropOne(ctx, name)
 	}
 
 	if _, err := s.Categories().Indexes().CreateOne(ctx, mongo.IndexModel{

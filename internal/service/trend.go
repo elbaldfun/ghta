@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -77,13 +78,37 @@ func categoryFilter(filter bson.M, category string) {
 	}
 }
 
+// countCacheTTL bounds how stale a board's total may be. The count only moves
+// when the daily fetch adds repos, and it feeds pagination (not results), so a
+// few minutes of staleness is invisible while removing a second full scan — the
+// expensive one — from every list request. singleflight in the cache also
+// collapses a thundering herd of identical counts (notably the regex-search
+// count, which scans the whole corpus).
+const countCacheTTL = 5 * time.Minute
+
 type TrendService struct {
 	store   *repository.Store
 	history *StarHistoryService // optional lazy star-history backfill
+	counts  *ttlCache[int64]    // filter -> match count, short TTL
 }
 
 func NewTrendService(store *repository.Store, history *StarHistoryService) *TrendService {
-	return &TrendService{store: store, history: history}
+	return &TrendService{
+		store:   store,
+		history: history,
+		counts:  newTTLCache[int64](countCacheTTL),
+	}
+}
+
+// countKey canonicalizes the filter-affecting query fields into a cache key.
+// Sort/limit/page are excluded because they don't change the match count.
+func countKey(q TrendQuery) string {
+	topics := append([]string(nil), q.Topics...)
+	sort.Strings(topics)
+	return strings.Join([]string{
+		q.Source, q.Language, q.Category, q.Type, q.License,
+		strings.Join(topics, "+"), q.Stars, q.Issues, q.Q,
+	}, "|")
 }
 
 // List returns tracked items matching the query. Invalid filters/sort/limit
@@ -150,13 +175,19 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, badInput("page must be >= 1")
 	}
 
-	total, err := s.store.Items().CountDocuments(ctx, filter)
+	total, err := s.counts.get(ctx, countKey(q), func(ctx context.Context) (int64, error) {
+		return s.store.Items().CountDocuments(ctx, filter)
+	})
 	if err != nil {
 		return nil, 0, err
 	}
 
 	opts := options.Find().
-		SetSort(bson.D{{Key: sortField, Value: sortOrder}}).
+		// The _id tiebreaker (same direction as the sort field) makes the order
+		// total and deterministic, so skip-pagination over tied sort values can't
+		// duplicate or drop rows across pages. The board_* indexes carry _id, so
+		// this stays index-satisfied rather than forcing a blocking sort.
+		SetSort(bson.D{{Key: sortField, Value: sortOrder}, {Key: "_id", Value: sortOrder}}).
 		SetSkip(int64(page-1) * int64(limit)).
 		SetLimit(int64(limit)).
 		// The list view never needs the heavyweight sourceData blobs.
@@ -303,7 +334,8 @@ func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.Trac
 	}
 
 	opts := options.Find().
-		SetSort(bson.D{{Key: field, Value: -1}}).
+		// _id tiebreaker (see List) keeps the limit boundary stable across ties.
+		SetSort(bson.D{{Key: field, Value: -1}, {Key: "_id", Value: -1}}).
 		SetLimit(int64(limit))
 
 	cur, err := s.store.Items().Find(ctx, filter, opts)
