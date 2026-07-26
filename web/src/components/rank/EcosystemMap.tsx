@@ -144,41 +144,41 @@ export function EcosystemMap({ cells }: { cells: HeatCell[] }) {
         })}
       </div>
 
-      {/* Narrow screens: a treemap would crush the labels, so collapse to a
-          one-per-row bar list — width encodes scale, colour the chosen metric,
-          sorted by growth. */}
-      <div className="flex flex-col gap-1.5 sm:hidden">
-        {[...cells]
-          .sort((a, b) => b.growth - a.growth)
-          .map((c) => {
-            const col = ramp(metricOf(c, colorBy), topSorted);
-            const isOpen = open === c.path;
-            return (
-              <button
-                key={c.path}
-                onClick={() => setOpen(isOpen ? null : c.path)}
-                aria-expanded={isOpen}
-                className="rounded-[6px] border border-border bg-surface px-3 py-2 text-left"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[13px] font-bold">{label(c)}</span>
-                  <span className="font-mono text-[12px] font-bold tabular-nums" style={{ color: col.bg }}>
-                    +{formatCompact(c.growth)}
-                    <span className="text-[9px] font-medium text-muted"> ★/{t('mapPerDay')}</span>
-                  </span>
-                </div>
-                <div className="mt-1.5 h-[6px] overflow-hidden rounded-full bg-surface2">
-                  <i
-                    className="block h-full rounded-full"
-                    style={{ width: `${Math.max(4, (c.repos / total) * 100).toFixed(1)}%`, background: col.bg }}
-                  />
-                </div>
-                <div className="mt-1 font-mono text-[10px] tabular-nums text-muted">
-                  {formatCompact(c.repos)} · {c.intensity} ★/{t('mapPerRepo')}
-                </div>
-              </button>
-            );
-          })}
+      {/* Narrow screens: the same treemap thesis (area = scale, colour = the
+          chosen metric), packed as hero + pairs + a triple tail so the biggest
+          domain still reads as biggest and labels stay legible in portrait.
+          A plain bar list would throw away the whole "who's big vs who's hot"
+          comparison the map exists to show. */}
+      <div className="flex h-[500px] flex-col gap-[3px] sm:hidden">
+        {pack(cells, [1, 2, 2, 2, 2, 3]).map((row, ri) => {
+          const rowArea = row.reduce((s, c) => s + c.repos, 0);
+          const hero = ri === 0;
+          return (
+            <div key={ri} className="flex gap-[3px]" style={{ flex: `${rowArea / total} 1 0` }}>
+              {row.map((c) => {
+                const col = ramp(metricOf(c, colorBy), topSorted);
+                const isOpen = open === c.path;
+                return (
+                  <button
+                    key={c.path}
+                    onClick={() => setOpen(isOpen ? null : c.path)}
+                    aria-expanded={isOpen}
+                    className="flex flex-col justify-between overflow-hidden rounded-[5px] px-2 py-1.5 text-left transition-[filter] active:brightness-[1.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fg"
+                    style={{ flex: `${c.repos / rowArea} 1 0`, background: col.bg, color: col.fg }}
+                  >
+                    <span className={`block truncate font-bold leading-tight ${hero ? 'text-[15px]' : 'text-[12px]'}`}>
+                      {label(c)}
+                    </span>
+                    <span className={`truncate font-mono font-bold tabular-nums tracking-tight ${hero ? 'text-[15px]' : 'text-[11.5px]'}`}>
+                      +{formatCompact(c.growth)}
+                      <span className="text-[9px] font-medium opacity-80"> ★/{t('mapPerDay')}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {active && (active.children?.length ?? 0) > 0 && (
