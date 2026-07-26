@@ -12,6 +12,14 @@ import { formatCompact } from '@/lib/rank-data';
  * old stacked carousels, so the corpus leaderboard reaches the fold. Repos we
  * track link to their detail page; newcomers link out to GitHub.
  */
+function heatColor(pct: number): string {
+  if (pct >= 40) return 'rgb(var(--heat4))';
+  if (pct >= 15) return 'rgb(var(--heat3))';
+  if (pct >= 5) return 'rgb(var(--heat2))';
+  if (pct >= 1) return 'rgb(var(--heat1))';
+  return 'rgb(var(--heat0))';
+}
+
 export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRepo[] }) {
   const t = useTranslations('rank');
   const [window, setWindow] = useState<'weekly' | 'monthly'>('weekly');
@@ -58,7 +66,10 @@ export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRep
                   <span className="text-muted">{h.repo.owner}/</span>
                   {h.repo.name}
                 </span>
-                <span className="font-mono text-[10.5px] font-bold tabular-nums text-accent2">
+                <span
+                  className="font-mono text-[10.5px] font-bold tabular-nums"
+                  style={{ color: heatColor(h.repo.stars > 0 ? (h.starsGained / h.repo.stars) * 100 : 0) }}
+                >
                   +{formatCompact(h.starsGained)} ★
                 </span>
                 <span className="ml-1 font-mono text-[10px] tabular-nums text-muted">

@@ -7,13 +7,14 @@ import {
   getCategoryTree,
   getDevelopers,
   getEcosystem,
+  getTrends,
   getTopics,
   type CategoryNode,
 } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 import { Carousel } from '@/components/rank/Carousel';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
-import { EcosystemCard } from '@/components/rank/EcosystemCard';
+import { RankTable } from '@/components/rank/RankTable';
 
 export async function generateMetadata({
   params: { locale },
@@ -49,6 +50,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
     getDevelopers('rising', 'ai', 6),
     getTopics('ai', 'hot', 12),
   ]);
+  const ecoTrends = await getTrends(ecoRes.items.map((i) => i.externalId), 30);
 
   // The AI subtree drives the "which AI area is hot" navigator.
   const aiNode = findCategory(tree, 'ai');
@@ -96,11 +98,18 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
             href="/ecosystem"
             more={t('seeAll')}
           />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(288px,1fr))] gap-3.5">
-            {ecoRes.items.map((item) => (
-              <EcosystemCard key={item.externalId} item={item} highlightGrowth />
-            ))}
-          </div>
+          <RankTable
+            header={
+              <div className="grid grid-cols-[36px_1fr_86px] items-center gap-2.5 border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted sm:gap-3.5 sm:px-4 md:grid-cols-[40px_1fr_92px_100px_84px]">
+                <div>#</div>
+                <div>{t('mapColRepo')}</div>
+                <div className="hidden md:block">{t('mapColTrend')}</div>
+                <div className="text-right">{t('mapColVelocity')}</div>
+                <div className="hidden text-right md:block">{t('mapColStars')}</div>
+              </div>
+            }
+            entries={ecoRes.items.map((item, i) => ({ item, rank: i + 1, series: ecoTrends[item.externalId] }))}
+          />
         </section>
       )}
 
