@@ -2,9 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getApps, getCategoryTree, type AppSort, type OS } from '@/lib/data';
-import { formatCompact, langColor } from '@/lib/rank-data';
-import { PlatformBadges } from '@/components/rank/PlatformBadges';
-import { StarIcon } from '@/components/rank/icons';
+import { AppCard } from '@/components/rank/AppCard';
 import { Pagination } from '@/components/rank/Pagination';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
@@ -32,26 +30,6 @@ export async function generateMetadata({
   return { title: t('appsTitle'), description: t('appsSubtitle') };
 }
 
-function heatColor(pct: number): string {
-  if (pct >= 4) return 'rgb(var(--heat4))';
-  if (pct >= 2) return 'rgb(var(--heat3))';
-  if (pct >= 0.8) return 'rgb(var(--heat2))';
-  if (pct >= 0.2) return 'rgb(var(--heat1))';
-  return 'rgb(var(--heat0))';
-}
-
-function releaseLabel(iso: string | null | undefined, locale: string): string | null {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return null;
-  const days = Math.max(0, Math.round((Date.now() - t) / 86400000));
-  if (days === 0) return locale === 'zh' ? '今天' : 'today';
-  if (days >= 30) {
-    const m = Math.round(days / 30);
-    return locale === 'zh' ? `${m}个月前` : `${m}mo`;
-  }
-  return locale === 'zh' ? `${days}天前` : `${days}d`;
-}
 
 export default async function AppsPage({
   params: { locale },
@@ -168,83 +146,9 @@ export default async function AppsPage({
         <div className="py-10 text-center text-[13px] text-muted">{t('appsEmpty')}</div>
       ) : (
         <div className="overflow-hidden rounded-card border border-border bg-surface">
-          {items.map((a, i) => {
-            const [owner = '', name = ''] = a.externalId.split('/');
-            const rank = (page - 1) * PER_PAGE + i + 1;
-            const pct = a.stars > 0 && a.growth > 0 ? (a.growth / a.stars) * 100 : 0;
-            const color = heatColor(pct);
-            const dot = langColor(a.language);
-            const rel = releaseLabel(a.latestReleaseAt, locale);
-            const inferred = a.platformSource !== 'asset';
-            return (
-              <div
-                key={a.externalId}
-                className="grid grid-cols-[36px_1fr_auto] items-center gap-2.5 border-b border-border px-3 py-2.5 last:border-b-0 hover:bg-surface2 sm:gap-3.5 sm:px-4"
-              >
-                <span
-                  className="font-mono text-[15px] font-bold tabular-nums tracking-tight"
-                  style={{ color: rank <= 3 ? 'rgb(var(--accent))' : undefined }}
-                >
-                  {rank}
-                </span>
-
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span className="inline-block h-[8px] w-[8px] shrink-0 rounded-full" style={{ backgroundColor: dot }} />
-                    <Link href={`/repo/${owner}/${name}`} className="truncate text-[13.5px] font-semibold hover:text-accent">
-                      <span className="text-muted">{owner}/</span>
-                      {name}
-                    </Link>
-                    {a.kind === 'cli' && (
-                      <span className="shrink-0 rounded-[3px] border border-border bg-surface2 px-1 py-px font-mono text-[9px] font-semibold text-muted">
-                        CLI
-                      </span>
-                    )}
-                  </span>
-                  {a.description && (
-                    <span className="mt-0.5 block truncate pl-[16px] text-[11.5px] text-muted">{a.description}</span>
-                  )}
-                  <span className="mt-1 flex flex-wrap items-center gap-1 pl-[16px]">
-                    <PlatformBadges platforms={a.platforms} inferred={inferred} inferredLabel={t('appsInferred')} />
-                    {a.language && (
-                      <span
-                        className="rounded-[3px] px-1.5 py-px font-mono text-[9.5px] font-semibold text-white opacity-90"
-                        style={{ backgroundColor: dot }}
-                      >
-                        {a.language}
-                      </span>
-                    )}
-                  </span>
-                </span>
-
-                <span className="flex items-center gap-3.5 pl-2 text-right sm:gap-5">
-                  {a.growth > 0 && (
-                    <span className="hidden font-mono text-[12px] font-bold tabular-nums sm:block" style={{ color }}>
-                      +{formatCompact(a.growth)}
-                      <span className="text-[9px] font-medium text-muted"> ★/{t('devPerDay')}</span>
-                    </span>
-                  )}
-                  <span className="flex w-[58px] items-center justify-end gap-1 font-mono text-[13px] font-bold tabular-nums">
-                    <StarIcon size={12} className="text-accent2" />
-                    {formatCompact(a.stars)}
-                  </span>
-                  {rel && (
-                    <span className="hidden w-[52px] text-right font-mono text-[10.5px] tabular-nums text-muted md:block">
-                      {t('appsLatest')} {rel}
-                    </span>
-                  )}
-                  <a
-                    href={`https://github.com/${a.externalId}/releases`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hidden shrink-0 rounded-md border border-border px-2.5 py-1 text-[11px] font-bold text-fg hover:border-accent hover:text-accent sm:block"
-                  >
-                    {t('appsDownload')} ↓
-                  </a>
-                </span>
-              </div>
-            );
-          })}
+          {items.map((a) => (
+            <AppCard key={a.externalId} app={a} />
+          ))}
         </div>
       )}
 

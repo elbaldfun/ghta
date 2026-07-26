@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,23 +23,77 @@ var validOS = map[string]bool{
 	"macos": true, "windows": true, "linux": true, "android": true, "ios": true, "web": true,
 }
 
+// AppDownload is the one recommended installer for a platform — the file a
+// "Download for macOS" button should point straight at.
+type AppDownload struct {
+	OS   string `json:"os"`
+	URL  string `json:"url"`
+	Name string `json:"name"`
+}
+
 // AppItem is one row of the open-source app directory: a downloadable app/CLI
-// with the platforms it ships for and its latest release.
+// with the platforms it ships for, a primary download per platform, and the
+// trust signals (stars, license) shown as secondary context.
 type AppItem struct {
-	ExternalID      string     `json:"externalId"`
-	Name            string     `json:"name"`
-	Description     string     `json:"description,omitempty"`
-	Language        string     `json:"language,omitempty"`
-	Stars           int        `json:"stars"`
-	Forks           int        `json:"forks"`
-	Growth          int        `json:"growth"`
-	Type            string     `json:"type,omitempty"`
-	Kind            string     `json:"kind"` // app | cli
-	Platforms       []string   `json:"platforms"`
-	PlatformSource  string     `json:"platformSource,omitempty"`
-	CategoryPath    []string   `json:"categoryPath,omitempty"`
-	LatestReleaseAt *time.Time `json:"latestReleaseAt,omitempty"`
-	HasDownloads    bool       `json:"hasDownloads"`
+	ExternalID      string        `json:"externalId"`
+	Name            string        `json:"name"`
+	Description     string        `json:"description,omitempty"`
+	Language        string        `json:"language,omitempty"`
+	Homepage        string        `json:"homepage,omitempty"`
+	License         string        `json:"license,omitempty"`
+	Stars           int           `json:"stars"`
+	Forks           int           `json:"forks"`
+	Growth          int           `json:"growth"`
+	Type            string        `json:"type,omitempty"`
+	Kind            string        `json:"kind"` // app | cli
+	Platforms       []string      `json:"platforms"`
+	PlatformSource  string        `json:"platformSource,omitempty"`
+	CategoryPath    []string      `json:"categoryPath,omitempty"`
+	LatestReleaseAt *time.Time    `json:"latestReleaseAt,omitempty"`
+	Downloads       []AppDownload `json:"downloads,omitempty"`
+	HasDownloads    bool          `json:"hasDownloads"`
+}
+
+// downloadPriority ranks asset extensions per platform so the button points at
+// the installer a user actually wants (a .dmg over a raw .zip, an installer
+// .exe over a portable archive), not just the first asset GitHub lists.
+var downloadPriority = map[string][]string{
+	"macos":   {".dmg", ".pkg", ".app.zip", ".app.tar.gz"},
+	"windows": {".exe", ".msi", ".appx", ".msix"},
+	"linux":   {".appimage", ".deb", ".rpm", ".flatpak", ".snap"},
+	"android": {".apk", ".aab"},
+	"ios":     {".ipa"},
+}
+
+// primaryDownloads picks one best asset per platform from the matched release
+// assets, ordered by platformOrder for stable output.
+func primaryDownloads(assets []assetRow) []AppDownload {
+	best := map[string]assetRow{}
+	rank := func(os, name string) int {
+		lower := strings.ToLower(name)
+		for i, ext := range downloadPriority[os] {
+			if strings.HasSuffix(lower, ext) {
+				return i
+			}
+		}
+		return len(downloadPriority[os]) + 1 // unranked archive: worst, but still usable
+	}
+	for _, a := range assets {
+		if a.URL == "" {
+			continue
+		}
+		cur, ok := best[a.Platform]
+		if !ok || rank(a.Platform, a.Name) < rank(a.Platform, cur.Name) {
+			best[a.Platform] = a
+		}
+	}
+	var out []AppDownload
+	for _, os := range []string{"macos", "windows", "linux", "android", "ios"} {
+		if a, ok := best[os]; ok {
+			out = append(out, AppDownload{OS: os, URL: a.URL, Name: a.Name})
+		}
+	}
+	return out
 }
 
 // AppService ranks the open-source app directory. Cached per os+kind+category+sort.
@@ -151,6 +206,9 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			"platformSource":  "$sourceData.platformSource",
 			"categoryPath":    1,
 			"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
+			"homepage":        "$sourceData.homepageUrl",
+			"license":         "$sourceData.license",
+			"releaseAssets":   bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}},
 			"assetCount":      bson.M{"$size": bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}}},
 		}}},
 	}
@@ -175,6 +233,8 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			Name:            r.Name,
 			Description:     r.Description,
 			Language:        r.Language,
+			Homepage:        r.Homepage,
+			License:         r.License,
 			Stars:           int(r.Stars),
 			Forks:           int(r.Forks),
 			Growth:          int(r.Growth),
@@ -184,6 +244,7 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			PlatformSource:  r.PlatformSource,
 			CategoryPath:    r.CategoryPath,
 			LatestReleaseAt: r.LatestReleaseAt,
+			Downloads:       primaryDownloads(r.ReleaseAssets),
 			HasDownloads:    r.AssetCount > 0,
 		})
 	}
@@ -195,6 +256,8 @@ type appRow struct {
 	Name            string     `bson:"name"`
 	Description     string     `bson:"description"`
 	Language        string     `bson:"language"`
+	Homepage        string     `bson:"homepage"`
+	License         string     `bson:"license"`
 	Stars           float64    `bson:"stars"`
 	Forks           float64    `bson:"forks"`
 	Growth          float64    `bson:"growth"`
@@ -203,5 +266,13 @@ type appRow struct {
 	PlatformSource  string     `bson:"platformSource"`
 	CategoryPath    []string   `bson:"categoryPath"`
 	LatestReleaseAt *time.Time `bson:"latestReleaseAt"`
+	ReleaseAssets   []assetRow `bson:"releaseAssets"`
 	AssetCount      int        `bson:"assetCount"`
+}
+
+type assetRow struct {
+	Name     string `bson:"name"`
+	Platform string `bson:"platform"`
+	URL      string `bson:"url"`
+	Size     int64  `bson:"size"`
 }

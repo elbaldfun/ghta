@@ -228,11 +228,19 @@ export type OS = 'macos' | 'windows' | 'linux' | 'android' | 'ios' | 'web';
 export type AppKind = 'app' | 'cli';
 export type AppSort = 'hot' | 'popular' | 'new';
 
+export interface AppDownload {
+  os: OS;
+  url: string;
+  name: string;
+}
+
 export interface AppItem {
   externalId: string;
   name: string;
   description?: string;
   language?: string;
+  homepage?: string;
+  license?: string;
   stars: number;
   forks: number;
   growth: number;
@@ -242,6 +250,7 @@ export interface AppItem {
   platformSource?: string; // asset | topic | heuristic
   categoryPath?: string[];
   latestReleaseAt?: string | null;
+  downloads?: AppDownload[];
   hasDownloads: boolean;
 }
 
