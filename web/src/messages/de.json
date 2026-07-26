@@ -124,7 +124,14 @@
     "trendDaysSuffix": " T",
     "detailWeekly": "Woche (geschätzt)",
     "detailOpenGithub": "Auf GitHub öffnen",
-    "detailDetailPage": "Details"
+    "detailDetailPage": "Details",
+    "hotBarDay": "Tag",
+    "navBreakout": "Aufsteiger",
+    "breakoutTitle": "Aufsteiger",
+    "breakoutSubtitle": "Am schnellsten wachsende Repos — täglich, wöchentlich, monatlich",
+    "hotNew": "NEU",
+    "hotColGain": "Zuwachs",
+    "hotEmpty": "Derzeit keine Aufsteiger-Daten"
   },
   "consent": {
     "title": "Cookie-Hinweis",

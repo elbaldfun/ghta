@@ -124,7 +124,14 @@
     "trendDaysSuffix": "d",
     "detailWeekly": "Weekly (est.)",
     "detailOpenGithub": "Open on GitHub",
-    "detailDetailPage": "Details"
+    "detailDetailPage": "Details",
+    "hotBarDay": "Day",
+    "navBreakout": "Breakout",
+    "breakoutTitle": "Breakout",
+    "breakoutSubtitle": "Fastest-rising repos right now — daily, weekly, monthly",
+    "hotNew": "NEW",
+    "hotColGain": "Gained",
+    "hotEmpty": "No breakout data right now"
   },
   "consent": {
     "title": "Cookie notice",

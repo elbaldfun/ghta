@@ -124,7 +124,14 @@
     "trendDaysSuffix": "日",
     "detailWeekly": "週間(推定)",
     "detailOpenGithub": "GitHub で開く",
-    "detailDetailPage": "詳細"
+    "detailDetailPage": "詳細",
+    "hotBarDay": "日",
+    "navBreakout": "急上昇",
+    "breakoutTitle": "急上昇",
+    "breakoutSubtitle": "今もっとも伸びているリポジトリ —— 日 / 週 / 月",
+    "hotNew": "新",
+    "hotColGain": "増加",
+    "hotEmpty": "急上昇データはありません"
   },
   "consent": {
     "title": "Cookie について",

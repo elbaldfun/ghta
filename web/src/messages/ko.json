@@ -124,7 +124,14 @@
     "trendDaysSuffix": "일",
     "detailWeekly": "주간(추정)",
     "detailOpenGithub": "GitHub에서 열기",
-    "detailDetailPage": "상세"
+    "detailDetailPage": "상세",
+    "hotBarDay": "일",
+    "navBreakout": "급상승",
+    "breakoutTitle": "급상승",
+    "breakoutSubtitle": "지금 가장 빠르게 오르는 저장소 — 일 / 주 / 월",
+    "hotNew": "신규",
+    "hotColGain": "증가",
+    "hotEmpty": "급상승 데이터가 없습니다"
   },
   "consent": {
     "title": "쿠키 안내",

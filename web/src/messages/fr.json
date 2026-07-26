@@ -124,7 +124,14 @@
     "trendDaysSuffix": " j",
     "detailWeekly": "Semaine (est.)",
     "detailOpenGithub": "Ouvrir sur GitHub",
-    "detailDetailPage": "Détails"
+    "detailDetailPage": "Détails",
+    "hotBarDay": "Jour",
+    "navBreakout": "En hausse",
+    "breakoutTitle": "En hausse",
+    "breakoutSubtitle": "Les dépôts qui montent le plus vite — jour, semaine, mois",
+    "hotNew": "NOUV",
+    "hotColGain": "Gain",
+    "hotEmpty": "Aucune donnée pour le moment"
   },
   "consent": {
     "title": "Avis sur les cookies",

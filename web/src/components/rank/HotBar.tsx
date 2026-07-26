@@ -49,7 +49,7 @@ export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRep
           {tab('weekly', t('hotBarWeek'))}
           {tab('monthly', t('hotBarMonth'))}
         </div>
-        <Link href="/ecosystem" className="ml-auto text-[11.5px] font-bold text-accent hover:underline">
+        <Link href={`/breakout?since=${window}`} className="ml-auto text-[11.5px] font-bold text-accent hover:underline">
           {t('seeAll')} →
         </Link>
       </div>

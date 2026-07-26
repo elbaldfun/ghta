@@ -124,7 +124,14 @@
     "trendDaysSuffix": " d",
     "detailWeekly": "Semana (est.)",
     "detailOpenGithub": "Abrir en GitHub",
-    "detailDetailPage": "Detalles"
+    "detailDetailPage": "Detalles",
+    "hotBarDay": "Día",
+    "navBreakout": "En alza",
+    "breakoutTitle": "En alza",
+    "breakoutSubtitle": "Los repos que más suben ahora — día, semana, mes",
+    "hotNew": "NUEVO",
+    "hotColGain": "Ganado",
+    "hotEmpty": "Sin datos de alza por ahora"
   },
   "consent": {
     "title": "Aviso de cookies",

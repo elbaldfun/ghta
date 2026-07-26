@@ -124,7 +124,14 @@
     "trendDaysSuffix": "天",
     "detailWeekly": "周增(推算)",
     "detailOpenGithub": "在 GitHub 打开",
-    "detailDetailPage": "详情页"
+    "detailDetailPage": "详情页",
+    "hotBarDay": "日",
+    "navBreakout": "爆款",
+    "breakoutTitle": "爆款",
+    "breakoutSubtitle": "当下涨得最快的仓库 —— 日 / 周 / 月",
+    "hotNew": "新",
+    "hotColGain": "新增",
+    "hotEmpty": "暂无爆款数据"
   },
   "consent": {
     "title": "Cookie 使用说明",
