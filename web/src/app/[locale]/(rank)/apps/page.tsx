@@ -99,7 +99,7 @@ export default async function AppsPage({
       </div>
 
       {/* OS filter — the primary dimension */}
-      <div className="scrollbar-hide mb-2 mt-3 flex items-center gap-1 overflow-x-auto">
+      <div className="scrollbar-hide mb-2 mt-3 -ml-[12px] flex items-center gap-1 overflow-x-auto">
         {osTab('', t('appsAll'))}
         {OSES.map((o) => osTab(o, OS_LABEL[o]))}
       </div>

@@ -153,7 +153,7 @@ export function BreakoutBoard({
 
   return (
     <div>
-      <div className="mb-[18px] flex items-center gap-1">
+      <div className="mb-[18px] -ml-[14px] flex items-center gap-1">
         {tab('daily', t('hotBarDay'))}
         {tab('weekly', t('hotBarWeek'))}
         {tab('monthly', t('hotBarMonth'))}

@@ -45,7 +45,7 @@ export default async function TopicsPage({
         <h1 className="font-display text-lg font-extrabold">{t('topicsTitle')}</h1>
         <span className="text-xs text-muted">{t('topicsSubtitle')}</span>
       </div>
-      <div className="mb-[18px] mt-3 flex items-center gap-1">
+      <div className="mb-[18px] mt-3 -ml-[14px] flex items-center gap-1">
         {tab('hot', t('topicsSortHot'))}
         {tab('popular', t('topicsSortPopular'))}
       </div>

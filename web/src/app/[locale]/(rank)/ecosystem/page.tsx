@@ -76,7 +76,7 @@ export default async function EcosystemPage({
         <span className="text-xs text-muted">{t('ecoSubtitle')}</span>
       </div>
       <div className="mb-[18px] mt-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">{PILLARS.map(pillarTab)}</div>
+        <div className="-ml-[14px] flex items-center gap-1">{PILLARS.map(pillarTab)}</div>
         <div className="flex items-center gap-1">
           {sortTab('hot', t('ecoSortHot'))}
           {sortTab('popular', t('ecoSortPopular'))}

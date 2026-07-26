@@ -10,7 +10,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 export function PageTabs({ items }: { items: { href: string; label: string }[] }) {
   const pathname = usePathname();
   return (
-    <div className="mb-4 flex items-center gap-1">
+    <div className="mb-4 -ml-[14px] flex items-center gap-1">
       {items.map((it) => {
         const active =
           it.href === '/' ? pathname === '/' : pathname === it.href || pathname.startsWith(it.href + '/');
