@@ -15,7 +15,7 @@ import { CategoryTree } from '@/components/rank/CategoryTree';
 import { FilterBar } from '@/components/rank/FilterBar';
 import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
-import { RepoCard } from '@/components/rank/RepoCard';
+import { RepoRow } from '@/components/rank/RepoRow';
 
 const PER_PAGE = 24;
 
@@ -118,9 +118,14 @@ export default async function RankHome({
           <div className="py-10 text-center text-[13px] text-muted">{t('noResults')}</div>
         ) : (
           <>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(288px,1fr))] gap-3.5">
-              {searchRes.data.items.map((repo) => (
-                <RepoCard key={repo.fullName} repo={repo} showUpdated={sort === 'updated'} />
+            <div className="overflow-hidden rounded-card border border-border bg-surface">
+              {searchRes.data.items.map((repo, i) => (
+                <RepoRow
+                  key={repo.fullName}
+                  repo={repo}
+                  rank={(page - 1) * PER_PAGE + i + 1}
+                  showUpdated={sort === 'updated'}
+                />
               ))}
             </div>
             <Pagination

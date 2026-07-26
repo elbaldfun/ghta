@@ -32,6 +32,7 @@ export interface RepoSummary {
   pushedAt: string;
   createdAt: string | null;
   htmlUrl: string;
+  dailyIncrease: number | null;
 }
 
 export interface RepoDetail extends RepoSummary {
@@ -72,6 +73,7 @@ function mapItem(it: any): RepoSummary {
     pushedAt: sd.pushedAt || it.fetchedAt,
     createdAt: null, // repo creation date is not tracked in the database
     htmlUrl: sd.url || `https://github.com/${it.externalId}`,
+    dailyIncrease: typeof it.dailyIncrease === 'number' ? it.dailyIncrease : null,
   };
 }
 
@@ -124,6 +126,7 @@ export async function getHot(since: HotWindow, limit = 12): Promise<HotRepo[]> {
         pushedAt: '',
         createdAt: null,
         htmlUrl: it.url || `https://github.com/${it.externalId}`,
+        dailyIncrease: null,
       },
     };
   });
