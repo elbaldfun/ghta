@@ -224,6 +224,28 @@ export async function getEcosystem(
   return { items: res.data.data ?? [], total: res.data.total ?? 0 };
 }
 
+export interface HeatCell {
+  path: string;
+  name: string;
+  nameEn?: string;
+  repos: number;
+  stars: number;
+  growth: number;
+  intensity: number; // daily stars per repo — the heat signal
+  children?: HeatCell[];
+}
+
+/**
+ * The ecosystem map: every domain with its scale (repos) and current velocity
+ * (growth, intensity). Scale and heat are separate signals — the largest field
+ * is usually not the one moving. Empty on error.
+ */
+export async function getHeatmap(): Promise<HeatCell[]> {
+  const res = await apiGet<{ data: HeatCell[] }>(`/category/heat`, 3600);
+  if (res.error !== null || !res.data) return [];
+  return res.data.data ?? [];
+}
+
 export interface SearchParamsIn {
   category?: string; // domain path (leaf "a/b" or parent "a") or category id
   type?: string; // form facet (cli|app|library|software|tutorial|awesome|interview|skill)

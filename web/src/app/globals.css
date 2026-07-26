@@ -26,6 +26,14 @@
   --up: 30 142 62;
   --down: 220 38 38;
 
+  /* Heat ramp — encodes velocity intensity. Deliberately separate from
+     --accent (brand) so colour carries information, not decoration. */
+  --heat0: 124 140 133;
+  --heat1: 62 142 126;
+  --heat2: 200 138 46;
+  --heat3: 226 102 44;
+  --heat4: 216 50 31;
+
   --radius-card: 12px;
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-sora), var(--font-sans);
@@ -48,6 +56,11 @@
     --muted: 124 143 128;
     --accent: 57 211 83;
     --accent2: 255 180 84;
+    --heat0: 100 117 109;
+    --heat1: 69 168 145;
+    --heat2: 224 169 63;
+    --heat3: 255 122 69;
+    --heat4: 255 82 54;
     --accent-fg: 4 20 10;
     --up: 57 211 83;
     --down: 248 113 113;
@@ -63,6 +76,11 @@
   --muted: 124 143 128;
   --accent: 57 211 83;
   --accent2: 255 180 84;
+  --heat0: 100 117 109;
+  --heat1: 69 168 145;
+  --heat2: 224 169 63;
+  --heat3: 255 122 69;
+  --heat4: 255 82 54;
   --accent-fg: 4 20 10;
   --up: 57 211 83;
   --down: 248 113 113;
