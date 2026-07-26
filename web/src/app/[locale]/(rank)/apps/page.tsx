@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getApps, type AppSort, type OS } from '@/lib/data';
+import { getApps, getCategoryTree, type AppSort, type OS } from '@/lib/data';
 import { formatCompact, langColor } from '@/lib/rank-data';
 import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { StarIcon } from '@/components/rank/icons';
@@ -58,7 +58,7 @@ export default async function AppsPage({
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { os?: string; kind?: string; sort?: string; page?: string };
+  searchParams: { os?: string; kind?: string; category?: string; sort?: string; page?: string };
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('rank');
@@ -69,12 +69,20 @@ export default async function AppsPage({
     searchParams.sort === 'popular' || searchParams.sort === 'new' ? searchParams.sort : 'hot';
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const { items, total } = await getApps({ os, kind, sort, limit: PER_PAGE, page });
+  const tree = await getCategoryTree();
+  // Validate category against the real top-level domains so it can't be used to
+  // spray arbitrary cache keys, and so the label lookup is safe.
+  const domains = tree.map((n) => ({ path: n.path, label: locale === 'zh' ? n.name : n.nameEn || n.name }));
+  const category = domains.some((d) => d.path === searchParams.category) ? (searchParams.category as string) : '';
+  const activeDomain = domains.find((d) => d.path === category);
+
+  const { items, total } = await getApps({ os, kind, category, sort, limit: PER_PAGE, page });
 
   const qp = (over: Record<string, string>) => {
     const base: Record<string, string> = {};
     if (os) base.os = os;
     if (kind) base.kind = kind;
+    if (category) base.category = category;
     base.sort = sort;
     return new URLSearchParams({ ...base, ...over }).toString();
   };
@@ -115,12 +123,39 @@ export default async function AppsPage({
         {OSES.map((o) => osTab(o, OS_LABEL[o]))}
       </div>
 
-      {/* kind + sort */}
+      {/* kind + domain + sort */}
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">
-          {smallTab(kind === '', `/apps?${qp({ kind: '', page: '1' })}`, t('appsAll'))}
-          {smallTab(kind === 'app', `/apps?${qp({ kind: 'app', page: '1' })}`, t('appsKindApp'))}
-          {smallTab(kind === 'cli', `/apps?${qp({ kind: 'cli', page: '1' })}`, t('appsKindCli'))}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {smallTab(kind === '', `/apps?${qp({ kind: '', page: '1' })}`, t('appsAll'))}
+            {smallTab(kind === 'app', `/apps?${qp({ kind: 'app', page: '1' })}`, t('appsKindApp'))}
+            {smallTab(kind === 'cli', `/apps?${qp({ kind: 'cli', page: '1' })}`, t('appsKindCli'))}
+          </div>
+          {domains.length > 0 && (
+            <details className="group relative">
+              <summary className="flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted hover:text-fg">
+                <span className={activeDomain ? 'text-accent' : ''}>{activeDomain?.label ?? t('appsAllDomains')}</span>
+                <span className="text-[9px]">▾</span>
+              </summary>
+              <div className="absolute left-0 top-full z-20 mt-1 max-h-[320px] w-[200px] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-card-hover">
+                <Link
+                  href={`/apps?${qp({ category: '', page: '1' })}`}
+                  className={`block rounded-md px-2.5 py-1.5 text-[12px] font-semibold hover:bg-surface2 ${category === '' ? 'text-accent' : 'text-muted'}`}
+                >
+                  {t('appsAllDomains')}
+                </Link>
+                {domains.map((d) => (
+                  <Link
+                    key={d.path}
+                    href={`/apps?${qp({ category: d.path, page: '1' })}`}
+                    className={`block rounded-md px-2.5 py-1.5 text-[12px] font-semibold hover:bg-surface2 ${category === d.path ? 'text-accent' : 'text-fg'}`}
+                  >
+                    {d.label}
+                  </Link>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {smallTab(sort === 'hot', `/apps?${qp({ sort: 'hot', page: '1' })}`, t('ecoSortHot'))}
@@ -214,7 +249,7 @@ export default async function AppsPage({
       )}
 
       {items.length > 0 && (
-        <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, sort }} />
+        <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, category, sort }} />
       )}
     </div>
   );

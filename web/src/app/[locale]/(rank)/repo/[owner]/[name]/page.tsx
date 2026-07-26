@@ -9,6 +9,8 @@ import { ReadmeBlock } from '@/components/rank/ReadmeBlock';
 import { RepoCard } from '@/components/rank/RepoCard';
 import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
 import { BackLink } from '@/components/rank/BackLink';
+import { PlatformBadges } from '@/components/rank/PlatformBadges';
+import { Downloads } from '@/components/rank/Downloads';
 
 interface Params {
   locale: string;
@@ -84,6 +86,15 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
           </a>
         )}
       </div>
+      {repo.platforms.length > 0 && (
+        <div className="mb-2.5">
+          <PlatformBadges
+            platforms={repo.platforms}
+            inferred={repo.platformSource !== 'asset'}
+            inferredLabel={t('appsInferred')}
+          />
+        </div>
+      )}
       <div className="mb-[22px]">
         {repo.description && <p className="max-w-[640px] text-[13px] text-muted">{repo.description}</p>}
         {repo.topics.length > 0 && (
@@ -113,6 +124,12 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
         </div>
       ) : (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{statTiles}</div>
+      )}
+
+      {repo.releaseAssets.length > 0 && (
+        <div className="mb-6">
+          <Downloads assets={repo.releaseAssets} fullName={repo.fullName} locale={params.locale} />
+        </div>
       )}
 
       {artifact.has && (

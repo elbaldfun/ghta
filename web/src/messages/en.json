@@ -143,7 +143,9 @@
     "appsInferred": "inferred",
     "appsColPlatform": "Platforms",
     "appsLatest": "latest",
-    "appsEmpty": "No apps match these filters yet"
+    "appsEmpty": "No apps match these filters yet",
+    "detailAllReleases": "All releases",
+    "appsAllDomains": "All domains"
   },
   "consent": {
     "title": "Cookie notice",

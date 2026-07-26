@@ -143,7 +143,9 @@
     "appsInferred": "inferido",
     "appsColPlatform": "Plataformas",
     "appsLatest": "última",
-    "appsEmpty": "Ninguna app para estos filtros"
+    "appsEmpty": "Ninguna app para estos filtros",
+    "detailAllReleases": "Todas las versiones",
+    "appsAllDomains": "Todos los dominios"
   },
   "consent": {
     "title": "Aviso de cookies",

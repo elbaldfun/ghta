@@ -143,7 +143,9 @@
     "appsInferred": "推断",
     "appsColPlatform": "平台",
     "appsLatest": "最新",
-    "appsEmpty": "暂无符合筛选的应用"
+    "appsEmpty": "暂无符合筛选的应用",
+    "detailAllReleases": "全部发行版",
+    "appsAllDomains": "全部分类"
   },
   "consent": {
     "title": "Cookie 使用说明",

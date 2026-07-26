@@ -35,8 +35,19 @@ export interface RepoSummary {
   dailyIncrease: number | null;
 }
 
+export interface ReleaseAsset {
+  name: string;
+  platform: OS;
+  url?: string;
+  size?: number;
+}
+
 export interface RepoDetail extends RepoSummary {
   weeklyIncrease: number | null;
+  platforms: OS[];
+  platformSource?: string;
+  releaseAssets: ReleaseAsset[];
+  latestRelease?: { tag?: string; publishedAt?: string | null } | null;
 }
 
 export type Fetched<T> = { data: T; error: null } | { data: null; error: string };
@@ -376,8 +387,16 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
   const res = await fetchItem(owner, name);
   if (res.error !== null) return res;
   const it = res.data.item;
+  const sd = it.sourceData ?? {};
   return {
-    data: { ...mapItem(it), weeklyIncrease: it.weeklyIncrease ?? null },
+    data: {
+      ...mapItem(it),
+      weeklyIncrease: it.weeklyIncrease ?? null,
+      platforms: (sd.platforms ?? []) as OS[],
+      platformSource: sd.platformSource ?? undefined,
+      releaseAssets: (sd.releaseAssets ?? []) as ReleaseAsset[],
+      latestRelease: sd.latestRelease ?? null,
+    },
     error: null,
   };
 }

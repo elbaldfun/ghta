@@ -143,7 +143,9 @@
     "appsInferred": "vermutet",
     "appsColPlatform": "Plattformen",
     "appsLatest": "neueste",
-    "appsEmpty": "Noch keine passenden Apps"
+    "appsEmpty": "Noch keine passenden Apps",
+    "detailAllReleases": "Alle Releases",
+    "appsAllDomains": "Alle Bereiche"
   },
   "consent": {
     "title": "Cookie-Hinweis",

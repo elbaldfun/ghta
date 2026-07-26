@@ -143,7 +143,9 @@
     "appsInferred": "추정",
     "appsColPlatform": "플랫폼",
     "appsLatest": "최신",
-    "appsEmpty": "조건에 맞는 앱이 없습니다"
+    "appsEmpty": "조건에 맞는 앱이 없습니다",
+    "detailAllReleases": "모든 릴리스",
+    "appsAllDomains": "모든 분야"
   },
   "consent": {
     "title": "쿠키 안내",
