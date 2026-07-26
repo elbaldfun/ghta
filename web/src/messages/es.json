@@ -131,7 +131,19 @@
     "breakoutSubtitle": "Los repos que más suben ahora — día, semana, mes",
     "hotNew": "NUEVO",
     "hotColGain": "Ganado",
-    "hotEmpty": "Sin datos de alza por ahora"
+    "hotEmpty": "Sin datos de alza por ahora",
+    "navApps": "Apps",
+    "appsTitle": "Apps de código abierto",
+    "appsSubtitle": "Apps y CLIs descargables, filtradas por tu SO",
+    "appsAll": "Todas",
+    "appsKindApp": "Apps",
+    "appsKindCli": "CLI",
+    "appsSortNew": "Recientes",
+    "appsDownload": "Descargar",
+    "appsInferred": "inferido",
+    "appsColPlatform": "Plataformas",
+    "appsLatest": "última",
+    "appsEmpty": "Ninguna app para estos filtros"
   },
   "consent": {
     "title": "Aviso de cookies",

@@ -131,7 +131,19 @@
     "breakoutSubtitle": "Am schnellsten wachsende Repos — täglich, wöchentlich, monatlich",
     "hotNew": "NEU",
     "hotColGain": "Zuwachs",
-    "hotEmpty": "Derzeit keine Aufsteiger-Daten"
+    "hotEmpty": "Derzeit keine Aufsteiger-Daten",
+    "navApps": "Apps",
+    "appsTitle": "Open-Source-Apps",
+    "appsSubtitle": "Ladbare Apps & CLIs, nach deinem OS gefiltert",
+    "appsAll": "Alle",
+    "appsKindApp": "Apps",
+    "appsKindCli": "CLI",
+    "appsSortNew": "Neueste",
+    "appsDownload": "Download",
+    "appsInferred": "vermutet",
+    "appsColPlatform": "Plattformen",
+    "appsLatest": "neueste",
+    "appsEmpty": "Noch keine passenden Apps"
   },
   "consent": {
     "title": "Cookie-Hinweis",

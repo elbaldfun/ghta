@@ -131,7 +131,19 @@
     "breakoutSubtitle": "Les dépôts qui montent le plus vite — jour, semaine, mois",
     "hotNew": "NOUV",
     "hotColGain": "Gain",
-    "hotEmpty": "Aucune donnée pour le moment"
+    "hotEmpty": "Aucune donnée pour le moment",
+    "navApps": "Apps",
+    "appsTitle": "Applications open-source",
+    "appsSubtitle": "Applis & CLIs téléchargeables, filtrées par OS",
+    "appsAll": "Toutes",
+    "appsKindApp": "Applis",
+    "appsKindCli": "CLI",
+    "appsSortNew": "Récentes",
+    "appsDownload": "Télécharger",
+    "appsInferred": "déduit",
+    "appsColPlatform": "Plateformes",
+    "appsLatest": "dernière",
+    "appsEmpty": "Aucune appli pour ces filtres"
   },
   "consent": {
     "title": "Avis sur les cookies",

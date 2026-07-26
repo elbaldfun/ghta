@@ -131,7 +131,19 @@
     "breakoutSubtitle": "今もっとも伸びているリポジトリ —— 日 / 週 / 月",
     "hotNew": "新",
     "hotColGain": "増加",
-    "hotEmpty": "急上昇データはありません"
+    "hotEmpty": "急上昇データはありません",
+    "navApps": "アプリ",
+    "appsTitle": "オープンソースアプリ",
+    "appsSubtitle": "ダウンロード可能なアプリと CLI、OS で絞り込み",
+    "appsAll": "すべて",
+    "appsKindApp": "アプリ",
+    "appsKindCli": "CLI",
+    "appsSortNew": "最新",
+    "appsDownload": "ダウンロード",
+    "appsInferred": "推定",
+    "appsColPlatform": "対応OS",
+    "appsLatest": "最新",
+    "appsEmpty": "条件に合うアプリはまだありません"
   },
   "consent": {
     "title": "Cookie について",

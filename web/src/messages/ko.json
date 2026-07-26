@@ -131,7 +131,19 @@
     "breakoutSubtitle": "지금 가장 빠르게 오르는 저장소 — 일 / 주 / 월",
     "hotNew": "신규",
     "hotColGain": "증가",
-    "hotEmpty": "급상승 데이터가 없습니다"
+    "hotEmpty": "급상승 데이터가 없습니다",
+    "navApps": "앱",
+    "appsTitle": "오픈소스 앱",
+    "appsSubtitle": "OS로 거른 다운로드 가능한 앱과 CLI",
+    "appsAll": "전체",
+    "appsKindApp": "앱",
+    "appsKindCli": "CLI",
+    "appsSortNew": "최신",
+    "appsDownload": "다운로드",
+    "appsInferred": "추정",
+    "appsColPlatform": "플랫폼",
+    "appsLatest": "최신",
+    "appsEmpty": "조건에 맞는 앱이 없습니다"
   },
   "consent": {
     "title": "쿠키 안내",

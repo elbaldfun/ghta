@@ -213,6 +213,52 @@ export interface EcoItem {
 export type EcoPillar = 'all' | 'skill' | 'mcp' | 'agent';
 export type EcoSort = 'hot' | 'popular';
 
+export type OS = 'macos' | 'windows' | 'linux' | 'android' | 'ios' | 'web';
+export type AppKind = 'app' | 'cli';
+export type AppSort = 'hot' | 'popular' | 'new';
+
+export interface AppItem {
+  externalId: string;
+  name: string;
+  description?: string;
+  language?: string;
+  stars: number;
+  forks: number;
+  growth: number;
+  type?: string;
+  kind: AppKind;
+  platforms: OS[];
+  platformSource?: string; // asset | topic | heuristic
+  categoryPath?: string[];
+  latestReleaseAt?: string | null;
+  hasDownloads: boolean;
+}
+
+/**
+ * The open-source app directory: downloadable apps/CLIs filtered by OS/kind/
+ * category and sorted hot|popular|new. Returns [] on error so the page degrades
+ * to an empty state instead of breaking.
+ */
+export async function getApps(params: {
+  os?: string;
+  kind?: string;
+  category?: string;
+  sort?: AppSort;
+  limit?: number;
+  page?: number;
+}): Promise<{ items: AppItem[]; total: number }> {
+  const q = new URLSearchParams();
+  if (params.os) q.set('os', params.os);
+  if (params.kind) q.set('kind', params.kind);
+  if (params.category) q.set('category', params.category);
+  q.set('sort', params.sort ?? 'hot');
+  q.set('limit', String(params.limit ?? 30));
+  q.set('page', String(params.page ?? 1));
+  const res = await apiGet<{ data: AppItem[]; total: number }>(`/apps?${q.toString()}`, 3600);
+  if (res.error !== null || !res.data) return { items: [], total: 0 };
+  return { items: res.data.data ?? [], total: res.data.total ?? 0 };
+}
+
 /**
  * The "AI stack" board: skills ∪ MCP servers ∪ agent repos, each tagged with the
  * pillars it belongs to. sort 'hot' = recent star growth (default), 'popular' =

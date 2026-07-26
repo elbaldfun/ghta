@@ -131,7 +131,19 @@
     "breakoutSubtitle": "Repositórios que mais sobem agora — dia, semana, mês",
     "hotNew": "NOVO",
     "hotColGain": "Ganho",
-    "hotEmpty": "Sem dados de alta no momento"
+    "hotEmpty": "Sem dados de alta no momento",
+    "navApps": "Apps",
+    "appsTitle": "Apps de código aberto",
+    "appsSubtitle": "Apps e CLIs baixáveis, filtrados pelo seu SO",
+    "appsAll": "Todos",
+    "appsKindApp": "Apps",
+    "appsKindCli": "CLI",
+    "appsSortNew": "Recentes",
+    "appsDownload": "Baixar",
+    "appsInferred": "inferido",
+    "appsColPlatform": "Plataformas",
+    "appsLatest": "última",
+    "appsEmpty": "Nenhum app para esses filtros"
   },
   "consent": {
     "title": "Aviso de cookies",

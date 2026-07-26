@@ -50,6 +50,12 @@ export function RankHeader() {
               {t('navEcosystem')}
             </Link>
             <Link
+              href="/apps"
+              className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
+            >
+              {t('navApps')}
+            </Link>
+            <Link
               href="/topics"
               className="rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold text-muted hover:text-fg"
             >

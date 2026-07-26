@@ -131,7 +131,19 @@
     "breakoutSubtitle": "Fastest-rising repos right now — daily, weekly, monthly",
     "hotNew": "NEW",
     "hotColGain": "Gained",
-    "hotEmpty": "No breakout data right now"
+    "hotEmpty": "No breakout data right now",
+    "navApps": "Apps",
+    "appsTitle": "Open-Source Apps",
+    "appsSubtitle": "Downloadable apps & CLIs, filtered by your OS",
+    "appsAll": "All",
+    "appsKindApp": "Apps",
+    "appsKindCli": "CLI",
+    "appsSortNew": "Newest",
+    "appsDownload": "Download",
+    "appsInferred": "inferred",
+    "appsColPlatform": "Platforms",
+    "appsLatest": "latest",
+    "appsEmpty": "No apps match these filters yet"
   },
   "consent": {
     "title": "Cookie notice",

@@ -131,7 +131,19 @@
     "breakoutSubtitle": "当下涨得最快的仓库 —— 日 / 周 / 月",
     "hotNew": "新",
     "hotColGain": "新增",
-    "hotEmpty": "暂无爆款数据"
+    "hotEmpty": "暂无爆款数据",
+    "navApps": "应用",
+    "appsTitle": "开源应用",
+    "appsSubtitle": "可下载的应用与命令行工具，按你的系统筛选",
+    "appsAll": "全部",
+    "appsKindApp": "应用",
+    "appsKindCli": "命令行",
+    "appsSortNew": "最新发行",
+    "appsDownload": "下载",
+    "appsInferred": "推断",
+    "appsColPlatform": "平台",
+    "appsLatest": "最新",
+    "appsEmpty": "暂无符合筛选的应用"
   },
   "consent": {
     "title": "Cookie 使用说明",
