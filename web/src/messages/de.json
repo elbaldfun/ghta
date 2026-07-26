@@ -145,7 +145,15 @@
     "appsLatest": "neueste",
     "appsEmpty": "Noch keine passenden Apps",
     "detailAllReleases": "Alle Releases",
-    "appsAllDomains": "Alle Bereiche"
+    "appsAllDomains": "Alle Bereiche",
+    "appsAltTo": "Alternative zu",
+    "navAlternatives": "Alternativen",
+    "altTitle": "Open-Source-Alternativen zu {name}",
+    "altSubtitle": "Kostenlose, quelloffene Alternativen zu {name}",
+    "altIndexTitle": "Open-Source-Alternativen",
+    "altIndexSubtitle": "Kostenlose Open-Source-Alternativen zu bezahlter Software",
+    "altCount": "{count} Alternativen",
+    "altEmpty": "Noch keine Alternativen gefunden"
   },
   "consent": {
     "title": "Cookie-Hinweis",

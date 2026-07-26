@@ -69,6 +69,20 @@ export function AppCard({ app }: { app: AppItem }) {
         {app.description && (
           <p className="mt-0.5 line-clamp-2 max-w-[62ch] text-[12.5px] text-muted">{app.description}</p>
         )}
+        {app.alternativeTo && app.alternativeTo.length > 0 && (
+          <p className="mt-1 text-[11.5px] text-muted">
+            <span aria-hidden="true">↔ </span>
+            {t('appsAltTo')}{' '}
+            {app.alternativeTo.map((a, i) => (
+              <span key={a.slug}>
+                {i > 0 && '、'}
+                <Link href={`/alternatives/${a.slug}`} className="font-semibold text-accent hover:underline">
+                  {a.name}
+                </Link>
+              </span>
+            ))}
+          </p>
+        )}
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
           <span className="flex items-center gap-1 font-semibold text-fg">
             <StarIcon size={12} className="text-accent2" />

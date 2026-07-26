@@ -145,7 +145,15 @@
     "appsLatest": "última",
     "appsEmpty": "Ninguna app para estos filtros",
     "detailAllReleases": "Todas las versiones",
-    "appsAllDomains": "Todos los dominios"
+    "appsAllDomains": "Todos los dominios",
+    "appsAltTo": "alternativa a",
+    "navAlternatives": "Alternativas",
+    "altTitle": "Alternativas de código abierto a {name}",
+    "altSubtitle": "Reemplazos gratuitos y de código abierto para {name}",
+    "altIndexTitle": "Alternativas de código abierto",
+    "altIndexSubtitle": "Encuentra alternativas de código abierto a software de pago",
+    "altCount": "{count} alternativas",
+    "altEmpty": "Aún no se encontraron alternativas"
   },
   "consent": {
     "title": "Aviso de cookies",

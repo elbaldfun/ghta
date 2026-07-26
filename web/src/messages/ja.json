@@ -145,7 +145,15 @@
     "appsLatest": "最新",
     "appsEmpty": "条件に合うアプリはまだありません",
     "detailAllReleases": "すべてのリリース",
-    "appsAllDomains": "すべての分野"
+    "appsAllDomains": "すべての分野",
+    "appsAltTo": "代替:",
+    "navAlternatives": "代替",
+    "altTitle": "{name} のオープンソース代替",
+    "altSubtitle": "{name} を置き換える無料・OSS・DL可能な選択肢",
+    "altIndexTitle": "オープンソース代替",
+    "altIndexSubtitle": "有料ソフトの無料OSS代替を探す",
+    "altCount": "{count} 件",
+    "altEmpty": "代替はまだ見つかりません"
   },
   "consent": {
     "title": "Cookie について",

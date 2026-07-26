@@ -100,12 +100,19 @@ func primaryDownloads(assets []assetRow) []AppDownload {
 
 // AppService ranks the open-source app directory. Cached per os+kind+category+sort.
 type AppService struct {
-	store *repository.Store
-	cache *ttlCache[[]AppItem]
+	store   *repository.Store
+	cache   *ttlCache[[]AppItem]   // directory boards, keyed os|kind|category|sort
+	byAlt   *ttlCache[[]AppItem]   // apps replacing one product, keyed by slug
+	targets *ttlCache[[]AltTarget] // the /alternatives index
 }
 
 func NewAppService(store *repository.Store) *AppService {
-	return &AppService{store: store, cache: newTTLCache[[]AppItem](appRankTTL)}
+	return &AppService{
+		store:   store,
+		cache:   newTTLCache[[]AppItem](appRankTTL),
+		byAlt:   newTTLCache[[]AppItem](appRankTTL),
+		targets: newTTLCache[[]AltTarget](altTargetsTTL),
+	}
 }
 
 // Ranking returns one page of the directory. os filters to a platform;
@@ -178,6 +185,30 @@ func appMatch(os, kind, category string) bson.M {
 	return m
 }
 
+// appProjection is the shared $project stage that shapes an AppItem, reused by
+// the directory board and the /alternatives reverse lookup.
+func appProjection() bson.M {
+	return bson.M{
+		"externalId":      1,
+		"name":            1,
+		"description":     1,
+		"language":        1,
+		"stars":           "$metrics.stars",
+		"forks":           "$metrics.forks",
+		"growth":          bson.M{"$ifNull": bson.A{"$dailyIncrease", 0}},
+		"type":            1,
+		"platforms":       bson.M{"$ifNull": bson.A{"$sourceData.platforms", bson.A{}}},
+		"platformSource":  "$sourceData.platformSource",
+		"categoryPath":    1,
+		"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
+		"homepage":        "$sourceData.homepageUrl",
+		"license":         "$sourceData.license",
+		"alternativeTo":   1,
+		"releaseAssets":   bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}},
+		"assetCount":      bson.M{"$size": bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}}},
+	}
+}
+
 func (s *AppService) compute(ctx context.Context, os, kind, category, sort string) ([]AppItem, error) {
 	sortKey := "dailyIncrease"
 	switch sort {
@@ -189,31 +220,9 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: appMatch(os, kind, category)}},
-		bson.D{{Key: "$addFields", Value: bson.M{
-			"growth":    bson.M{"$ifNull": bson.A{"$dailyIncrease", 0}},
-			"platforms": bson.M{"$ifNull": bson.A{"$sourceData.platforms", bson.A{}}},
-		}}},
 		bson.D{{Key: "$sort", Value: bson.D{{Key: sortKey, Value: -1}}}},
 		bson.D{{Key: "$limit", Value: appTopN}},
-		bson.D{{Key: "$project", Value: bson.M{
-			"externalId":      1,
-			"name":            1,
-			"description":     1,
-			"language":        1,
-			"stars":           "$metrics.stars",
-			"forks":           "$metrics.forks",
-			"growth":          1,
-			"type":            1,
-			"platforms":       1,
-			"platformSource":  "$sourceData.platformSource",
-			"categoryPath":    1,
-			"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
-			"homepage":        "$sourceData.homepageUrl",
-			"license":         "$sourceData.license",
-			"alternativeTo":   1,
-			"releaseAssets":   bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}},
-			"assetCount":      bson.M{"$size": bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}}},
-		}}},
+		bson.D{{Key: "$project", Value: appProjection()}},
 	}
 
 	cur, err := s.store.Items().Aggregate(ctx, pipeline)
@@ -224,7 +233,11 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 	if err := cur.All(ctx, &raw); err != nil {
 		return nil, fmt.Errorf("app ranking decode: %w", err)
 	}
+	return appItemsFromRows(raw), nil
+}
 
+// appItemsFromRows maps decoded aggregation rows to API items.
+func appItemsFromRows(raw []appRow) []AppItem {
 	rows := make([]AppItem, 0, len(raw))
 	for _, r := range raw {
 		kind := "app"
@@ -252,7 +265,7 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 			HasDownloads:    r.AssetCount > 0,
 		})
 	}
-	return rows, nil
+	return rows
 }
 
 type appRow struct {

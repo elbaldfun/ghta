@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import { getReadme, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
 import { Carousel } from '@/components/rank/Carousel';
@@ -94,6 +95,20 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
             inferredLabel={t('appsInferred')}
           />
         </div>
+      )}
+      {repo.alternativeTo.length > 0 && (
+        <p className="mb-2.5 text-[13px] text-muted">
+          <span aria-hidden="true">↔ </span>
+          {t('appsAltTo')}{' '}
+          {repo.alternativeTo.map((a, i) => (
+            <span key={a.slug}>
+              {i > 0 && '、'}
+              <Link href={`/alternatives/${a.slug}`} className="font-bold text-accent hover:underline">
+                {a.name}
+              </Link>
+            </span>
+          ))}
+        </p>
       )}
       <div className="mb-[22px]">
         {repo.description && <p className="max-w-[640px] text-[13px] text-muted">{repo.description}</p>}

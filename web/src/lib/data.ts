@@ -48,6 +48,7 @@ export interface RepoDetail extends RepoSummary {
   platformSource?: string;
   releaseAssets: ReleaseAsset[];
   latestRelease?: { tag?: string; publishedAt?: string | null } | null;
+  alternativeTo: Alternative[];
 }
 
 export type Fetched<T> = { data: T; error: null } | { data: null; error: string };
@@ -251,7 +252,39 @@ export interface AppItem {
   categoryPath?: string[];
   latestReleaseAt?: string | null;
   downloads?: AppDownload[];
+  alternativeTo?: Alternative[];
   hasDownloads: boolean;
+}
+
+export interface Alternative {
+  name: string;
+  slug: string;
+  kind?: string;
+}
+
+export interface AltTarget {
+  name: string;
+  slug: string;
+  kind?: string;
+  count: number;
+}
+
+/** Paid products with the most open-source alternatives (the /alternatives index). */
+export async function getAltTargets(): Promise<AltTarget[]> {
+  const res = await apiGet<{ data: AltTarget[] }>(`/alternatives`, 3600);
+  return res.error === null && res.data ? (res.data.data ?? []) : [];
+}
+
+/** Open-source apps that replace one product, plus its display name. */
+export async function getAppsByAlternative(
+  slug: string,
+): Promise<{ items: AppItem[]; name: string }> {
+  const res = await apiGet<{ data: AppItem[]; name: string }>(
+    `/alternatives/${encodeURIComponent(slug)}`,
+    3600,
+  );
+  if (res.error !== null || !res.data) return { items: [], name: slug };
+  return { items: res.data.data ?? [], name: res.data.name ?? slug };
 }
 
 /**
@@ -405,6 +438,7 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
       platformSource: sd.platformSource ?? undefined,
       releaseAssets: (sd.releaseAssets ?? []) as ReleaseAsset[],
       latestRelease: sd.latestRelease ?? null,
+      alternativeTo: (it.alternativeTo ?? []) as Alternative[],
     },
     error: null,
   };

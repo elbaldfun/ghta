@@ -20,6 +20,35 @@ func NewAppHandler(svc *service.AppService) *AppHandler {
 
 func (h *AppHandler) Register(r gin.IRoutes) {
 	r.GET("/apps", h.List)
+	r.GET("/alternatives", h.AltIndex)
+	r.GET("/alternatives/:slug", h.ByAlternative)
+}
+
+// AltIndex handles GET /alternatives — paid products with the most open-source
+// alternatives, most-covered first.
+func (h *AppHandler) AltIndex(c *gin.Context) {
+	targets, err := h.svc.AltTargets(c.Request.Context())
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": targets})
+}
+
+// ByAlternative handles GET /alternatives/:slug — the open-source apps that
+// replace one product.
+func (h *AppHandler) ByAlternative(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "slug required"})
+		return
+	}
+	rows, name, err := h.svc.ByAlternative(c.Request.Context(), slug)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": rows, "slug": slug, "name": name, "total": len(rows)})
 }
 
 // List handles GET /apps?os=&kind=&category=&sort=hot|popular|new&limit=&page=.

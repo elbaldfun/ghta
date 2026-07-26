@@ -145,7 +145,15 @@
     "appsLatest": "최신",
     "appsEmpty": "조건에 맞는 앱이 없습니다",
     "detailAllReleases": "모든 릴리스",
-    "appsAllDomains": "모든 분야"
+    "appsAllDomains": "모든 분야",
+    "appsAltTo": "대체:",
+    "navAlternatives": "대체",
+    "altTitle": "{name}의 오픈소스 대체",
+    "altSubtitle": "{name}을 대체하는 무료·오픈소스·다운로드 가능한 선택지",
+    "altIndexTitle": "오픈소스 대체",
+    "altIndexSubtitle": "유료 소프트웨어의 무료 오픈소스 대체 찾기",
+    "altCount": "{count}개",
+    "altEmpty": "아직 대체를 찾지 못했습니다"
   },
   "consent": {
     "title": "쿠키 안내",

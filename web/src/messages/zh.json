@@ -145,7 +145,15 @@
     "appsLatest": "最新",
     "appsEmpty": "暂无符合筛选的应用",
     "detailAllReleases": "全部发行版",
-    "appsAllDomains": "全部分类"
+    "appsAllDomains": "全部分类",
+    "appsAltTo": "开源替代",
+    "navAlternatives": "替代",
+    "altTitle": "{name} 的开源替代",
+    "altSubtitle": "可下载、免费、开源——替代 {name} 的选择",
+    "altIndexTitle": "开源替代",
+    "altIndexSubtitle": "为付费软件找免费开源的替代品",
+    "altCount": "{count} 个替代",
+    "altEmpty": "暂未发现开源替代"
   },
   "consent": {
     "title": "Cookie 使用说明",
