@@ -107,7 +107,17 @@
     "mapColRepo": "Repository",
     "mapColTrend": "30-day trend",
     "mapColVelocity": "Velocity",
-    "mapColStars": "Stars"
+    "mapColStars": "Stars",
+    "mapByHeat": "Heat",
+    "mapByGrowth": "Growth",
+    "mapByScale": "Scale",
+    "mapColorHeat": "stars/repo/day",
+    "mapColorGrowth": "daily growth",
+    "mapColorScale": "repo count",
+    "mapSortVelocity": "Velocity",
+    "mapSortRelative": "Relative",
+    "mapSortStars": "Stars",
+    "mapColorBy": "Colour"
   },
   "consent": {
     "title": "Cookie notice",

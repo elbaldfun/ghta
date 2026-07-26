@@ -107,7 +107,17 @@
     "mapColRepo": "リポジトリ",
     "mapColTrend": "30日トレンド",
     "mapColVelocity": "速度",
-    "mapColStars": "スター"
+    "mapColStars": "スター",
+    "mapByHeat": "勢い",
+    "mapByGrowth": "増加量",
+    "mapByScale": "規模",
+    "mapColorHeat": "1リポジトリ日次スター",
+    "mapColorGrowth": "日次増加量",
+    "mapColorScale": "リポジトリ数",
+    "mapSortVelocity": "速度",
+    "mapSortRelative": "相対増加",
+    "mapSortStars": "スター",
+    "mapColorBy": "色"
   },
   "consent": {
     "title": "Cookie について",

@@ -107,7 +107,17 @@
     "mapColRepo": "저장소",
     "mapColTrend": "30일 추이",
     "mapColVelocity": "속도",
-    "mapColStars": "스타"
+    "mapColStars": "스타",
+    "mapByHeat": "열기",
+    "mapByGrowth": "증가",
+    "mapByScale": "규모",
+    "mapColorHeat": "저장소당 일일 스타",
+    "mapColorGrowth": "일일 증가량",
+    "mapColorScale": "저장소 수",
+    "mapSortVelocity": "속도",
+    "mapSortRelative": "상대 증가",
+    "mapSortStars": "스타",
+    "mapColorBy": "색상"
   },
   "consent": {
     "title": "쿠키 안내",

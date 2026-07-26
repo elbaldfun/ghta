@@ -20,11 +20,25 @@ export async function generateMetadata({
   return { title: t('mapTitle'), description: t('mapSubtitle') };
 }
 
-export default async function MapPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function MapPage({
+  params: { locale },
+  searchParams,
+}: {
+  params: { locale: string };
+  searchParams: { sort?: string };
+}) {
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
-  const [cells, eco] = await Promise.all([getHeatmap(), getEcosystem('all', 'hot', 20)]);
+  const sort = searchParams.sort === 'stars' || searchParams.sort === 'rel' ? searchParams.sort : 'velocity';
+  const [cells, eco] = await Promise.all([getHeatmap(), getEcosystem('all', 'hot', 60)]);
+
+  const rel = (x: { growth: number; stars: number }) => (x.stars > 0 ? x.growth / x.stars : 0);
+  const items = [...eco.items]
+    .sort((a, b) =>
+      sort === 'stars' ? b.stars - a.stars : sort === 'rel' ? rel(b) - rel(a) : b.growth - a.growth,
+    )
+    .slice(0, 20);
 
   const totalRepos = cells.reduce((s, c) => s + c.repos, 0);
   const totalGrowth = cells.reduce((s, c) => s + c.growth, 0);
@@ -41,16 +55,28 @@ export default async function MapPage({ params: { locale } }: { params: { locale
 
       <EcosystemMap cells={cells} />
 
-      {eco.items.length > 0 && (
+      {items.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <div className="flex items-baseline gap-2.5">
               <h2 className="font-display text-lg font-extrabold">{t('mapBoardTitle')}</h2>
               <span className="text-xs text-muted">{t('mapBoardSubtitle')}</span>
             </div>
-            <Link href="/ecosystem" className="text-[12px] font-bold text-accent hover:underline">
-              {t('seeAll')} →
-            </Link>
+            <div className="flex items-center gap-1">
+              {([['velocity', t('mapSortVelocity')], ['rel', t('mapSortRelative')], ['stars', t('mapSortStars')]] as const).map(
+                ([key, txt]) => (
+                  <Link
+                    key={key}
+                    href={`/map?sort=${key}`}
+                    className={`rounded-md px-2.5 py-1 text-[11.5px] font-semibold ${
+                      sort === key ? 'text-accent' : 'text-muted hover:text-fg'
+                    }`}
+                  >
+                    {txt}
+                  </Link>
+                ),
+              )}
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-surface">
@@ -61,7 +87,7 @@ export default async function MapPage({ params: { locale } }: { params: { locale
               <div className="text-right">{t('mapColVelocity')}</div>
               <div className="text-right">{t('mapColStars')}</div>
             </div>
-            {eco.items.map((item, i) => (
+            {items.map((item, i) => (
               <RankRow key={item.externalId} item={item} rank={i + 1} />
             ))}
           </div>

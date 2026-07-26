@@ -107,7 +107,17 @@
     "mapColRepo": "Repositório",
     "mapColTrend": "Tendência 30 d",
     "mapColVelocity": "Velocidade",
-    "mapColStars": "Estrelas"
+    "mapColStars": "Estrelas",
+    "mapByHeat": "Calor",
+    "mapByGrowth": "Crescimento",
+    "mapByScale": "Escala",
+    "mapColorHeat": "estrelas/repo/dia",
+    "mapColorGrowth": "crescimento diário",
+    "mapColorScale": "nº de repos",
+    "mapSortVelocity": "Velocidade",
+    "mapSortRelative": "Relativo",
+    "mapSortStars": "Estrelas",
+    "mapColorBy": "Cor"
   },
   "consent": {
     "title": "Aviso de cookies",

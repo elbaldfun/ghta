@@ -107,7 +107,17 @@
     "mapColRepo": "仓库",
     "mapColTrend": "30 日趋势",
     "mapColVelocity": "速度",
-    "mapColStars": "星标"
+    "mapColStars": "星标",
+    "mapByHeat": "热度",
+    "mapByGrowth": "增速",
+    "mapByScale": "规模",
+    "mapColorHeat": "每项目日均增星",
+    "mapColorGrowth": "日增长总量",
+    "mapColorScale": "项目数量",
+    "mapSortVelocity": "速度",
+    "mapSortRelative": "相对增速",
+    "mapSortStars": "总星标",
+    "mapColorBy": "颜色"
   },
   "consent": {
     "title": "Cookie 使用说明",

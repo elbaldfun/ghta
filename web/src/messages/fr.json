@@ -107,7 +107,17 @@
     "mapColRepo": "Dépôt",
     "mapColTrend": "Tendance 30 j",
     "mapColVelocity": "Vitesse",
-    "mapColStars": "Étoiles"
+    "mapColStars": "Étoiles",
+    "mapByHeat": "Dynamique",
+    "mapByGrowth": "Croissance",
+    "mapByScale": "Ampleur",
+    "mapColorHeat": "étoiles/dépôt/jour",
+    "mapColorGrowth": "croissance quotidienne",
+    "mapColorScale": "nombre de dépôts",
+    "mapSortVelocity": "Vitesse",
+    "mapSortRelative": "Relatif",
+    "mapSortStars": "Étoiles",
+    "mapColorBy": "Couleur"
   },
   "consent": {
     "title": "Avis sur les cookies",
