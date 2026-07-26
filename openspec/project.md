@@ -51,6 +51,7 @@ Apple App Store 应用、Chrome Web Store 扩展、Microsoft Store 软件——�
 | 10 | Microsoft Store 源适配器 | backend(source) | ❌ 未实现 |
 | 11 | Web 前端 + 专业 UI（源维度感知） | frontend | ❌ 未实现（新建） |
 | 12 | 用户管理 | backend | ⚠️ 模板，随 auth 收敛 |
+| 13 | 开源应用目录（按系统筛选下载 + 开源替代落地页） | backend+frontend | ✅ 已上线（change 13，见 specs/app-directory） |
 
 ## 目标技术架构
 
