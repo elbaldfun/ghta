@@ -8,7 +8,12 @@ import { LICENSE_NAMES, type SortOption } from './rank-data';
 
 // Server-only on purpose: without the NEXT_PUBLIC_ prefix the backend address
 // is never inlined into the browser bundle. Every caller below runs on the server.
-const API = process.env.API_URL || 'http://localhost:3000';
+const API =
+  process.env.API_URL ||
+  // A production build without API_URL (e.g. a preview deploy that only has the
+  // variable set for Production) would otherwise call localhost and render every
+  // page empty. Fall back to the public API there; keep localhost for dev.
+  (process.env.NODE_ENV === 'production' ? 'https://api.starrank.dev' : 'http://localhost:3000');
 
 export interface RepoSummary {
   owner: string;

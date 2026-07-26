@@ -6,6 +6,11 @@ import { formatCompact } from '@/lib/rank-data';
 import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankRow } from '@/components/rank/RankRow';
 
+// Render per request rather than at build time: the map's data comes from the
+// backend, and a build that can't reach it (e.g. a preview deploy without
+// API_URL) would otherwise bake an empty page and serve it until revalidation.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({
   params: { locale },
 }: {
