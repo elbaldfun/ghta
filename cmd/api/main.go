@@ -112,6 +112,10 @@ func main() {
 		slog.Error("invalid DEVSYNC_CRON", "err", err)
 		os.Exit(1)
 	}
+	if _, err := scheduler.AddFunc(cfg.AltFindCron, func() { altFinder.Run(rootCtx) }); err != nil {
+		slog.Error("invalid ALTFIND_CRON", "err", err)
+		os.Exit(1)
+	}
 	scheduler.Start()
 	defer scheduler.Stop()
 

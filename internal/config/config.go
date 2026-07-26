@@ -38,6 +38,7 @@ type Config struct {
 	FetchCron       string
 	CategorizeCron  string
 	DevSyncCron     string
+	AltFindCron     string
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
 
 	CategorizeBatchSize int // items per AI categorization call
@@ -72,6 +73,7 @@ func Load() (*Config, error) {
 		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
 		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
 		DevSyncCron:     getEnv("DEVSYNC_CRON", "0 0 4 * * *"),
+		AltFindCron:     getEnv("ALTFIND_CRON", "0 0 6 * * *"), // after categorize, so newly-classified apps get alternatives
 	}
 
 	// PORT
