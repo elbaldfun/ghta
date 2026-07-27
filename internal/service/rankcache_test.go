@@ -89,26 +89,90 @@ func TestTTLCacheReturnsErrorWhenNoStale(t *testing.T) {
 	}
 }
 
-// Characterization of CURRENT behavior: once an entry is stale, get() BLOCKS the
-// triggering caller on the full recompute and returns the fresh value (never the
-// stale one). This is the latency cliff the stale-while-revalidate work targets:
-// after SWR lands, a stale hit should return the OLD value immediately and
-// refresh in the background — at which point this test is updated to assert the
-// new contract (stale value returned, compute observed asynchronously).
-func TestTTLCacheBlocksOnStaleRecompute(t *testing.T) {
-	c := newTTLCache[int](time.Nanosecond) // entries are stale almost immediately
-	if _, err := c.get(context.Background(), "k", func(context.Context) (int, error) { return 1, nil }); err != nil {
+// SWR contract: a stale hit returns the OLD value IMMEDIATELY (never blocking on
+// the recompute) and refreshes in the background; a later read sees the fresh
+// value. This is the latency cliff removed — no caller ever waits for a
+// multi-second board recompute except the very first (cold) load.
+func TestTTLCacheServesStaleImmediatelyThenRefreshes(t *testing.T) {
+	c := newTTLCache[int](20 * time.Millisecond)
+	var calls atomic.Int64
+	var fresh atomic.Int64
+	fresh.Store(1)
+	compute := func(context.Context) (int, error) {
+		calls.Add(1)
+		time.Sleep(60 * time.Millisecond) // a "slow" recompute
+		return int(fresh.Load()), nil
+	}
+
+	// Cold load blocks (nothing to serve yet) and returns 1.
+	if v, err := c.get(context.Background(), "k", compute); err != nil || v != 1 {
+		t.Fatalf("cold load: v=%d err=%v, want 1", v, err)
+	}
+	fresh.Store(2)
+	time.Sleep(30 * time.Millisecond) // now stale
+
+	// Stale hit must return the OLD value fast, without waiting for the recompute.
+	start := time.Now()
+	v, err := c.get(context.Background(), "k", compute)
+	elapsed := time.Since(start)
+	if err != nil || v != 1 {
+		t.Fatalf("stale hit: v=%d err=%v, want stale 1", v, err)
+	}
+	if elapsed > 15*time.Millisecond {
+		t.Fatalf("stale hit blocked %v — should return immediately", elapsed)
+	}
+
+	// The background refresh eventually swaps in the fresh value.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		got, _ := c.get(context.Background(), "k", compute)
+		if got == 2 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("background refresh never updated the value (still %d)", got)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// Under a burst of concurrent stale reads, at most one background refresh runs
+// per key — the stale reads all return immediately and only one compute fires.
+func TestTTLCacheSingleBackgroundRefresh(t *testing.T) {
+	c := newTTLCache[int](10 * time.Millisecond)
+	var calls atomic.Int64
+	gate := make(chan struct{})
+	compute := func(context.Context) (int, error) {
+		n := calls.Add(1)
+		if n == 1 {
+			return 1, nil // cold seed returns immediately
+		}
+		<-gate // refresh blocks until released, so we can inspect in-flight count
+		return int(n), nil
+	}
+
+	if _, err := c.get(context.Background(), "k", compute); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
-	time.Sleep(time.Millisecond) // ensure TTL elapsed
+	time.Sleep(20 * time.Millisecond) // stale
 
-	v, err := c.get(context.Background(), "k", func(context.Context) (int, error) { return 2, nil })
-	if err != nil {
-		t.Fatalf("recompute: %v", err)
+	var wg sync.WaitGroup
+	for i := 0; i < 12; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if v, err := c.get(context.Background(), "k", compute); err != nil || v != 1 {
+				t.Errorf("stale read: v=%d err=%v, want stale 1", v, err)
+			}
+		}()
 	}
-	if v != 2 {
-		t.Fatalf("stale hit returned %d, want 2 (current contract: caller blocks for fresh value)", v)
+	wg.Wait()
+	time.Sleep(30 * time.Millisecond) // let the single refresh goroutine reach compute
+
+	if got := calls.Load(); got != 2 {
+		t.Fatalf("expected exactly 1 background refresh (calls=2), got calls=%d", got)
 	}
+	close(gate)
 }
 
 func TestTTLCacheCapsKeySpace(t *testing.T) {
