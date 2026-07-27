@@ -155,7 +155,8 @@
     "altCount": "{count}개",
     "altEmpty": "아직 대체를 찾지 못했습니다",
     "tabList": "순위",
-    "tabDirectory": "디렉터리"
+    "tabDirectory": "디렉터리",
+    "searchSeeAll": "“{q}” 전체 검색"
   },
   "consent": {
     "title": "쿠키 안내",

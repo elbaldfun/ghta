@@ -155,7 +155,8 @@
     "altCount": "{count} alternativas",
     "altEmpty": "Nenhuma alternativa encontrada",
     "tabList": "Ranking",
-    "tabDirectory": "Diretório"
+    "tabDirectory": "Diretório",
+    "searchSeeAll": "Buscar tudo por “{q}”"
   },
   "consent": {
     "title": "Aviso de cookies",

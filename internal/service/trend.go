@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -20,6 +20,63 @@ import (
 	"github.com/elbaldfun/ghta/internal/repository"
 	"github.com/elbaldfun/ghta/pkg/query"
 )
+
+// SuggestItem is one autocomplete row for the search-as-you-type dropdown.
+type SuggestItem struct {
+	ExternalID string `json:"externalId"`
+	Name       string `json:"name"`
+	Stars      int    `json:"stars"`
+	Language   string `json:"language,omitempty"`
+	IconURL    string `json:"iconUrl,omitempty"`
+}
+
+// suggestCollation makes the name prefix match case-insensitively via the
+// matching collated index (name_ci), so autocomplete stays index-backed.
+var suggestCollation = &options.Collation{Locale: "en", Strength: 2}
+
+// Suggest returns up to `limit` name-prefix matches for autocomplete, ranked by
+// stars. Uses a case-insensitive prefix range on the collated name index (fast,
+// index-backed), pulling a bounded window and ranking it in Go.
+func (s *TrendService) Suggest(ctx context.Context, q string, limit int) ([]SuggestItem, error) {
+	q = strings.TrimSpace(q)
+	if len([]rune(q)) < 2 {
+		return []SuggestItem{}, nil
+	}
+	if limit <= 0 || limit > 20 {
+		limit = 8
+	}
+
+	filter := bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}}
+	cur, err := s.store.Items().Find(ctx, filter,
+		options.Find().
+			SetCollation(suggestCollation).
+			SetLimit(60).
+			SetProjection(bson.M{"externalId": 1, "name": 1, "metrics.stars": 1, "language": 1, "iconUrl": 1}))
+	if err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		ExternalID string `bson:"externalId"`
+		Name       string `bson:"name"`
+		Language   string `bson:"language"`
+		IconURL    string `bson:"iconUrl"`
+		Metrics    struct {
+			Stars float64 `bson:"stars"`
+		} `bson:"metrics"`
+	}
+	if err := cur.All(ctx, &rows); err != nil {
+		return nil, err
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Metrics.Stars > rows[j].Metrics.Stars })
+	if len(rows) > limit {
+		rows = rows[:limit]
+	}
+	out := make([]SuggestItem, len(rows))
+	for i, r := range rows {
+		out[i] = SuggestItem{ExternalID: r.ExternalID, Name: r.Name, Stars: int(r.Metrics.Stars), Language: r.Language, IconURL: r.IconURL}
+	}
+	return out, nil
+}
 
 // InputError marks a client input problem (mapped to HTTP 400).
 type InputError struct{ msg string }
@@ -108,12 +165,10 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		filter["sourceData.topicNames"] = bson.M{"$all": q.Topics}
 	}
 	if q.Q != "" {
-		re := primitive.Regex{Pattern: regexp.QuoteMeta(q.Q), Options: "i"}
-		filter["$or"] = []bson.M{
-			{"externalId": re},
-			{"name": re},
-			{"description": re},
-		}
+		// Full-text search over the weighted text index (name > topics >
+		// description). Replaces the old unanchored $or regex, which scanned the
+		// whole collection and ranked by stars instead of relevance.
+		filter["$text"] = bson.M{"$search": q.Q}
 	}
 	if q.Stars != "" {
 		cond, err := query.ParseRange(q.Stars)
@@ -155,12 +210,21 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, err
 	}
 
+	proj := bson.M{"sourceData.readme": 0, "sourceData.releases": 0}
+	sort := bson.D{{Key: sortField, Value: sortOrder}}
+	if q.Q != "" {
+		// Rank by text relevance for a search; $meta may sit alongside the
+		// exclusion projection.
+		proj["score"] = bson.M{"$meta": "textScore"}
+		sort = bson.D{{Key: "score", Value: bson.M{"$meta": "textScore"}}}
+	}
+
 	opts := options.Find().
-		SetSort(bson.D{{Key: sortField, Value: sortOrder}}).
+		SetSort(sort).
 		SetSkip(int64(page-1) * int64(limit)).
 		SetLimit(int64(limit)).
 		// The list view never needs the heavyweight sourceData blobs.
-		SetProjection(bson.M{"sourceData.readme": 0, "sourceData.releases": 0})
+		SetProjection(proj)
 
 	cur, err := s.store.Items().Find(ctx, filter, opts)
 	if err != nil {

@@ -19,6 +19,16 @@ func NewTrendingHandler(svc *service.TrendService) *TrendingHandler {
 	return &TrendingHandler{svc: svc}
 }
 
+// Suggest handles GET /search/suggest?q= — autocomplete for the search box.
+func (h *TrendingHandler) Suggest(c *gin.Context) {
+	items, err := h.svc.Suggest(c.Request.Context(), c.Query("q"), 8)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
 // List handles GET /trending.
 func (h *TrendingHandler) List(c *gin.Context) {
 	q := service.TrendQuery{

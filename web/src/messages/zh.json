@@ -155,7 +155,8 @@
     "altCount": "{count} 个替代",
     "altEmpty": "暂未发现开源替代",
     "tabList": "榜单",
-    "tabDirectory": "目录"
+    "tabDirectory": "目录",
+    "searchSeeAll": "搜索全部“{q}”"
   },
   "consent": {
     "title": "Cookie 使用说明",

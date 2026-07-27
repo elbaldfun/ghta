@@ -184,6 +184,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.GET("/trending", trending.List)
 	r.GET("/trending/rising", trending.Rising)
 	r.GET("/trending/item", trending.Item)
+	r.GET("/search/suggest", trending.Suggest)
 
 	handler.NewStatsHandler(store).Register(r)
 	handler.NewNewReposHandler(ghAdapter).Register(r)

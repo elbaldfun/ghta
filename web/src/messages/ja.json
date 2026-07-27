@@ -155,7 +155,8 @@
     "altCount": "{count} 件",
     "altEmpty": "代替はまだ見つかりません",
     "tabList": "ランキング",
-    "tabDirectory": "ディレクトリ"
+    "tabDirectory": "ディレクトリ",
+    "searchSeeAll": "「{q}」を全て検索"
   },
   "consent": {
     "title": "Cookie について",

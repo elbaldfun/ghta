@@ -155,7 +155,8 @@
     "altCount": "{count} Alternativen",
     "altEmpty": "Noch keine Alternativen gefunden",
     "tabList": "Rangliste",
-    "tabDirectory": "Verzeichnis"
+    "tabDirectory": "Verzeichnis",
+    "searchSeeAll": "Alles nach „{q}“ suchen"
   },
   "consent": {
     "title": "Cookie-Hinweis",

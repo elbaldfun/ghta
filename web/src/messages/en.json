@@ -155,7 +155,8 @@
     "altCount": "{count} alternatives",
     "altEmpty": "No open-source alternatives found yet",
     "tabList": "Leaderboard",
-    "tabDirectory": "Directory"
+    "tabDirectory": "Directory",
+    "searchSeeAll": "Search all for “{q}”"
   },
   "consent": {
     "title": "Cookie notice",

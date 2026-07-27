@@ -113,6 +113,33 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "sourceData.platforms", Value: 1}}},                  // app directory: filter by OS
 		{Keys: bson.D{{Key: "sourceData.latestRelease.publishedAt", Value: -1}}}, // app directory: "new" sort
 		{Keys: bson.D{{Key: "alternativeTo.slug", Value: 1}}},                    // app directory: /alternatives/<slug> reverse lookup
+		// Weighted full-text index powering relevance search (replaces the old
+		// unanchored-regex collection scan). Only one text index per collection.
+		{
+			Keys: bson.D{
+				{Key: "name", Value: "text"},
+				{Key: "sourceData.topicNames", Value: "text"},
+				{Key: "generatedTopics", Value: "text"},
+				{Key: "externalId", Value: "text"},
+				{Key: "description", Value: "text"},
+			},
+			// Point language_override at a field we don't store, so Mongo doesn't
+			// treat our `language` field (values like "TypeScript") as the text
+			// language and fail the build; every doc then uses the default language.
+			Options: options.Index().SetName("item_text").SetLanguageOverride("searchLang").SetWeights(bson.D{
+				{Key: "name", Value: 10},
+				{Key: "sourceData.topicNames", Value: 6},
+				{Key: "generatedTopics", Value: 6},
+				{Key: "externalId", Value: 4},
+				{Key: "description", Value: 2},
+			}),
+		},
+		// Case-insensitive index on name for index-backed prefix autocomplete
+		// (Suggest queries it with the same collation).
+		{
+			Keys:    bson.D{{Key: "name", Value: 1}},
+			Options: options.Index().SetName("name_ci").SetCollation(&options.Collation{Locale: "en", Strength: 2}),
+		},
 	}
 	if _, err := s.Items().Indexes().CreateMany(ctx, itemIndexes); err != nil {
 		return fmt.Errorf("item indexes: %w", err)
