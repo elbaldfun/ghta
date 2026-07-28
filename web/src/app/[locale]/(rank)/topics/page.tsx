@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { getTopics, type TopicSort } from '@/lib/data';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { formatCompact } from '@/lib/rank-data';
+import { PageShell } from '@/components/rank/PageShell';
 
 export async function generateMetadata({
   params: { locale },
@@ -41,7 +42,7 @@ export default async function TopicsPage({
   );
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('topicsTitle')}</h1>
         <span className="text-xs text-muted">{t('topicsSubtitle')}</span>
@@ -100,6 +101,6 @@ export default async function TopicsPage({
           })}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

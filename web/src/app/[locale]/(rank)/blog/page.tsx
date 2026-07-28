@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { listPosts } from '@/lib/blog';
+import { PageShell } from '@/components/rank/PageShell';
 
 export async function generateMetadata({
   params: { locale },
@@ -22,7 +23,7 @@ export default async function BlogIndex({
   const posts = await listPosts(locale);
 
   return (
-    <div className="px-7 py-[22px]">
+    <PageShell className="py-[22px]">
       <header className="mb-6 max-w-[760px]">
         <h1 className="font-display text-[23px] font-extrabold">{t('title')}</h1>
         <p className="mt-1.5 text-[13px] text-muted">{t('subtitle')}</p>
@@ -64,6 +65,6 @@ export default async function BlogIndex({
           ))}
         </ul>
       )}
-    </div>
+    </PageShell>
   );
 }

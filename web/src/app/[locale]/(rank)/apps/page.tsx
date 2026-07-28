@@ -6,6 +6,7 @@ import { AppCard } from '@/components/rank/AppCard';
 import { FilterDropdown } from '@/components/rank/FilterDropdown';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageTabs } from '@/components/rank/PageTabs';
+import { PageShell } from '@/components/rank/PageShell';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
 // build where the backend is unreachable.
@@ -91,7 +92,7 @@ export default async function AppsPage({
   );
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <PageTabs items={[{ href: '/apps', label: t('tabDirectory') }, { href: '/alternatives', label: t('navAlternatives') }]} />
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('appsTitle')}</h1>
@@ -148,6 +149,6 @@ export default async function AppsPage({
       {items.length > 0 && (
         <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, category, sort }} />
       )}
-    </div>
+    </PageShell>
   );
 }

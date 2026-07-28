@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { PageShell } from '@/components/rank/PageShell';
 
 export async function generateMetadata({
   params: { locale },
@@ -23,7 +24,7 @@ export default async function PrivacyPage({
   const t = await getTranslations('privacy');
 
   return (
-    <div className="px-7 py-[22px]">
+    <PageShell className="py-[22px]">
       <article className="max-w-[760px]">
         <h1 className="font-display text-[23px] font-extrabold">{t('title')}</h1>
         <p className="mt-1 text-xs text-muted">{t('updated')}</p>
@@ -38,6 +39,6 @@ export default async function PrivacyPage({
           </section>
         ))}
       </article>
-    </div>
+    </PageShell>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { HotRepo } from '@/lib/data';
+import { PageShell } from './PageShell';
 import { formatCompact } from '@/lib/rank-data';
 
 /**
@@ -39,7 +40,8 @@ export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRep
   );
 
   return (
-    <section className="border-b border-border px-4 py-3 sm:px-[26px]" aria-label={t('hotBarTitle')}>
+    <section className="border-b border-border py-3" aria-label={t('hotBarTitle')}>
+      <PageShell>
       <div className="mb-2 flex items-center gap-3">
         <span className="flex items-center gap-1.5 text-[13px] font-extrabold">
           <span aria-hidden="true">🔥</span>
@@ -97,6 +99,7 @@ export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRep
           );
         })}
       </div>
+      </PageShell>
     </section>
   );
 }

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getAltTargets } from '@/lib/data';
 import { PageTabs } from '@/components/rank/PageTabs';
+import { PageShell } from '@/components/rank/PageShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ export default async function AlternativesIndexPage({ params: { locale } }: { pa
   const targets = await getAltTargets();
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <PageTabs items={[{ href: '/apps', label: t('tabDirectory') }, { href: '/alternatives', label: t('navAlternatives') }]} />
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('altIndexTitle')}</h1>
@@ -49,6 +50,6 @@ export default async function AlternativesIndexPage({ params: { locale } }: { pa
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

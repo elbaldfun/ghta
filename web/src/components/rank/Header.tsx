@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { NavLink } from './NavLink';
+import { PageShell } from './PageShell';
 import { NavDropdown } from './NavDropdown';
 import { SearchBox } from './SearchBox';
 import { LocaleMenu } from './LocaleMenu';
@@ -16,7 +17,7 @@ export function RankHeader() {
     <header className="border-b border-border">
       {/* Mobile stacks three compact rows (logo+controls / nav / search);
           from lg up everything sits on one line. */}
-      <div className="mx-auto flex max-w-screen-xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 lg:flex-nowrap lg:gap-x-5 lg:px-7 lg:py-5">
+      <PageShell className="flex flex-wrap items-center gap-x-4 gap-y-3 py-4 lg:flex-nowrap lg:gap-x-5 lg:py-5">
         <Link href="/" className="order-1 flex items-baseline gap-2.5">
           <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
           <span className="hidden text-xs text-muted sm:inline">Explorer</span>
@@ -40,13 +41,16 @@ export function RankHeader() {
             <SearchBox />
           </Suspense>
         </div>
-        <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-4 lg:ml-0">
+        {/* ml-auto at every breakpoint pins the controls to the container's
+            right edge — the search field is width-capped, so without this the
+            row wouldn't fill and the controls drifted off the alignment line. */}
+        <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-4">
           <Suspense>
             <LocaleMenu />
           </Suspense>
           <ThemePill />
         </div>
-      </div>
+      </PageShell>
     </header>
   );
 }
