@@ -73,7 +73,7 @@ func (s *TopicService) board(ctx context.Context, domain, sort string) ([]HotTop
 }
 
 func (s *TopicService) compute(ctx context.Context, domain, sort string) ([]HotTopic, error) {
-	pipeline := mongo.Pipeline{}
+	pipeline := mongo.Pipeline{liveMatch}
 	if domain != "" {
 		// Anchor on "domain/" so a domain never over-matches a sibling whose
 		// name shares its prefix (e.g. "ml" must not match "mlops/…").

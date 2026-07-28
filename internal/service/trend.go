@@ -46,7 +46,7 @@ func (s *TrendService) Suggest(ctx context.Context, q string, limit int) ([]Sugg
 		limit = 8
 	}
 
-	filter := bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}}
+	filter := liveFilter(bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}})
 	cur, err := s.store.Items().Find(ctx, filter,
 		options.Find().
 			SetCollation(suggestCollation).
@@ -87,6 +87,16 @@ func badInput(format string, a ...any) InputError { return InputError{msg: fmt.S
 
 const defaultLimit = 50
 const maxLimit = 50
+
+// liveFilter excludes reconciler-tombstoned records (deleted upstream or
+// rename ghosts) from a query filter. Every user-facing ranking applies it.
+func liveFilter(m bson.M) bson.M {
+	m["stale"] = bson.M{"$ne": true}
+	return m
+}
+
+// liveMatch is liveFilter as a ready-made aggregation stage.
+var liveMatch = bson.D{{Key: "$match", Value: bson.M{"stale": bson.M{"$ne": true}}}}
 
 // sortFields whitelists user-facing sort fields and maps them to stored paths.
 // "stars" is the documented alias for the GitHub primary metric.
@@ -147,7 +157,7 @@ func NewTrendService(store *repository.Store, history *StarHistoryService) *Tren
 // return an InputError. The returned total is the full match count (for
 // pagination), independent of limit/page.
 func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.TrackedItem, int64, error) {
-	filter := bson.M{}
+	filter := liveFilter(bson.M{})
 	if q.Source != "" {
 		filter["source"] = q.Source
 	}

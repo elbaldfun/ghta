@@ -25,7 +25,7 @@ type AltTarget struct {
 func (s *AppService) AltTargets(ctx context.Context) ([]AltTarget, error) {
 	return s.targets.get(ctx, "all", func(ctx context.Context) ([]AltTarget, error) {
 		pipeline := mongo.Pipeline{
-			bson.D{{Key: "$match", Value: bson.M{"alternativeTo.0": bson.M{"$exists": true}}}},
+			bson.D{{Key: "$match", Value: liveFilter(bson.M{"alternativeTo.0": bson.M{"$exists": true}})}},
 			bson.D{{Key: "$unwind", Value: "$alternativeTo"}},
 			bson.D{{Key: "$group", Value: bson.M{
 				"_id":   "$alternativeTo.slug",
@@ -62,7 +62,7 @@ func (s *AppService) AltTargets(ctx context.Context) ([]AltTarget, error) {
 func (s *AppService) ByAlternative(ctx context.Context, slug string) ([]AppItem, string, error) {
 	rows, err := s.byAlt.get(ctx, slug, func(ctx context.Context) ([]AppItem, error) {
 		pipeline := mongo.Pipeline{
-			bson.D{{Key: "$match", Value: bson.M{"alternativeTo.slug": slug}}},
+			bson.D{{Key: "$match", Value: liveFilter(bson.M{"alternativeTo.slug": slug})}},
 			bson.D{{Key: "$sort", Value: bson.D{{Key: "metrics.stars", Value: -1}}}},
 			bson.D{{Key: "$limit", Value: appTopN}},
 			bson.D{{Key: "$project", Value: appProjection()}},

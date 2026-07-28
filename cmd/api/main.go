@@ -93,6 +93,7 @@ func main() {
 	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
 	altFinder := job.NewAltFinder(store, aiProvider, logger)
 	iconFetcher := job.NewIconFetcher(store, logger)
+	reconciler := job.NewReconciler(store, ghAdapter, cfg.RateLimitBuffer, logger)
 
 	// Scheduled jobs. Metrics run right after each fetch pass.
 	scheduler := cron.New(cron.WithSeconds())
@@ -119,6 +120,10 @@ func main() {
 	}
 	if _, err := scheduler.AddFunc(cfg.IconCron, func() { iconFetcher.Run(rootCtx) }); err != nil {
 		slog.Error("invalid ICON_CRON", "err", err)
+		os.Exit(1)
+	}
+	if _, err := scheduler.AddFunc(cfg.ReconcileCron, func() { reconciler.Run(rootCtx) }); err != nil {
+		slog.Error("invalid RECONCILE_CRON", "err", err)
 		os.Exit(1)
 	}
 	scheduler.Start()

@@ -115,6 +115,14 @@ type TrackedItem struct {
 	IconStatus string         `bson:"iconStatus,omitempty" json:"iconStatus,omitempty"`
 	SourceData map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
 
+	// Stale marks a record the reconciler confirmed is gone from its source —
+	// deleted upstream, or a rename ghost whose new name is already tracked.
+	// Stale items are excluded from every ranking (change: ghost dedupe);
+	// StaleReason is "gone" or "renamed:<newExternalId>".
+	Stale       bool      `bson:"stale,omitempty" json:"stale,omitempty"`
+	StaleReason string    `bson:"staleReason,omitempty" json:"staleReason,omitempty"`
+	StaleAt     time.Time `bson:"staleAt,omitempty" json:"staleAt,omitempty"`
+
 	FetchedAt time.Time `bson:"fetchedAt" json:"fetchedAt"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`

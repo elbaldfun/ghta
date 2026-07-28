@@ -102,7 +102,7 @@ func (s *StarHistoryService) Warmup(ctx context.Context, top int) {
 		SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).
 		SetLimit(int64(top)).
 		SetProjection(bson.M{"externalId": 1})
-	cur, err := s.store.Items().Find(ctx, bson.M{"source": domain.SourceGitHub}, opts)
+	cur, err := s.store.Items().Find(ctx, liveFilter(bson.M{"source": domain.SourceGitHub}), opts)
 	if err != nil {
 		s.log.Error("history warmup: query failed", "err", err)
 		return

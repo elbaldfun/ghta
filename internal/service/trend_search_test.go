@@ -126,4 +126,23 @@ func TestListRelevanceRanking(t *testing.T) {
 		}
 		seen[it.ExternalID] = true
 	}
+
+	// A tombstoned ghost must vanish from results and the total.
+	if _, err := store.Items().UpdateOne(ctx,
+		bson.M{"externalId": "acme/namaste-react"},
+		bson.M{"$set": bson.M{"stale": true, "staleReason": "gone"}}); err != nil {
+		t.Fatalf("tombstone: %v", err)
+	}
+	itemsLive, totalLive, err := svc.List(ctx, TrendQuery{Q: "react"})
+	if err != nil {
+		t.Fatalf("List after tombstone: %v", err)
+	}
+	if totalLive != 3 {
+		t.Errorf("total after tombstone = %d, want 3", totalLive)
+	}
+	for _, it := range itemsLive {
+		if it.ExternalID == "acme/namaste-react" {
+			t.Errorf("stale item leaked into results")
+		}
+	}
 }

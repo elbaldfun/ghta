@@ -112,7 +112,7 @@ func (s *EcosystemService) compute(ctx context.Context, pillar, sort string) ([]
 	}
 
 	pipeline := mongo.Pipeline{
-		bson.D{{Key: "$match", Value: pillarFilter(pillar)}},
+		bson.D{{Key: "$match", Value: liveFilter(pillarFilter(pillar))}},
 		bson.D{{Key: "$addFields", Value: bson.M{
 			"growth":  bson.M{"$ifNull": bson.A{"$dailyIncrease", 0}},
 			"isSkill": bson.M{"$eq": bson.A{"$type", "skill"}},
