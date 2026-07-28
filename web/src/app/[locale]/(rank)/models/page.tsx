@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getModels, type ModelSort, type ModelTask } from '@/lib/data';
 import { ModelRow } from '@/components/rank/ModelRow';
+import { PageShell } from '@/components/rank/PageShell';
 import { Pagination } from '@/components/rank/Pagination';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
@@ -76,7 +77,7 @@ export default async function ModelsPage({
   );
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('modelsTitle')}</h1>
         <span className="text-xs text-muted">{t('modelsSubtitle')}</span>
@@ -119,6 +120,6 @@ export default async function ModelsPage({
       {items.length > 0 && (
         <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/models" cap={BOARD_CAP} params={{ task, sort }} />
       )}
-    </div>
+    </PageShell>
   );
 }
