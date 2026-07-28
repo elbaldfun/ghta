@@ -98,7 +98,7 @@ func (s *DeveloperService) board(ctx context.Context, board, domain string) ([]R
 }
 
 func (s *DeveloperService) compute(ctx context.Context, board, domain string) ([]RankedDeveloper, error) {
-	pipeline := mongo.Pipeline{}
+	pipeline := mongo.Pipeline{liveMatch}
 
 	// Only count the owner's repos within the requested domain, so "AI builders"
 	// ranks people by their AI work, not their unrelated projects.

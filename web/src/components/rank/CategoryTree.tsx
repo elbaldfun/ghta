@@ -38,8 +38,43 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
   const count = (n: number) => (n > 0 ? <span className="text-[11px] text-muted">{formatCompact(n)}</span> : null);
   const allActive = !active;
 
+  // Mobile: the full tree would push the ranking below the fold, so it
+  // collapses into one native select (parents + indented leaves).
+  const mobilePicker = (
+    <div className="border-b border-border bg-surface px-4 py-3 lg:hidden">
+      <select
+        value={active ?? ''}
+        onChange={(e) => navigate(e.target.value || null)}
+        aria-label={t('browseAll')}
+        className="w-full appearance-none rounded-lg border border-border bg-surface2 px-3 py-2 text-[13px] font-semibold text-fg outline-none"
+      >
+        <option value="">
+          {t('browseAll')}
+          {total ? ` (${formatCompact(total)})` : ''}
+        </option>
+        {tree.map((group) => (
+          <optgroup key={group.path} label={categoryLabel(group, locale)}>
+            <option value={group.path}>
+              {categoryLabel(group, locale)}
+              {group.count > 0 ? ` (${formatCompact(group.count)})` : ''}
+            </option>
+            {group.children?.map((node) => (
+              <option key={node.path} value={node.path}>
+                {'  '}
+                {categoryLabel(node, locale)}
+                {node.count > 0 ? ` (${formatCompact(node.count)})` : ''}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
-    <aside className="border-r border-border bg-surface px-4 py-5">
+    <>
+      {mobilePicker}
+      <aside className="hidden border-r border-border bg-surface px-4 py-5 lg:block">
       <button
         onClick={() => navigate(null)}
         className={`mb-2 flex w-full items-center justify-between rounded-lg px-2.5 py-2 ${
@@ -105,6 +140,7 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
           </div>
         );
       })}
-    </aside>
+      </aside>
+    </>
   );
 }

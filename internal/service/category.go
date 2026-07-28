@@ -147,6 +147,7 @@ func (s *CategoryService) categoryCounts(ctx context.Context) (map[string]int, e
 
 	// Leaf counts: one row per (item, leaf path).
 	leafCur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
+		liveMatch,
 		{{Key: "$unwind", Value: "$categoryPath"}},
 		{{Key: "$group", Value: bson.M{"_id": "$categoryPath", "n": bson.M{"$sum": 1}}}},
 	})
@@ -159,6 +160,7 @@ func (s *CategoryService) categoryCounts(ctx context.Context) (map[string]int, e
 
 	// Parent counts: distinct items per top-level segment.
 	parentCur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
+		liveMatch,
 		{{Key: "$unwind", Value: "$categoryPath"}},
 		{{Key: "$group", Value: bson.M{"_id": bson.M{
 			"item":   "$_id",
@@ -252,6 +254,7 @@ func (s *CategoryService) TypeFacets(ctx context.Context, order []TypeFacet) ([]
 	s.mu.Unlock()
 
 	cur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
+		liveMatch,
 		{{Key: "$group", Value: bson.M{"_id": "$type", "n": bson.M{"$sum": 1}}}},
 	})
 	if err != nil {

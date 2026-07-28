@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -120,3 +121,88 @@ func startOfUTCDay(t time.Time) time.Time {
 }
 
 func snapKey(s domain.Source, id string) string { return string(s) + "\x00" + id }
+
+// StaleCandidates returns non-stale items of one source whose fetchedAt is
+// older than cutoff, oldest first — the reconciler's work queue. A renamed or
+// deleted repo stops appearing in search-based fetch shards, so its record
+// silently freezes; this surfaces those records for verification.
+func (s *Store) StaleCandidates(ctx context.Context, source domain.Source, cutoff time.Time, limit int) ([]domain.TrackedItem, error) {
+	cur, err := s.Items().Find(ctx,
+		bson.M{"source": source, "fetchedAt": bson.M{"$lt": cutoff}, "stale": bson.M{"$ne": true}},
+		options.Find().
+			SetSort(bson.D{{Key: "fetchedAt", Value: 1}}).
+			SetLimit(int64(limit)).
+			SetProjection(bson.M{"externalId": 1, "name": 1, "fetchedAt": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("stale candidates: %w", err)
+	}
+	items := []domain.TrackedItem{}
+	if err := cur.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// MarkItemStale tombstones a record the reconciler confirmed is gone from its
+// source (deleted upstream, or a rename ghost whose new name is already
+// tracked). Stale items stay in the collection for history but are excluded
+// from every ranking.
+func (s *Store) MarkItemStale(ctx context.Context, source domain.Source, externalID, reason string) error {
+	now := time.Now().UTC()
+	_, err := s.Items().UpdateOne(ctx,
+		bson.M{"source": source, "externalId": externalID},
+		bson.M{"$set": bson.M{"stale": true, "staleReason": reason, "staleAt": now, "updatedAt": now}})
+	if err != nil {
+		return fmt.Errorf("mark stale %s: %w", externalID, err)
+	}
+	return nil
+}
+
+// RenameItem moves a record to its new upstream identity (GitHub rename with
+// no existing record under the new name), refreshing the live metrics in the
+// same write. Returns mongo's duplicate-key error if the new externalId
+// appeared concurrently; callers then tombstone the old record instead.
+func (s *Store) RenameItem(ctx context.Context, source domain.Source, oldID, newID, newName string, metrics map[string]float64) error {
+	now := time.Now().UTC()
+	_, err := s.Items().UpdateOne(ctx,
+		bson.M{"source": source, "externalId": oldID},
+		bson.M{"$set": bson.M{
+			"externalId": newID,
+			"name":       newName,
+			"metrics":    metrics,
+			"fetchedAt":  now,
+			"updatedAt":  now,
+		}})
+	if err != nil {
+		return fmt.Errorf("rename %s -> %s: %w", oldID, newID, err)
+	}
+	return nil
+}
+
+// RefreshItemMetrics updates live metrics + fetchedAt for a record the
+// reconciler verified still exists under the same name (it merely fell out of
+// the fetch shards, e.g. below the star cutoff).
+func (s *Store) RefreshItemMetrics(ctx context.Context, source domain.Source, externalID string, metrics map[string]float64) error {
+	now := time.Now().UTC()
+	_, err := s.Items().UpdateOne(ctx,
+		bson.M{"source": source, "externalId": externalID},
+		bson.M{"$set": bson.M{"metrics": metrics, "fetchedAt": now, "updatedAt": now}})
+	if err != nil {
+		return fmt.Errorf("refresh metrics %s: %w", externalID, err)
+	}
+	return nil
+}
+
+// ItemExists reports whether a record exists for (source, externalId).
+func (s *Store) ItemExists(ctx context.Context, source domain.Source, externalID string) (bool, error) {
+	err := s.Items().FindOne(ctx,
+		bson.M{"source": source, "externalId": externalID},
+		options.FindOne().SetProjection(bson.M{"_id": 1})).Err()
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return false, nil
+	}
+	return false, err
+}

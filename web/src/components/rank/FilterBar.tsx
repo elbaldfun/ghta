@@ -53,10 +53,17 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
 
   const all = { value: 'all', label: t('all') };
   const sortLabels: Record<string, string> = {
+    relevance: t('sortRelevance'),
     stars: t('sortStars'),
+    daily: t('sortDaily'),
+    weekly: t('sortWeekly'),
     forks: t('sortForks'),
     updated: t('sortUpdated'),
   };
+  // Relevance only exists for a search; when browsing, hide it.
+  const hasQuery = Boolean(params.get('q'));
+  const sortOptions = hasQuery ? SORT_OPTIONS : SORT_OPTIONS.filter((s) => s !== 'relevance');
+  const currentSort = params.get('sort') ?? (hasQuery ? 'relevance' : 'stars');
 
   return (
     <div className="flex flex-wrap items-center gap-3.5">
@@ -96,8 +103,8 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
       />
       <LabeledSelect
         label={t('sortBy')}
-        value={params.get('sort') ?? 'stars'}
-        options={SORT_OPTIONS.map((s) => ({ value: s, label: sortLabels[s] }))}
+        value={currentSort}
+        options={sortOptions.map((s) => ({ value: s, label: sortLabels[s] }))}
         onChange={(v) => setParam('sort', v)}
       />
     </div>

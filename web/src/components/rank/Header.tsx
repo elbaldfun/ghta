@@ -14,31 +14,33 @@ export function RankHeader() {
 
   return (
     <header className="border-b border-border">
-      <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-5 px-7 py-5">
-        <div className="flex flex-wrap items-center gap-3.5">
-          <Link href="/" className="flex items-baseline gap-2.5">
-            <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
-            <span className="text-xs text-muted">Explorer</span>
-          </Link>
-          <nav className="flex flex-wrap items-center gap-1">
-            <NavLink href="/" label={t('navRankings')} />
-            <NavLink href="/breakout" label={t('navBreakout')} />
-            <NavDropdown
-              label={t('navAi')}
-              items={[
-                { href: '/ecosystem', label: t('navEcosystem') },
-                { href: '/topics', label: t('navTopics') },
-              ]}
-            />
-            <NavLink href="/apps" label={t('navApps')} />
-            <NavLink href="/developers" label={t('navDevelopers')} />
-            <NavLink href="/blog" label={tb('nav')} />
-          </nav>
+      {/* Mobile stacks three compact rows (logo+controls / nav / search);
+          from lg up everything sits on one line. */}
+      <div className="mx-auto flex max-w-screen-xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 lg:flex-nowrap lg:gap-x-5 lg:px-7 lg:py-5">
+        <Link href="/" className="order-1 flex items-baseline gap-2.5">
+          <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
+          <span className="hidden text-xs text-muted sm:inline">Explorer</span>
+        </Link>
+        <nav className="order-3 -mx-1 flex w-full flex-wrap items-center gap-1 lg:order-2 lg:mx-0 lg:w-auto">
+          <NavLink href="/" label={t('navRankings')} />
+          <NavLink href="/breakout" label={t('navBreakout')} />
+          <NavDropdown
+            label={t('navAi')}
+            items={[
+              { href: '/ecosystem', label: t('navEcosystem') },
+              { href: '/topics', label: t('navTopics') },
+            ]}
+          />
+          <NavLink href="/apps" label={t('navApps')} />
+          <NavLink href="/developers" label={t('navDevelopers')} />
+          <NavLink href="/blog" label={tb('nav')} />
+        </nav>
+        <div className="order-4 w-full lg:order-3 lg:w-auto lg:max-w-[460px] lg:flex-1">
+          <Suspense>
+            <SearchBox />
+          </Suspense>
         </div>
-        <Suspense>
-          <SearchBox />
-        </Suspense>
-        <div className="flex items-center gap-1.5">
+        <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-4 lg:ml-0">
           <Suspense>
             <LocaleMenu />
           </Suspense>

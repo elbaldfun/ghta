@@ -46,7 +46,7 @@ func (s *TrendService) Suggest(ctx context.Context, q string, limit int) ([]Sugg
 		limit = 8
 	}
 
-	filter := bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}}
+	filter := liveFilter(bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}})
 	cur, err := s.store.Items().Find(ctx, filter,
 		options.Find().
 			SetCollation(suggestCollation).
@@ -88,6 +88,16 @@ func badInput(format string, a ...any) InputError { return InputError{msg: fmt.S
 const defaultLimit = 50
 const maxLimit = 50
 
+// liveFilter excludes reconciler-tombstoned records (deleted upstream or
+// rename ghosts) from a query filter. Every user-facing ranking applies it.
+func liveFilter(m bson.M) bson.M {
+	m["stale"] = bson.M{"$ne": true}
+	return m
+}
+
+// liveMatch is liveFilter as a ready-made aggregation stage.
+var liveMatch = bson.D{{Key: "$match", Value: bson.M{"stale": bson.M{"$ne": true}}}}
+
 // sortFields whitelists user-facing sort fields and maps them to stored paths.
 // "stars" is the documented alias for the GitHub primary metric.
 var sortFields = map[string]string{
@@ -96,6 +106,11 @@ var sortFields = map[string]string{
 	"issues":    "metrics.openIssues",
 	"fetchedAt": "fetchedAt",
 	"updated":   "fetchedAt",
+	// Growth boards — the differentiated signal. Nulls (no snapshots yet)
+	// sort last under desc, which is exactly what a growth board wants.
+	"daily":   "dailyIncrease",
+	"weekly":  "weeklyIncrease",
+	"monthly": "monthlyIncrease",
 }
 
 type TrendQuery struct {
@@ -147,7 +162,7 @@ func NewTrendService(store *repository.Store, history *StarHistoryService) *Tren
 // return an InputError. The returned total is the full match count (for
 // pagination), independent of limit/page.
 func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.TrackedItem, int64, error) {
-	filter := bson.M{}
+	filter := liveFilter(bson.M{})
 	if q.Source != "" {
 		filter["source"] = q.Source
 	}
@@ -185,7 +200,15 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		filter["metrics.openIssues"] = cond
 	}
 
-	sortField, sortOrder, err := parseSort(q.Sort)
+	// A search ranks by blended relevance unless the caller explicitly asks for
+	// a concrete field ("relevance" without a query degrades to the default).
+	sortSpec := q.Sort
+	if sortName(sortSpec) == "relevance" {
+		sortSpec = ""
+	}
+	relevance := q.Q != "" && sortSpec == ""
+
+	sortField, sortOrder, err := parseSort(sortSpec)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -210,21 +233,20 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, err
 	}
 
-	proj := bson.M{"sourceData.readme": 0, "sourceData.releases": 0}
-	sort := bson.D{{Key: sortField, Value: sortOrder}}
-	if q.Q != "" {
-		// Rank by text relevance for a search; $meta may sit alongside the
-		// exclusion projection.
-		proj["score"] = bson.M{"$meta": "textScore"}
-		sort = bson.D{{Key: "score", Value: bson.M{"$meta": "textScore"}}}
+	if relevance {
+		items, err := s.relevanceSearch(ctx, filter, q.Q, page, limit)
+		if err != nil {
+			return nil, 0, err
+		}
+		return items, total, nil
 	}
 
 	opts := options.Find().
-		SetSort(sort).
+		SetSort(bson.D{{Key: sortField, Value: sortOrder}}).
 		SetSkip(int64(page-1) * int64(limit)).
 		SetLimit(int64(limit)).
 		// The list view never needs the heavyweight sourceData blobs.
-		SetProjection(proj)
+		SetProjection(bson.M{"sourceData.readme": 0, "sourceData.releases": 0})
 
 	cur, err := s.store.Items().Find(ctx, filter, opts)
 	if err != nil {
@@ -235,6 +257,109 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, err
 	}
 	return items, total, nil
+}
+
+// relevanceSearch ranks $text matches by textScore blended with a popularity
+// boost and a name-match bonus. Raw textScore is term-frequency based, so
+// low-star repos that repeat the query word across name/topics/description
+// outscore the canonical repo (searching "react" buried react/react at #18).
+// ln(stars) separates near-ties without letting a loosely-matching mega-repo
+// hijack the query, and an exact name hit (the "find this project by its
+// name" intent) is decisive.
+func (s *TrendService) relevanceSearch(ctx context.Context, filter bson.M, rawQuery string, page, limit int) ([]domain.TrackedItem, error) {
+	q := strings.ToLower(strings.TrimSpace(rawQuery))
+	nameLower := bson.M{"$toLower": "$name"}
+	// name == query -> 5x; name starts with query -> 2x; else 1x.
+	nameBonus := bson.M{"$switch": bson.M{
+		"branches": bson.A{
+			bson.M{"case": bson.M{"$eq": bson.A{nameLower, q}}, "then": 5},
+			bson.M{"case": bson.M{"$eq": bson.A{bson.M{"$indexOfCP": bson.A{nameLower, q}}, 0}}, "then": 2},
+		},
+		"default": 1,
+	}}
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		// Shed the heavyweight blobs before the in-memory sort stage.
+		{{Key: "$project", Value: bson.M{"sourceData.readme": 0, "sourceData.releases": 0}}},
+		{{Key: "$addFields", Value: bson.M{
+			"searchScore": bson.M{"$multiply": bson.A{
+				bson.M{"$meta": "textScore"},
+				// 1 + ln(stars+2): ~1.7x at 0 stars, ~14x at 250k.
+				bson.M{"$add": bson.A{1, bson.M{"$ln": bson.M{"$add": bson.A{
+					bson.M{"$ifNull": bson.A{"$metrics.stars", 0}}, 2,
+				}}}}},
+				nameBonus,
+			}},
+		}}},
+		{{Key: "$sort", Value: bson.D{{Key: "searchScore", Value: -1}, {Key: "metrics.stars", Value: -1}}}},
+		{{Key: "$skip", Value: int64(page-1) * int64(limit)}},
+		{{Key: "$limit", Value: int64(limit)}},
+		{{Key: "$unset", Value: "searchScore"}},
+	}
+	cur, err := s.store.Items().Aggregate(ctx, pipeline, options.Aggregate().SetAllowDiskUse(true))
+	if err != nil {
+		return nil, err
+	}
+	items := []domain.TrackedItem{}
+	if err := cur.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// sortName extracts the field part of a "field:order" sort spec.
+func sortName(sort string) string {
+	if i := strings.IndexByte(sort, ':'); i >= 0 {
+		return sort[:i]
+	}
+	return sort
+}
+
+// RepoRank locates an item on one leaderboard scope — the detail page's
+// "JavaScript #3 · web/frontend #1" line and the future README badge both
+// read from this.
+type RepoRank struct {
+	Scope string `json:"scope"`         // "overall" | "language" | "category"
+	Key   string `json:"key,omitempty"` // language name or category path
+	Rank  int64  `json:"rank"`          // 1-based; ties share the best position
+}
+
+// Ranks computes the item's position on each board it belongs to: the overall
+// corpus, its language board, and every domain path (capped at 2). Each rank
+// is one indexed count of live repos with strictly more stars. Best-effort —
+// a failing scope is skipped rather than failing the page.
+func (s *TrendService) Ranks(ctx context.Context, item *domain.TrackedItem) []RepoRank {
+	stars, ok := item.Metrics["stars"]
+	if !ok {
+		return nil
+	}
+	base := func() bson.M {
+		return liveFilter(bson.M{"source": item.Source, "metrics.stars": bson.M{"$gt": stars}})
+	}
+	ranks := []RepoRank{}
+	add := func(scope, key string, extra bson.M) {
+		f := base()
+		for k, v := range extra {
+			f[k] = v
+		}
+		n, err := s.store.Items().CountDocuments(ctx, f)
+		if err != nil {
+			return
+		}
+		ranks = append(ranks, RepoRank{Scope: scope, Key: key, Rank: n + 1})
+	}
+
+	add("overall", "", nil)
+	if item.Language != "" {
+		add("language", item.Language, bson.M{"language": item.Language})
+	}
+	for i, path := range item.CategoryPath {
+		if i >= 2 {
+			break
+		}
+		add("category", path, bson.M{"categoryPath": path})
+	}
+	return ranks
 }
 
 // Item returns a single tracked item and its recent snapshot history (for the
@@ -382,10 +507,11 @@ func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.Trac
 }
 
 // parseSort validates "field:order" against the whitelist, defaulting to
-// fetchedAt descending.
+// stars descending — the order a ranking API's consumers expect (the old
+// fetchedAt default returned an effectively arbitrary list).
 func parseSort(sort string) (string, int, error) {
 	if sort == "" {
-		return "fetchedAt", -1, nil
+		return "metrics.stars", -1, nil
 	}
 	field := sort
 	order := -1

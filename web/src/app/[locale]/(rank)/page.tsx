@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import {
   categoryLabel,
   findCategory,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
 import { CategoryTree } from '@/components/rank/CategoryTree';
+import { ErrorState } from '@/components/rank/ErrorState';
 import { FilterBar } from '@/components/rank/FilterBar';
 import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
@@ -49,9 +51,14 @@ export default async function RankHome({
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
-  const sort: SortOption = SORT_OPTIONS.includes(searchParams.sort as SortOption)
+  // Searches default to relevance; browsing (no query) has no relevance to
+  // rank by, so it falls back to stars.
+  let sort: SortOption = SORT_OPTIONS.includes(searchParams.sort as SortOption)
     ? (searchParams.sort as SortOption)
-    : 'stars';
+    : searchParams.q
+      ? 'relevance'
+      : 'stars';
+  if (sort === 'relevance' && !searchParams.q) sort = 'stars';
   const page = Math.max(1, Number(searchParams.page) || 1);
 
   // The "hot this week" strip only makes sense on the unfiltered landing view.
@@ -91,10 +98,10 @@ export default async function RankHome({
   return (
     <>
       {isLanding && <HotBar weekly={hotWeekly} monthly={hotMonthly} />}
-      <div className="grid min-h-[620px] grid-cols-[250px_1fr]">
+      <div className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
         <CategoryTree tree={tree} total={total} />
 
-      <div className="px-[26px] py-[22px]">
+      <div className="px-4 py-[22px] sm:px-[26px]">
         <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
           <div>
@@ -113,11 +120,17 @@ export default async function RankHome({
         </div>
 
         {searchRes.error !== null ? (
-          <div className="py-10 text-center text-[13px] text-muted">
-            {t('loadError')} ({searchRes.error})
-          </div>
+          <ErrorState />
         ) : searchRes.data.items.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted">{t('noResults')}</div>
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <p className="text-[13px] text-muted">{t('noResults')}</p>
+            <Link
+              href="/"
+              className="rounded-full border border-border px-4 py-1.5 text-[12.5px] font-bold text-fg transition-colors hover:bg-surface2"
+            >
+              {t('clearFilters')}
+            </Link>
+          </div>
         ) : (
           <>
             <div className="overflow-hidden rounded-card border border-border bg-surface">
@@ -127,6 +140,7 @@ export default async function RankHome({
                   repo={repo}
                   rank={(page - 1) * PER_PAGE + i + 1}
                   showUpdated={sort === 'updated'}
+                  growthWindow={sort === 'weekly' ? 'weekly' : 'daily'}
                 />
               ))}
             </div>

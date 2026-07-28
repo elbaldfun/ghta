@@ -33,6 +33,7 @@ export interface RepoSummary {
   createdAt: string | null;
   htmlUrl: string;
   dailyIncrease: number | null;
+  weeklyIncrease: number | null;
 }
 
 export interface ReleaseAsset {
@@ -42,8 +43,15 @@ export interface ReleaseAsset {
   size?: number;
 }
 
+/** One leaderboard position for the detail page's rank line. */
+export interface RepoRank {
+  scope: 'overall' | 'language' | 'category';
+  key?: string; // language name or category path
+  rank: number; // 1-based
+}
+
 export interface RepoDetail extends RepoSummary {
-  weeklyIncrease: number | null;
+  ranks: RepoRank[];
   platforms: OS[];
   platformSource?: string;
   releaseAssets: ReleaseAsset[];
@@ -86,6 +94,7 @@ function mapItem(it: any): RepoSummary {
     createdAt: null, // repo creation date is not tracked in the database
     htmlUrl: sd.url || `https://github.com/${it.externalId}`,
     dailyIncrease: typeof it.dailyIncrease === 'number' ? it.dailyIncrease : null,
+    weeklyIncrease: typeof it.weeklyIncrease === 'number' ? it.weeklyIncrease : null,
   };
 }
 
@@ -139,6 +148,7 @@ export async function getHot(since: HotWindow, limit = 12): Promise<HotRepo[]> {
         createdAt: null,
         htmlUrl: it.url || `https://github.com/${it.externalId}`,
         dailyIncrease: null,
+        weeklyIncrease: null,
       },
     };
   });
@@ -397,7 +407,8 @@ function listParams(p: SearchParamsIn): URLSearchParams {
   if (p.q) params.set('q', p.q);
   if (p.language) params.set('language', p.language);
   if (p.license && LICENSE_NAMES[p.license]) params.set('license', LICENSE_NAMES[p.license]);
-  params.set('sort', `${p.sort === 'updated' ? 'updated' : (p.sort ?? 'stars')}:desc`);
+  // Searches rank by blended relevance unless the user picked a concrete sort.
+  params.set('sort', `${p.sort === 'updated' ? 'updated' : (p.sort ?? (p.q ? 'relevance' : 'stars'))}:desc`);
   params.set('limit', String(p.perPage ?? 24));
   params.set('page', String(p.page ?? 1));
   return params;
@@ -416,9 +427,9 @@ export async function searchRepos(p: SearchParamsIn): Promise<Fetched<SearchResu
 async function fetchItem(
   owner: string,
   name: string,
-): Promise<Fetched<{ item: any; history: any[] }>> {
+): Promise<Fetched<{ item: any; history: any[]; ranks?: any[] }>> {
   const params = new URLSearchParams({ source: 'github', externalId: `${owner}/${name}` });
-  const res = await apiGet<{ data: { item: any; history: any[] } }>(
+  const res = await apiGet<{ data: { item: any; history: any[]; ranks?: any[] } }>(
     `/trending/item?${params}`,
     600,
   );
@@ -434,7 +445,9 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
   return {
     data: {
       ...mapItem(it),
-      weeklyIncrease: it.weeklyIncrease ?? null,
+      ranks: Array.isArray(res.data.ranks)
+        ? res.data.ranks.filter((r: any) => typeof r?.rank === 'number' && r.rank > 0)
+        : [],
       platforms: (sd.platforms ?? []) as OS[],
       platformSource: sd.platformSource ?? undefined,
       releaseAssets: (sd.releaseAssets ?? []) as ReleaseAsset[],

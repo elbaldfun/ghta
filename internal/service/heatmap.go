@@ -55,6 +55,7 @@ func (s *HeatmapService) compute(ctx context.Context) ([]HeatCell, error) {
 	// One pass over the leaf paths; parents are rolled up in Go rather than with
 	// a second aggregation.
 	cur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
+		liveMatch,
 		bson.D{{Key: "$unwind", Value: "$categoryPath"}},
 		bson.D{{Key: "$group", Value: bson.M{
 			"_id":    "$categoryPath",

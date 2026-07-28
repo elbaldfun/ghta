@@ -164,13 +164,13 @@ func (s *AppService) board(ctx context.Context, os, kind, category, sort string)
 // appMatch builds the corpus filter: an item is in the directory when it's an
 // app/cli OR ships platform builds, never a library. os/kind/category narrow it.
 func appMatch(os, kind, category string) bson.M {
-	m := bson.M{
+	m := liveFilter(bson.M{
 		"type": bson.M{"$ne": "library"},
 		"$or": bson.A{
 			bson.M{"type": bson.M{"$in": bson.A{"app", "cli"}}},
 			bson.M{"sourceData.platforms.0": bson.M{"$exists": true}},
 		},
-	}
+	})
 	if os != "" {
 		m["sourceData.platforms"] = os
 	}
