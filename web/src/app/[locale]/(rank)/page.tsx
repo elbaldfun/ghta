@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import {
   categoryLabel,
   findCategory,
@@ -121,7 +122,15 @@ export default async function RankHome({
         {searchRes.error !== null ? (
           <ErrorState />
         ) : searchRes.data.items.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted">{t('noResults')}</div>
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <p className="text-[13px] text-muted">{t('noResults')}</p>
+            <Link
+              href="/"
+              className="rounded-full border border-border px-4 py-1.5 text-[12.5px] font-bold text-fg transition-colors hover:bg-surface2"
+            >
+              {t('clearFilters')}
+            </Link>
+          </div>
         ) : (
           <>
             <div className="overflow-hidden rounded-card border border-border bg-surface">

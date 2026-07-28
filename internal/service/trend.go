@@ -497,10 +497,11 @@ func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.Trac
 }
 
 // parseSort validates "field:order" against the whitelist, defaulting to
-// fetchedAt descending.
+// stars descending — the order a ranking API's consumers expect (the old
+// fetchedAt default returned an effectively arbitrary list).
 func parseSort(sort string) (string, int, error) {
 	if sort == "" {
-		return "fetchedAt", -1, nil
+		return "metrics.stars", -1, nil
 	}
 	field := sort
 	order := -1
