@@ -39,7 +39,7 @@ export function HotBar({ weekly, monthly }: { weekly: HotRepo[]; monthly: HotRep
   );
 
   return (
-    <section className="border-b border-border px-[26px] py-3" aria-label={t('hotBarTitle')}>
+    <section className="border-b border-border px-4 py-3 sm:px-[26px]" aria-label={t('hotBarTitle')}>
       <div className="mb-2 flex items-center gap-3">
         <span className="flex items-center gap-1.5 text-[13px] font-extrabold">
           <span aria-hidden="true">🔥</span>
