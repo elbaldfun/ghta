@@ -55,6 +55,8 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
   const sortLabels: Record<string, string> = {
     relevance: t('sortRelevance'),
     stars: t('sortStars'),
+    daily: t('sortDaily'),
+    weekly: t('sortWeekly'),
     forks: t('sortForks'),
     updated: t('sortUpdated'),
   };

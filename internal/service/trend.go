@@ -106,6 +106,11 @@ var sortFields = map[string]string{
 	"issues":    "metrics.openIssues",
 	"fetchedAt": "fetchedAt",
 	"updated":   "fetchedAt",
+	// Growth boards — the differentiated signal. Nulls (no snapshots yet)
+	// sort last under desc, which is exactly what a growth board wants.
+	"daily":   "dailyIncrease",
+	"weekly":  "weeklyIncrease",
+	"monthly": "monthlyIncrease",
 }
 
 type TrendQuery struct {

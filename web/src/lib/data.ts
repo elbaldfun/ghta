@@ -33,6 +33,7 @@ export interface RepoSummary {
   createdAt: string | null;
   htmlUrl: string;
   dailyIncrease: number | null;
+  weeklyIncrease: number | null;
 }
 
 export interface ReleaseAsset {
@@ -43,7 +44,6 @@ export interface ReleaseAsset {
 }
 
 export interface RepoDetail extends RepoSummary {
-  weeklyIncrease: number | null;
   platforms: OS[];
   platformSource?: string;
   releaseAssets: ReleaseAsset[];
@@ -86,6 +86,7 @@ function mapItem(it: any): RepoSummary {
     createdAt: null, // repo creation date is not tracked in the database
     htmlUrl: sd.url || `https://github.com/${it.externalId}`,
     dailyIncrease: typeof it.dailyIncrease === 'number' ? it.dailyIncrease : null,
+    weeklyIncrease: typeof it.weeklyIncrease === 'number' ? it.weeklyIncrease : null,
   };
 }
 
@@ -139,6 +140,7 @@ export async function getHot(since: HotWindow, limit = 12): Promise<HotRepo[]> {
         createdAt: null,
         htmlUrl: it.url || `https://github.com/${it.externalId}`,
         dailyIncrease: null,
+        weeklyIncrease: null,
       },
     };
   });

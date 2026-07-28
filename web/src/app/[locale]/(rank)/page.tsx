@@ -131,6 +131,7 @@ export default async function RankHome({
                   repo={repo}
                   rank={(page - 1) * PER_PAGE + i + 1}
                   showUpdated={sort === 'updated'}
+                  growthWindow={sort === 'weekly' ? 'weekly' : 'daily'}
                 />
               ))}
             </div>

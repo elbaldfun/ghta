@@ -31,17 +31,23 @@ export function RepoRow({
   repo,
   rank,
   showUpdated = false,
+  growthWindow = 'daily',
 }: {
   repo: RepoSummary;
   rank: number;
   showUpdated?: boolean;
+  /** Which growth figure the row highlights; follows the active sort. */
+  growthWindow?: 'daily' | 'weekly';
 }) {
   const t = useTranslations('rank');
   const locale = useLocale();
   const dot = langColor(repo.language);
   const artifact = artifactOf(repo.language);
-  const growth = repo.dailyIncrease ?? 0;
-  const pct = growth > 0 && repo.stars > 0 ? (growth / repo.stars) * 100 : 0;
+  const weekly = growthWindow === 'weekly';
+  const growth = (weekly ? repo.weeklyIncrease : repo.dailyIncrease) ?? 0;
+  // Heat is calibrated per-day; scale weekly figures down for comparable color.
+  const perDay = weekly ? growth / 7 : growth;
+  const pct = perDay > 0 && repo.stars > 0 ? (perDay / repo.stars) * 100 : 0;
   const color = heatColor(pct);
 
   return (
@@ -98,7 +104,7 @@ export function RepoRow({
         {growth > 0 && (
           <span className="hidden font-mono text-[12px] font-bold tabular-nums sm:block" style={{ color }}>
             +{formatCompact(growth)}
-            <span className="text-[9px] font-medium text-muted"> ★/{t('devPerDay')}</span>
+            <span className="text-[9px] font-medium text-muted"> ★/{weekly ? t('unitWeek') : t('devPerDay')}</span>
           </span>
         )}
         {showUpdated ? (
