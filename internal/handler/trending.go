@@ -82,7 +82,8 @@ func (h *TrendingHandler) Item(c *gin.Context) {
 		respondErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{"item": item, "history": history}})
+	ranks := h.svc.Ranks(c.Request.Context(), item)
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"item": item, "history": history, "ranks": ranks}})
 }
 
 // Rising handles GET /trending/rising.

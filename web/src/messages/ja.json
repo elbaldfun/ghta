@@ -32,6 +32,7 @@
     "results": "件",
     "noResults": "該当するリポジトリが見つかりません",
     "loadError": "データを読み込めませんでした",
+    "rankOverall": "総合",
     "loadErrorHint": "サーバーが応答していません。まもなく復旧する見込みです。",
     "loadErrorPersists": "まだ応答がありません。メンテナンス中の可能性があります。数分後にお試しください。",
     "retry": "再試行",

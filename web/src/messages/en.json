@@ -32,6 +32,7 @@
     "results": "results",
     "noResults": "No repositories found",
     "loadError": "Couldn't load data from GitHub",
+    "rankOverall": "Overall",
     "loadErrorHint": "The server isn't responding right now — data should be back shortly.",
     "loadErrorPersists": "Still no luck — the server may be under maintenance. Try again in a few minutes.",
     "retry": "Retry",

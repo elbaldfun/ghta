@@ -32,6 +32,7 @@
     "results": "résultats",
     "noResults": "Aucun dépôt trouvé",
     "loadError": "Impossible de charger les données",
+    "rankOverall": "Général",
     "loadErrorHint": "Le serveur ne répond pas pour le moment — les données reviendront bientôt.",
     "loadErrorPersists": "Toujours rien — le serveur est peut-être en maintenance. Réessayez dans quelques minutes.",
     "retry": "Réessayer",

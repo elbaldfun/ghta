@@ -146,3 +146,44 @@ func TestListRelevanceRanking(t *testing.T) {
 		}
 	}
 }
+
+// Ranks: overall / language / category positions count only live repos with
+// strictly more stars.
+func TestRanks(t *testing.T) {
+	store := searchTestStore(t)
+	ctx := context.Background()
+
+	insert := func(id string, stars float64, lang string, paths []string, stale bool) {
+		doc := bson.M{
+			"source": domain.SourceGitHub, "externalId": id, "name": id,
+			"language": lang, "metrics": bson.M{"stars": stars}, "categoryPath": paths,
+		}
+		if stale {
+			doc["stale"] = true
+		}
+		if _, err := store.Items().InsertOne(ctx, doc); err != nil {
+			t.Fatalf("insert %s: %v", id, err)
+		}
+	}
+	insert("a/top", 100000, "Go", []string{"infra/devops"}, false)
+	insert("a/mid", 50000, "Go", []string{"infra/devops"}, false)
+	insert("a/low", 10000, "Rust", []string{"infra/devops"}, false)
+	insert("a/ghost", 200000, "Go", []string{"infra/devops"}, true) // must not count
+
+	svc := NewTrendService(store, nil)
+	var mid domain.TrackedItem
+	if err := store.Items().FindOne(ctx, bson.M{"externalId": "a/mid"}).Decode(&mid); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	ranks := svc.Ranks(ctx, &mid)
+
+	want := map[string]int64{"overall:": 2, "language:Go": 2, "category:infra/devops": 2}
+	if len(ranks) != len(want) {
+		t.Fatalf("ranks = %+v, want %d entries", ranks, len(want))
+	}
+	for _, r := range ranks {
+		if got := want[r.Scope+":"+r.Key]; got != r.Rank {
+			t.Errorf("%s:%s rank = %d, want %d (ghost must not count)", r.Scope, r.Key, r.Rank, got)
+		}
+	}
+}

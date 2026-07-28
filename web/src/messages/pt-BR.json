@@ -32,6 +32,7 @@
     "results": "resultados",
     "noResults": "Nenhum repositório encontrado",
     "loadError": "Não foi possível carregar os dados",
+    "rankOverall": "Geral",
     "loadErrorHint": "O servidor não está respondendo agora — os dados devem voltar em breve.",
     "loadErrorPersists": "Ainda nada — o servidor pode estar em manutenção. Tente novamente em alguns minutos.",
     "retry": "Tentar novamente",

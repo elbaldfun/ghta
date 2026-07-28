@@ -43,7 +43,15 @@ export interface ReleaseAsset {
   size?: number;
 }
 
+/** One leaderboard position for the detail page's rank line. */
+export interface RepoRank {
+  scope: 'overall' | 'language' | 'category';
+  key?: string; // language name or category path
+  rank: number; // 1-based
+}
+
 export interface RepoDetail extends RepoSummary {
+  ranks: RepoRank[];
   platforms: OS[];
   platformSource?: string;
   releaseAssets: ReleaseAsset[];
@@ -419,9 +427,9 @@ export async function searchRepos(p: SearchParamsIn): Promise<Fetched<SearchResu
 async function fetchItem(
   owner: string,
   name: string,
-): Promise<Fetched<{ item: any; history: any[] }>> {
+): Promise<Fetched<{ item: any; history: any[]; ranks?: any[] }>> {
   const params = new URLSearchParams({ source: 'github', externalId: `${owner}/${name}` });
-  const res = await apiGet<{ data: { item: any; history: any[] } }>(
+  const res = await apiGet<{ data: { item: any; history: any[]; ranks?: any[] } }>(
     `/trending/item?${params}`,
     600,
   );
@@ -437,7 +445,9 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
   return {
     data: {
       ...mapItem(it),
-      weeklyIncrease: it.weeklyIncrease ?? null,
+      ranks: Array.isArray(res.data.ranks)
+        ? res.data.ranks.filter((r: any) => typeof r?.rank === 'number' && r.rank > 0)
+        : [],
       platforms: (sd.platforms ?? []) as OS[],
       platformSource: sd.platformSource ?? undefined,
       releaseAssets: (sd.releaseAssets ?? []) as ReleaseAsset[],

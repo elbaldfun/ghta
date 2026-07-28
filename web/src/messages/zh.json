@@ -32,6 +32,7 @@
     "results": "个结果",
     "noResults": "未找到匹配的仓库",
     "loadError": "GitHub 数据加载失败",
+    "rankOverall": "总榜",
     "loadErrorHint": "服务器暂时没有响应,数据稍后就会回来。",
     "loadErrorPersists": "还是不行——服务器可能在维护,请过几分钟再试。",
     "retry": "重试",

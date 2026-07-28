@@ -305,6 +305,53 @@ func sortName(sort string) string {
 	return sort
 }
 
+// RepoRank locates an item on one leaderboard scope — the detail page's
+// "JavaScript #3 · web/frontend #1" line and the future README badge both
+// read from this.
+type RepoRank struct {
+	Scope string `json:"scope"`         // "overall" | "language" | "category"
+	Key   string `json:"key,omitempty"` // language name or category path
+	Rank  int64  `json:"rank"`          // 1-based; ties share the best position
+}
+
+// Ranks computes the item's position on each board it belongs to: the overall
+// corpus, its language board, and every domain path (capped at 2). Each rank
+// is one indexed count of live repos with strictly more stars. Best-effort —
+// a failing scope is skipped rather than failing the page.
+func (s *TrendService) Ranks(ctx context.Context, item *domain.TrackedItem) []RepoRank {
+	stars, ok := item.Metrics["stars"]
+	if !ok {
+		return nil
+	}
+	base := func() bson.M {
+		return liveFilter(bson.M{"source": item.Source, "metrics.stars": bson.M{"$gt": stars}})
+	}
+	ranks := []RepoRank{}
+	add := func(scope, key string, extra bson.M) {
+		f := base()
+		for k, v := range extra {
+			f[k] = v
+		}
+		n, err := s.store.Items().CountDocuments(ctx, f)
+		if err != nil {
+			return
+		}
+		ranks = append(ranks, RepoRank{Scope: scope, Key: key, Rank: n + 1})
+	}
+
+	add("overall", "", nil)
+	if item.Language != "" {
+		add("language", item.Language, bson.M{"language": item.Language})
+	}
+	for i, path := range item.CategoryPath {
+		if i >= 2 {
+			break
+		}
+		add("category", path, bson.M{"categoryPath": path})
+	}
+	return ranks
+}
+
 // Item returns a single tracked item and its recent snapshot history (for the
 // detail page's metric-history chart).
 func (s *TrendService) Item(ctx context.Context, source, externalID string) (*domain.TrackedItem, []domain.MetricSnapshot, error) {
