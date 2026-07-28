@@ -115,6 +115,29 @@ func (s *ModelService) compute(ctx context.Context, task, sort string) ([]ModelI
 		sortKey = bson.D{{Key: "dailyIncrease", Value: -1}}
 	}
 
+	items, err := s.query(ctx, filter, sortKey)
+	if err != nil {
+		return nil, err
+	}
+	// Bootstrap: likes velocity needs two days of snapshots. Until increments
+	// exist, rank "hot" by HF's own trendingScore so the default board is never
+	// empty; the real velocity axis takes over automatically once data accrues.
+	if sort == "hot" && len(items) == 0 {
+		delete(filter, "dailyIncrease")
+		items, err = s.query(ctx, filter, bson.D{{Key: "sourceData.trendingScore", Value: -1}})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	rows := make([]ModelItem, 0, len(items))
+	for _, it := range items {
+		rows = append(rows, mapModelItem(it))
+	}
+	return rows, nil
+}
+
+func (s *ModelService) query(ctx context.Context, filter bson.M, sortKey bson.D) ([]domain.TrackedItem, error) {
 	cur, err := s.store.Items().Find(ctx, filter,
 		options.Find().
 			SetSort(sortKey).
@@ -129,12 +152,7 @@ func (s *ModelService) compute(ctx context.Context, task, sort string) ([]ModelI
 	if err := cur.All(ctx, &items); err != nil {
 		return nil, fmt.Errorf("model board decode: %w", err)
 	}
-
-	rows := make([]ModelItem, 0, len(items))
-	for _, it := range items {
-		rows = append(rows, mapModelItem(it))
-	}
-	return rows, nil
+	return items, nil
 }
 
 func mapModelItem(it domain.TrackedItem) ModelItem {

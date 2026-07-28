@@ -118,6 +118,7 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "metrics.downloads30d", Value: -1}}},
 		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "metrics.likes", Value: -1}}},
 		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "sourceData.createdAt", Value: -1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "sourceData.trendingScore", Value: -1}}},
 		// Weighted full-text index powering relevance search (replaces the old
 		// unanchored-regex collection scan). Only one text index per collection.
 		{
