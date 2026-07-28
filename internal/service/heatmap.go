@@ -56,6 +56,9 @@ func (s *HeatmapService) compute(ctx context.Context) ([]HeatCell, error) {
 	// a second aggregation.
 	cur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
 		liveMatch,
+		// GitHub only: HF items carry a parallel "hf/<task>" taxonomy that must
+		// not surface as a domain on the repo ecosystem map.
+		bson.D{{Key: "$match", Value: bson.M{"source": "github"}}},
 		bson.D{{Key: "$unwind", Value: "$categoryPath"}},
 		bson.D{{Key: "$group", Value: bson.M{
 			"_id":    "$categoryPath",

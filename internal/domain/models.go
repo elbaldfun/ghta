@@ -46,10 +46,11 @@ func (p *PathList) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 type Source string
 
 const (
-	SourceGitHub   Source = "github"
-	SourceAppStore Source = "appstore"
-	SourceChrome   Source = "chrome"
-	SourceMSStore  Source = "msstore"
+	SourceGitHub      Source = "github"
+	SourceHuggingFace Source = "huggingface"
+	SourceAppStore    Source = "appstore"
+	SourceChrome      Source = "chrome"
+	SourceMSStore     Source = "msstore"
 )
 
 // MetricDirection expresses whether a higher or lower primary metric is "better"

@@ -46,7 +46,7 @@ func (s *TrendService) Suggest(ctx context.Context, q string, limit int) ([]Sugg
 		limit = 8
 	}
 
-	filter := liveFilter(bson.M{"name": bson.M{"$gte": q, "$lt": q + "￿"}})
+	filter := liveFilter(bson.M{"source": domain.SourceGitHub, "name": bson.M{"$gte": q, "$lt": q + "￿"}})
 	cur, err := s.store.Items().Find(ctx, filter,
 		options.Find().
 			SetCollation(suggestCollation).
@@ -163,9 +163,14 @@ func NewTrendService(store *repository.Store, history *StarHistoryService) *Tren
 // pagination), independent of limit/page.
 func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.TrackedItem, int64, error) {
 	filter := liveFilter(bson.M{})
-	if q.Source != "" {
-		filter["source"] = q.Source
+	// Default to the GitHub corpus: these are the repo boards. Other sources
+	// (huggingface) have their own endpoints and are only included when asked
+	// for explicitly.
+	if q.Source == "" {
+		q.Source = string(domain.SourceGitHub)
 	}
+	filter["source"] = q.Source
+	filter["source"] = q.Source
 	if q.Language != "" {
 		filter["language"] = q.Language
 	}
@@ -472,9 +477,10 @@ func (s *TrendService) Rising(ctx context.Context, q RisingQuery) ([]domain.Trac
 	}
 
 	filter := bson.M{field: bson.M{"$ne": nil}}
-	if q.Source != "" {
-		filter["source"] = q.Source
+	if q.Source == "" {
+		q.Source = string(domain.SourceGitHub)
 	}
+	filter["source"] = q.Source
 	if q.Language != "" {
 		filter["language"] = q.Language
 	}

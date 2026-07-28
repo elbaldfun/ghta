@@ -113,6 +113,11 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "sourceData.platforms", Value: 1}}},                  // app directory: filter by OS
 		{Keys: bson.D{{Key: "sourceData.latestRelease.publishedAt", Value: -1}}}, // app directory: "new" sort
 		{Keys: bson.D{{Key: "alternativeTo.slug", Value: 1}}},                    // app directory: /alternatives/<slug> reverse lookup
+		// HF model boards (change 14): filter by source(+task) and sort.
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "dailyIncrease", Value: -1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "metrics.downloads30d", Value: -1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "metrics.likes", Value: -1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "sourceData.createdAt", Value: -1}}},
 		// Weighted full-text index powering relevance search (replaces the old
 		// unanchored-regex collection scan). Only one text index per collection.
 		{

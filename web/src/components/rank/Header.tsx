@@ -30,6 +30,7 @@ export function RankHeader() {
             items={[
               { href: '/ecosystem', label: t('navEcosystem') },
               { href: '/topics', label: t('navTopics') },
+              { href: '/models', label: t('navModels') },
             ]}
           />
           <NavLink href="/apps" label={t('navApps')} />

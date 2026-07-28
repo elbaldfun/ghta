@@ -26,6 +26,7 @@ import (
 	"github.com/elbaldfun/ghta/internal/service"
 	"github.com/elbaldfun/ghta/internal/source"
 	"github.com/elbaldfun/ghta/internal/source/github"
+	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
@@ -58,6 +59,9 @@ func main() {
 	registry := source.NewRegistry()
 	ghAdapter := github.NewAdapter(cfg.GitHubToken, cfg.RateLimitBuffer, 50, logger)
 	registry.Register(ghAdapter)
+	// HuggingFace models (change 14): rides the same daily fetch pass; the
+	// shared metrics job then derives likes velocity from its snapshots.
+	registry.Register(huggingface.NewAdapter(cfg.HFToken, logger))
 
 	fetcher := job.NewFetcher(store, registry, logger)
 
@@ -198,6 +202,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	handler.NewTopicHandler(service.NewTopicService(store)).Register(r)         // GET /topics — hot topics per domain
 	handler.NewEcosystemHandler(service.NewEcosystemService(store)).Register(r) // GET /ecosystem — AI stack (skills/mcp/agents)
 	handler.NewAppHandler(service.NewAppService(store)).Register(r)             // GET /apps — open-source app directory (filter by OS)
+	handler.NewModelHandler(service.NewModelService(store)).Register(r)         // GET /models — HuggingFace model boards
 
 	categoryService := service.NewCategoryService(store)
 	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)

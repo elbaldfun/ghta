@@ -20,6 +20,7 @@ type Config struct {
 	MongoDB  string
 
 	GitHubToken string
+	HFToken     string // optional; the HF list API works unauthenticated
 
 	// Bearer token guarding the admin surface (/internal/*, /category, /user).
 	// Empty means those routes refuse every request — a misconfigured deploy
@@ -65,6 +66,7 @@ func Load() (*Config, error) {
 		MongoURI:        os.Getenv("MONGODB_URI"),
 		MongoDB:         getEnv("MONGODB_DB", "github-trend"),
 		GitHubToken:     os.Getenv("GITHUB_API_TOKEN"),
+		HFToken:         os.Getenv("HF_TOKEN"),
 		AdminToken:      os.Getenv("ADMIN_API_TOKEN"),
 		AIProvider:      getEnv("AI_PROVIDER", "openai"),
 		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),

@@ -44,6 +44,17 @@ func (s *Store) UpsertItems(ctx context.Context, items []domain.TrackedItem) (in
 			"analysisFailCount": 0,
 			"createdAt":         now,
 		}
+		// Sources that classify at fetch time (HF: categoryPath = "hf/<task>"
+		// from the official pipeline tag) persist their own classification and
+		// are marked done so the LLM categorizer never touches them. GitHub's
+		// adapter sets no CategoryPath, so its categorizer-owned fields keep the
+		// insert-only behavior above.
+		if len(it.CategoryPath) > 0 {
+			set["categoryPath"] = it.CategoryPath
+			set["analysisStatus"] = domain.AnalysisDone
+			delete(setOnInsert, "categoryPath")
+			delete(setOnInsert, "analysisStatus")
+		}
 		models = append(models, mongo.NewUpdateOneModel().
 			SetFilter(bson.M{"source": it.Source, "externalId": it.ExternalID}).
 			SetUpdate(bson.M{"$set": set, "$setOnInsert": setOnInsert}).
