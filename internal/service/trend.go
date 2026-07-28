@@ -185,7 +185,15 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		filter["metrics.openIssues"] = cond
 	}
 
-	sortField, sortOrder, err := parseSort(q.Sort)
+	// A search ranks by blended relevance unless the caller explicitly asks for
+	// a concrete field ("relevance" without a query degrades to the default).
+	sortSpec := q.Sort
+	if sortName(sortSpec) == "relevance" {
+		sortSpec = ""
+	}
+	relevance := q.Q != "" && sortSpec == ""
+
+	sortField, sortOrder, err := parseSort(sortSpec)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -210,21 +218,20 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, err
 	}
 
-	proj := bson.M{"sourceData.readme": 0, "sourceData.releases": 0}
-	sort := bson.D{{Key: sortField, Value: sortOrder}}
-	if q.Q != "" {
-		// Rank by text relevance for a search; $meta may sit alongside the
-		// exclusion projection.
-		proj["score"] = bson.M{"$meta": "textScore"}
-		sort = bson.D{{Key: "score", Value: bson.M{"$meta": "textScore"}}}
+	if relevance {
+		items, err := s.relevanceSearch(ctx, filter, page, limit)
+		if err != nil {
+			return nil, 0, err
+		}
+		return items, total, nil
 	}
 
 	opts := options.Find().
-		SetSort(sort).
+		SetSort(bson.D{{Key: sortField, Value: sortOrder}}).
 		SetSkip(int64(page-1) * int64(limit)).
 		SetLimit(int64(limit)).
 		// The list view never needs the heavyweight sourceData blobs.
-		SetProjection(proj)
+		SetProjection(bson.M{"sourceData.readme": 0, "sourceData.releases": 0})
 
 	cur, err := s.store.Items().Find(ctx, filter, opts)
 	if err != nil {
@@ -235,6 +242,52 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		return nil, 0, err
 	}
 	return items, total, nil
+}
+
+// relevanceSearch ranks $text matches by textScore blended with a popularity
+// boost. Raw textScore is term-frequency based, so a low-star repo that stuffs
+// the query word into its name/topics/description outscores the canonical repo
+// (searching "react" buried facebook/react below tutorial forks). Multiplying
+// by ln(stars) keeps relevance primary while letting popularity break the
+// near-ties that dominate name searches.
+func (s *TrendService) relevanceSearch(ctx context.Context, filter bson.M, page, limit int) ([]domain.TrackedItem, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		// Shed the heavyweight blobs before the in-memory sort stage.
+		{{Key: "$project", Value: bson.M{"sourceData.readme": 0, "sourceData.releases": 0}}},
+		{{Key: "$addFields", Value: bson.M{
+			"searchScore": bson.M{"$multiply": bson.A{
+				bson.M{"$meta": "textScore"},
+				// 1 + ln(stars+2): ~1.7x at 0 stars, ~14x at 250k. Log-scaled so
+				// popularity separates near-equal text scores without letting a
+				// mega-repo hijack unrelated queries.
+				bson.M{"$add": bson.A{1, bson.M{"$ln": bson.M{"$add": bson.A{
+					bson.M{"$ifNull": bson.A{"$metrics.stars", 0}}, 2,
+				}}}}},
+			}},
+		}}},
+		{{Key: "$sort", Value: bson.D{{Key: "searchScore", Value: -1}, {Key: "metrics.stars", Value: -1}}}},
+		{{Key: "$skip", Value: int64(page-1) * int64(limit)}},
+		{{Key: "$limit", Value: int64(limit)}},
+		{{Key: "$unset", Value: "searchScore"}},
+	}
+	cur, err := s.store.Items().Aggregate(ctx, pipeline, options.Aggregate().SetAllowDiskUse(true))
+	if err != nil {
+		return nil, err
+	}
+	items := []domain.TrackedItem{}
+	if err := cur.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// sortName extracts the field part of a "field:order" sort spec.
+func sortName(sort string) string {
+	if i := strings.IndexByte(sort, ':'); i >= 0 {
+		return sort[:i]
+	}
+	return sort
 }
 
 // Item returns a single tracked item and its recent snapshot history (for the

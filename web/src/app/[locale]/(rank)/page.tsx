@@ -49,9 +49,14 @@ export default async function RankHome({
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
-  const sort: SortOption = SORT_OPTIONS.includes(searchParams.sort as SortOption)
+  // Searches default to relevance; browsing (no query) has no relevance to
+  // rank by, so it falls back to stars.
+  let sort: SortOption = SORT_OPTIONS.includes(searchParams.sort as SortOption)
     ? (searchParams.sort as SortOption)
-    : 'stars';
+    : searchParams.q
+      ? 'relevance'
+      : 'stars';
+  if (sort === 'relevance' && !searchParams.q) sort = 'stars';
   const page = Math.max(1, Number(searchParams.page) || 1);
 
   // The "hot this week" strip only makes sense on the unfiltered landing view.

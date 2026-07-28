@@ -397,7 +397,8 @@ function listParams(p: SearchParamsIn): URLSearchParams {
   if (p.q) params.set('q', p.q);
   if (p.language) params.set('language', p.language);
   if (p.license && LICENSE_NAMES[p.license]) params.set('license', LICENSE_NAMES[p.license]);
-  params.set('sort', `${p.sort === 'updated' ? 'updated' : (p.sort ?? 'stars')}:desc`);
+  // Searches rank by blended relevance unless the user picked a concrete sort.
+  params.set('sort', `${p.sort === 'updated' ? 'updated' : (p.sort ?? (p.q ? 'relevance' : 'stars'))}:desc`);
   params.set('limit', String(p.perPage ?? 24));
   params.set('page', String(p.page ?? 1));
   return params;

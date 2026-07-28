@@ -64,7 +64,7 @@ export const LICENSE_NAMES: Record<string, string> = {
 };
 export const FILTER_LICENSES = ['mit', 'apache-2.0', 'gpl-3.0', 'gpl-2.0', 'bsd-3-clause', 'mpl-2.0'] as const;
 
-export const SORT_OPTIONS = ['stars', 'forks', 'updated'] as const;
+export const SORT_OPTIONS = ['relevance', 'stars', 'forks', 'updated'] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number];
 
 // ---- Package/artifact heuristics (from the approved prototype) ----

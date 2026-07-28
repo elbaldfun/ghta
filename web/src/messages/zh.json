@@ -22,6 +22,7 @@
     "filterFine": "按语言细分：",
     "filterLicense": "开源协议：",
     "sortBy": "排序",
+    "sortRelevance": "相关性",
     "sortStars": "Stars",
     "sortForks": "Forks",
     "sortUpdated": "最近更新",
