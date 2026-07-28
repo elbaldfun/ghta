@@ -59,6 +59,10 @@ func TestListRelevanceRanking(t *testing.T) {
 		searchItem("acme/namaste-react", "Namaste-React", "Namaste React course notes. React react react.", []string{"react", "course"}, 2000),
 		// mid-size legit ecosystem repo
 		searchItem("remix-run/react-router", "react-router", "Declarative routing for React", []string{"react", "router"}, 53000),
+		// the production failure mode: a popular repo whose raw textScore beats
+		// the canonical one (query term dense in every field + real stars) —
+		// only the exact-name bonus keeps the canonical repo on top
+		searchItem("alan2207/bulletproof-react", "bulletproof-react", "React react react: architecture for production React apps.", []string{"react", "react-applications", "react-best-practice"}, 36000),
 		// unrelated control
 		searchItem("vuejs/vue", "vue", "Progressive JavaScript framework", []string{"vue"}, 210000),
 	}
@@ -73,8 +77,8 @@ func TestListRelevanceRanking(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List(q=react): %v", err)
 	}
-	if total != 4 {
-		t.Fatalf("total = %d, want 4 (vue must not match)", total)
+	if total != 5 {
+		t.Fatalf("total = %d, want 5 (vue must not match)", total)
 	}
 	if len(items) == 0 || items[0].ExternalID != "facebook/react" {
 		got := []string{}
@@ -137,8 +141,8 @@ func TestListRelevanceRanking(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List after tombstone: %v", err)
 	}
-	if totalLive != 3 {
-		t.Errorf("total after tombstone = %d, want 3", totalLive)
+	if totalLive != 4 {
+		t.Errorf("total after tombstone = %d, want 4", totalLive)
 	}
 	for _, it := range itemsLive {
 		if it.ExternalID == "acme/namaste-react" {

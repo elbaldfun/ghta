@@ -234,7 +234,7 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 	}
 
 	if relevance {
-		items, err := s.relevanceSearch(ctx, filter, page, limit)
+		items, err := s.relevanceSearch(ctx, filter, q.Q, page, limit)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -260,12 +260,23 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 }
 
 // relevanceSearch ranks $text matches by textScore blended with a popularity
-// boost. Raw textScore is term-frequency based, so a low-star repo that stuffs
-// the query word into its name/topics/description outscores the canonical repo
-// (searching "react" buried facebook/react below tutorial forks). Multiplying
-// by ln(stars) keeps relevance primary while letting popularity break the
-// near-ties that dominate name searches.
-func (s *TrendService) relevanceSearch(ctx context.Context, filter bson.M, page, limit int) ([]domain.TrackedItem, error) {
+// boost and a name-match bonus. Raw textScore is term-frequency based, so
+// low-star repos that repeat the query word across name/topics/description
+// outscore the canonical repo (searching "react" buried react/react at #18).
+// ln(stars) separates near-ties without letting a loosely-matching mega-repo
+// hijack the query, and an exact name hit (the "find this project by its
+// name" intent) is decisive.
+func (s *TrendService) relevanceSearch(ctx context.Context, filter bson.M, rawQuery string, page, limit int) ([]domain.TrackedItem, error) {
+	q := strings.ToLower(strings.TrimSpace(rawQuery))
+	nameLower := bson.M{"$toLower": "$name"}
+	// name == query -> 5x; name starts with query -> 2x; else 1x.
+	nameBonus := bson.M{"$switch": bson.M{
+		"branches": bson.A{
+			bson.M{"case": bson.M{"$eq": bson.A{nameLower, q}}, "then": 5},
+			bson.M{"case": bson.M{"$eq": bson.A{bson.M{"$indexOfCP": bson.A{nameLower, q}}, 0}}, "then": 2},
+		},
+		"default": 1,
+	}}
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: filter}},
 		// Shed the heavyweight blobs before the in-memory sort stage.
@@ -273,12 +284,11 @@ func (s *TrendService) relevanceSearch(ctx context.Context, filter bson.M, page,
 		{{Key: "$addFields", Value: bson.M{
 			"searchScore": bson.M{"$multiply": bson.A{
 				bson.M{"$meta": "textScore"},
-				// 1 + ln(stars+2): ~1.7x at 0 stars, ~14x at 250k. Log-scaled so
-				// popularity separates near-equal text scores without letting a
-				// mega-repo hijack unrelated queries.
+				// 1 + ln(stars+2): ~1.7x at 0 stars, ~14x at 250k.
 				bson.M{"$add": bson.A{1, bson.M{"$ln": bson.M{"$add": bson.A{
 					bson.M{"$ifNull": bson.A{"$metrics.stars", 0}}, 2,
 				}}}}},
+				nameBonus,
 			}},
 		}}},
 		{{Key: "$sort", Value: bson.D{{Key: "searchScore", Value: -1}, {Key: "metrics.stars", Value: -1}}}},
