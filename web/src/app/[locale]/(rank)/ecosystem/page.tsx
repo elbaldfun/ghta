@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getEcosystem, getTrends, type EcoPillar, type EcoSort } from '@/lib/data';
 import { RankTable } from '@/components/rank/RankTable';
+import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
 
 export async function generateMetadata({
@@ -84,7 +85,7 @@ export default async function EcosystemPage({
       </div>
 
       {items.length === 0 ? (
-        <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
+        <ErrorState />
       ) : (
         <RankTable
           header={

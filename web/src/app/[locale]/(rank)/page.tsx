@@ -12,6 +12,7 @@ import {
 } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
 import { CategoryTree } from '@/components/rank/CategoryTree';
+import { ErrorState } from '@/components/rank/ErrorState';
 import { FilterBar } from '@/components/rank/FilterBar';
 import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
@@ -118,9 +119,7 @@ export default async function RankHome({
         </div>
 
         {searchRes.error !== null ? (
-          <div className="py-10 text-center text-[13px] text-muted">
-            {t('loadError')} ({searchRes.error})
-          </div>
+          <ErrorState />
         ) : searchRes.data.items.length === 0 ? (
           <div className="py-10 text-center text-[13px] text-muted">{t('noResults')}</div>
         ) : (

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getDevelopers, type DeveloperBoard } from '@/lib/data';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
+import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
 
 export async function generateMetadata({
@@ -58,7 +59,7 @@ export default async function DevelopersPage({
       </div>
 
       {items.length === 0 ? (
-        <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
+        <ErrorState />
       ) : (
         <div className="overflow-hidden rounded-card border border-border bg-surface">
           {items.map((dev, i) => (

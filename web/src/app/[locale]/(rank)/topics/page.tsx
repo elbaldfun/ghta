@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getTopics, type TopicSort } from '@/lib/data';
+import { ErrorState } from '@/components/rank/ErrorState';
 import { formatCompact } from '@/lib/rank-data';
 
 export async function generateMetadata({
@@ -51,7 +52,7 @@ export default async function TopicsPage({
       </div>
 
       {topics.length === 0 ? (
-        <div className="py-10 text-center text-[13px] text-muted">{t('loadError')}</div>
+        <ErrorState />
       ) : (
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((tp, i) => {
