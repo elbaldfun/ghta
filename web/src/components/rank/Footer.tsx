@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { PageShell } from './PageShell';
 
 /** Single-row footer: full-bleed top border, content aligned to the site container. */
 export function RankFooter() {
@@ -9,7 +10,7 @@ export function RankFooter() {
 
   return (
     <footer className="mt-10 border-t border-border">
-      <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between gap-x-5 gap-y-2 px-7 py-6 text-xs text-muted">
+      <PageShell className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 py-6 text-xs text-muted">
         <span>
           © {year} <span className="font-semibold">StarRank Explorer</span> · {t('footerTagline')}
         </span>
@@ -29,7 +30,7 @@ export function RankFooter() {
             {t('footerDataSource')}
           </a>
         </nav>
-      </div>
+      </PageShell>
     </footer>
   );
 }

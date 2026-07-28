@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/layout-guard.mjs && next build",
+    "lint:layout": "node scripts/layout-guard.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

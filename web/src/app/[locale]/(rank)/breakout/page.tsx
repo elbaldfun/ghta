@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getHot, type HotWindow } from '@/lib/data';
 import { BreakoutBoard } from '@/components/rank/BreakoutBoard';
+import { PageShell } from '@/components/rank/PageShell';
 
 // Trending is fetched fresh per request (backend caches ~1h). Static export would
 // bake empty data on preview builds where API_URL is unset.
@@ -39,12 +40,12 @@ export default async function BreakoutPage({
   ]);
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <div className="mb-4 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">🔥 {t('breakoutTitle')}</h1>
         <span className="text-xs text-muted">{t('breakoutSubtitle')}</span>
       </div>
       <BreakoutBoard daily={daily} weekly={weekly} monthly={monthly} initial={initial} />
-    </div>
+    </PageShell>
   );
 }

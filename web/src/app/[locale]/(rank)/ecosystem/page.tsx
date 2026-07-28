@@ -5,6 +5,7 @@ import { getEcosystem, getTrends, type EcoPillar, type EcoSort } from '@/lib/dat
 import { RankTable } from '@/components/rank/RankTable';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
+import { PageShell } from '@/components/rank/PageShell';
 
 export async function generateMetadata({
   params: { locale },
@@ -71,7 +72,7 @@ export default async function EcosystemPage({
   );
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('ecoTitle')}</h1>
         <span className="text-xs text-muted">{t('ecoSubtitle')}</span>
@@ -114,6 +115,6 @@ export default async function EcosystemPage({
           params={{ pillar, sort }}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

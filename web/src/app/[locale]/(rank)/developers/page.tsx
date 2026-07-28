@@ -5,6 +5,7 @@ import { getDevelopers, type DeveloperBoard } from '@/lib/data';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
+import { PageShell } from '@/components/rank/PageShell';
 
 export async function generateMetadata({
   params: { locale },
@@ -48,7 +49,7 @@ export default async function DevelopersPage({
   );
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('devTitle')}</h1>
         <span className="text-xs text-muted">{t('devSubtitle')}</span>
@@ -82,6 +83,6 @@ export default async function DevelopersPage({
           params={{ board }}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -77,7 +77,7 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
       <aside className="hidden border-r border-border bg-surface px-4 py-5 lg:block">
       <button
         onClick={() => navigate(null)}
-        className={`mb-2 flex w-full items-center justify-between rounded-lg px-2.5 py-2 ${
+        className={`mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 ${
           allActive ? 'bg-surface2' : 'hover:bg-surface2/60'
         }`}
       >
@@ -100,7 +100,7 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
                 setExpanded((e) => ({ ...e, [group.path]: active === group.path ? !isOpen : true }));
                 navigate(group.path);
               }}
-              className={`flex w-full items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 ${
+              className={`flex w-full items-center justify-between gap-1.5 rounded-lg px-3 py-2 ${
                 isActiveCat ? 'bg-surface2' : 'hover:bg-surface2/60'
               }`}
             >

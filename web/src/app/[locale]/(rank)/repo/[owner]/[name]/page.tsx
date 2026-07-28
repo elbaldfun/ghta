@@ -12,6 +12,7 @@ import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
 import { BackLink } from '@/components/rank/BackLink';
 import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { Downloads } from '@/components/rank/Downloads';
+import { PageShell } from '@/components/rank/PageShell';
 
 interface Params {
   locale: string;
@@ -89,8 +90,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   ));
 
   return (
-    // px-7 matches RankHeader's inner container, so content lines up with the brand/nav above.
-    <div className="px-7 py-[22px]">
+    <PageShell className="py-[22px]">
       <BackLink />
 
       <div className="mb-2 flex flex-wrap items-center gap-2.5">
@@ -227,6 +227,6 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
           </Carousel>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

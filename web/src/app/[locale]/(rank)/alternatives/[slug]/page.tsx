@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { getAppsByAlternative } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
 import { PageTabs } from '@/components/rank/PageTabs';
+import { PageShell } from '@/components/rank/PageShell';
 
 // Fetched per request; the backend caches ~1h.
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,7 @@ export default async function AlternativePage({
   const { items, name } = await getAppsByAlternative(slug);
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <PageTabs items={[{ href: '/apps', label: t('tabDirectory') }, { href: '/alternatives', label: t('navAlternatives') }]} />
       <Link href="/alternatives" className="mb-4 flex w-fit items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg">
         ← {t('altIndexTitle')}
@@ -49,6 +50,6 @@ export default async function AlternativePage({
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

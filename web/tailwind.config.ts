@@ -27,6 +27,12 @@ const config: Config = {
       borderRadius: {
         card: 'var(--radius-card)',
       },
+      spacing: {
+        // The page's horizontal gutter on desktop. ONLY PageShell (and gutter-
+        // aligned edge cases inside it) may reference this; pages never hand-
+        // write horizontal padding — see scripts/layout-guard.mjs.
+        gutter: '28px',
+      },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],

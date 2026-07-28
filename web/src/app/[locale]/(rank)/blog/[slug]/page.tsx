@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { getPost, renderPostBody } from '@/lib/blog';
 import { DataBlock } from '@/components/blog/DataBlock';
 import { BackIcon } from '@/components/rank/icons';
+import { PageShell } from '@/components/rank/PageShell';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
 
@@ -56,7 +57,7 @@ export default async function BlogPost({ params }: { params: Params }) {
   };
 
   return (
-    <div className="px-7 py-[22px]">
+    <PageShell className="py-[22px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -109,6 +110,6 @@ export default async function BlogPost({ params }: { params: Params }) {
 
         <p className="mt-8 border-t border-border pt-4 text-[11px] text-muted">{t('dataNote')}</p>
       </article>
-    </div>
+    </PageShell>
   );
 }

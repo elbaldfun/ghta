@@ -6,6 +6,7 @@ import { formatCompact } from '@/lib/rank-data';
 import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankTable } from '@/components/rank/RankTable';
 import { PageTabs } from '@/components/rank/PageTabs';
+import { PageShell } from '@/components/rank/PageShell';
 
 // Render per request rather than at build time: the map's data comes from the
 // backend, and a build that can't reach it (e.g. a preview deploy without
@@ -46,7 +47,7 @@ export default async function MapPage({
   const totalGrowth = cells.reduce((s, c) => s + c.growth, 0);
 
   return (
-    <div className="px-[26px] py-[22px]">
+    <PageShell className="py-[22px]">
       <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
       <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-display text-xl font-extrabold">{t('mapTitle')}</h1>
@@ -96,6 +97,6 @@ export default async function MapPage({
           />
         </section>
       )}
-    </div>
+    </PageShell>
   );
 }

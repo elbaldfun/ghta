@@ -19,6 +19,7 @@ import { HotBar } from '@/components/rank/HotBar';
 import { Pagination } from '@/components/rank/Pagination';
 import { RepoRow } from '@/components/rank/RepoRow';
 import { PageTabs } from '@/components/rank/PageTabs';
+import { PageShell } from '@/components/rank/PageShell';
 
 const PER_PAGE = 24;
 
@@ -98,10 +99,12 @@ export default async function RankHome({
   return (
     <>
       {isLanding && <HotBar weekly={hotWeekly} monthly={hotMonthly} />}
-      <div className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
+      {/* gutter=false: the sidebar owns its background up to the container
+          edge; the content column applies the gutter itself. */}
+      <PageShell gutter={false} className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
         <CategoryTree tree={tree} total={total} />
 
-      <div className="px-4 py-[22px] sm:px-[26px]">
+      <div className="px-4 py-[22px] lg:px-gutter">
         <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
           <div>
@@ -160,7 +163,7 @@ export default async function RankHome({
           </>
         )}
       </div>
-    </div>
+    </PageShell>
     </>
   );
 }
