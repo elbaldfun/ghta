@@ -33,18 +33,6 @@ func NewAltFinder(store *repository.Store, prov provider.Provider, log *slog.Log
 	return &AltFinder{store: store, prov: prov, log: log}
 }
 
-// appCorpusFilter matches the same set as the /apps directory: apps/CLIs or
-// anything that ships platform builds, never a library.
-func appCorpusFilter() bson.M {
-	return bson.M{
-		"type": bson.M{"$ne": "library"},
-		"$or": bson.A{
-			bson.M{"type": bson.M{"$in": bson.A{"app", "cli"}}},
-			bson.M{"sourceData.platforms.0": bson.M{"$exists": true}},
-		},
-	}
-}
-
 // Run infers alternatives for up to maxAltPerRun unprocessed apps. Re-entrant
 // runs are rejected. Batches that fail the LLM call are left unprocessed so a
 // later run retries them, rather than being recorded as "no alternatives".
@@ -55,7 +43,7 @@ func (f *AltFinder) Run(ctx context.Context) {
 	}
 	defer f.running.Store(false)
 
-	filter := appCorpusFilter()
+	filter := repository.AppCorpusFilter()
 	filter["altStatus"] = bson.M{"$exists": false}
 
 	cur, err := f.store.Items().Find(ctx, filter,

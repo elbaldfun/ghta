@@ -50,7 +50,7 @@ func (f *IconFetcher) Run(ctx context.Context) {
 	}
 	defer f.running.Store(false)
 
-	filter := appCorpusFilter()
+	filter := repository.AppCorpusFilter()
 	filter["iconStatus"] = bson.M{"$exists": false}
 	filter["sourceData.homepageUrl"] = bson.M{"$nin": bson.A{"", nil}}
 

@@ -40,6 +40,7 @@ type Config struct {
 	CategorizeCron  string
 	DevSyncCron     string
 	AltFindCron     string
+	StoreCron       string
 	IconCron        string
 	ReconcileCron   string
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
@@ -77,8 +78,9 @@ func Load() (*Config, error) {
 		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
 		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
 		DevSyncCron:     getEnv("DEVSYNC_CRON", "0 0 4 * * *"),
-		AltFindCron:     getEnv("ALTFIND_CRON", "0 0 6 * * *"), // after categorize, so newly-classified apps get alternatives
-		IconCron:        getEnv("ICON_CRON", "0 30 6 * * *"),   // after categorize; extracts app icons from homepages
+		AltFindCron:     getEnv("ALTFIND_CRON", "0 0 6 * * *"),   // after categorize, so newly-classified apps get alternatives
+		StoreCron:       getEnv("STORE_CRON", "0 30 5 * * *"),    // after categorize; shelf/tagline/excluded judgement (change 15)
+		IconCron:        getEnv("ICON_CRON", "0 30 6 * * *"),     // after categorize; extracts app icons from homepages
 		ReconcileCron:   getEnv("RECONCILE_CRON", "0 0 7 * * *"), // rename-ghost hunt: verify oldest-unfetched repos against GitHub
 	}
 

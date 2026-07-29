@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -20,6 +21,18 @@ import (
 	"github.com/elbaldfun/ghta/internal/repository"
 	"github.com/elbaldfun/ghta/pkg/query"
 )
+
+// containsCJK reports whether s contains CJK characters (Chinese/Japanese
+// kanji, kana, or Hangul) — queries that Mongo's text index cannot segment.
+func containsCJK(s string) bool {
+	for _, r := range s {
+		if (r >= 0x4E00 && r <= 0x9FFF) || (r >= 0x3400 && r <= 0x4DBF) ||
+			(r >= 0x3040 && r <= 0x30FF) || (r >= 0xAC00 && r <= 0xD7AF) {
+			return true
+		}
+	}
+	return false
+}
 
 // SuggestItem is one autocomplete row for the search-as-you-type dropdown.
 type SuggestItem struct {
@@ -170,7 +183,6 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		q.Source = string(domain.SourceGitHub)
 	}
 	filter["source"] = q.Source
-	filter["source"] = q.Source
 	if q.Language != "" {
 		filter["language"] = q.Language
 	}
@@ -185,10 +197,22 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 		filter["sourceData.topicNames"] = bson.M{"$all": q.Topics}
 	}
 	if q.Q != "" {
-		// Full-text search over the weighted text index (name > topics >
-		// description). Replaces the old unanchored $or regex, which scanned the
-		// whole collection and ranked by stars instead of relevance.
-		filter["$text"] = bson.M{"$search": q.Q}
+		if containsCJK(q.Q) {
+			// Mongo's text index has no CJK segmentation — a Chinese tagline is
+			// one giant token and $text can never match a substring of it. CJK
+			// queries instead substring-match the store tagline (the zh search
+			// corpus, change 15) plus name/description.
+			re := primitive.Regex{Pattern: regexp.QuoteMeta(q.Q), Options: "i"}
+			filter["$or"] = []bson.M{
+				{"store.taglineZh": re},
+				{"name": re},
+				{"description": re},
+			}
+		} else {
+			// Full-text search over the weighted text index (name > topics >
+			// description), ranked by blended relevance below.
+			filter["$text"] = bson.M{"$search": q.Q}
+		}
 	}
 	if q.Stars != "" {
 		cond, err := query.ParseRange(q.Stars)
@@ -211,11 +235,16 @@ func (s *TrendService) List(ctx context.Context, q TrendQuery) ([]domain.Tracked
 	if sortName(sortSpec) == "relevance" {
 		sortSpec = ""
 	}
-	relevance := q.Q != "" && sortSpec == ""
+	// CJK queries run as substring matches (no $text, see above), so there is no
+	// textScore to blend — they skip the relevance pipeline and rank by stars.
+	relevance := q.Q != "" && sortSpec == "" && !containsCJK(q.Q)
 
 	sortField, sortOrder, err := parseSort(sortSpec)
 	if err != nil {
 		return nil, 0, err
+	}
+	if q.Q != "" && sortSpec == "" && !relevance {
+		sortField, sortOrder = "metrics.stars", -1
 	}
 
 	limit := q.Limit

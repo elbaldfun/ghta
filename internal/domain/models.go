@@ -71,6 +71,23 @@ const (
 
 // TrackedItem is the source-agnostic main document. Every adapter normalizes its
 // raw data into this shape; source-specific fields live under SourceData.
+// StoreInfo is the LLM-inferred app-store layer for one item (change 15).
+// Category is a controlled shelf slug (see service.AppShelves) or "excluded"
+// (not a runnable app: framework/library/list/service). CategoryOverride is the
+// manual correction channel and, when set, always wins over Category. Version
+// records which prompt/enum generation judged the item, so bumping the version
+// re-queues the whole corpus without deleting anything.
+type StoreInfo struct {
+	Category         string `bson:"category,omitempty" json:"category,omitempty"`
+	CategoryOverride string `bson:"categoryOverride,omitempty" json:"categoryOverride,omitempty"`
+	TaglineZh        string `bson:"taglineZh,omitempty" json:"taglineZh,omitempty"`
+	TaglineEn        string `bson:"taglineEn,omitempty" json:"taglineEn,omitempty"`
+	HasGui           *bool  `bson:"hasGui,omitempty" json:"hasGui,omitempty"`
+	Status           string `bson:"status,omitempty" json:"status,omitempty"` // done | failed
+	FailCount        int    `bson:"failCount,omitempty" json:"failCount,omitempty"`
+	Version          int    `bson:"version,omitempty" json:"version,omitempty"`
+}
+
 // Alternative is a commercial/paid product an open-source app can replace.
 type Alternative struct {
 	Name string `bson:"name" json:"name"`                     // canonical product name, e.g. "Notion"
@@ -112,8 +129,13 @@ type TrackedItem struct {
 	AltStatus     string        `bson:"altStatus,omitempty" json:"altStatus,omitempty"`
 	// IconURL is the app's brand icon extracted from its homepage (change 13).
 	// IconStatus marks the item as processed. TOP-LEVEL, same reason as above.
-	IconURL    string         `bson:"iconUrl,omitempty" json:"iconUrl,omitempty"`
-	IconStatus string         `bson:"iconStatus,omitempty" json:"iconStatus,omitempty"`
+	IconURL    string `bson:"iconUrl,omitempty" json:"iconUrl,omitempty"`
+	IconStatus string `bson:"iconStatus,omitempty" json:"iconStatus,omitempty"`
+	// Store is the app-store layer (change 15): consumer shelf classification,
+	// plain-language taglines, GUI/exclusion verdicts — LLM-inferred. One
+	// top-level subdocument (survives sourceData overwrites) instead of more
+	// scattered flags.
+	Store      *StoreInfo     `bson:"store,omitempty" json:"store,omitempty"`
 	SourceData map[string]any `bson:"sourceData,omitempty" json:"sourceData,omitempty"`
 
 	// Stale marks a record the reconciler confirmed is gone from its source —

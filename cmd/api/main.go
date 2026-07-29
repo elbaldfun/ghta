@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/elbaldfun/ghta/internal/config"
 	"github.com/elbaldfun/ghta/internal/domain"
@@ -96,6 +97,7 @@ func main() {
 	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency, logger)
 	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
 	altFinder := job.NewAltFinder(store, aiProvider, logger)
+	storeFinder := job.NewStoreFinder(store, aiProvider, logger)
 	iconFetcher := job.NewIconFetcher(store, logger)
 	reconciler := job.NewReconciler(store, ghAdapter, cfg.RateLimitBuffer, logger)
 
@@ -116,6 +118,10 @@ func main() {
 	}
 	if _, err := scheduler.AddFunc(cfg.DevSyncCron, func() { devSync.Run(rootCtx) }); err != nil {
 		slog.Error("invalid DEVSYNC_CRON", "err", err)
+		os.Exit(1)
+	}
+	if _, err := scheduler.AddFunc(cfg.StoreCron, func() { storeFinder.Run(rootCtx) }); err != nil {
+		slog.Error("invalid STORE_CRON", "err", err)
 		os.Exit(1)
 	}
 	if _, err := scheduler.AddFunc(cfg.AltFindCron, func() { altFinder.Run(rootCtx) }); err != nil {
@@ -141,7 +147,7 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, altFinder, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, altFinder, storeFinder, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -178,7 +184,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, storeFinder *job.StoreFinder, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -270,6 +276,53 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	admin.POST("/internal/icon-fetch", func(c *gin.Context) {
 		go iconFetcher.Run(jobCtx)
 		c.JSON(http.StatusAccepted, gin.H{"status": "icon-fetch started"})
+	})
+
+	// Internal: app-store judgement (change 15). ?drain=1 keeps running until
+	// the whole pending corpus is judged (the backfill); otherwise one bounded
+	// pass. Background either way; watch the logs for progress.
+	admin.POST("/internal/store-find", func(c *gin.Context) {
+		if c.Query("drain") == "1" {
+			go storeFinder.RunUntilDone(jobCtx)
+			c.JSON(http.StatusAccepted, gin.H{"status": "store drain started"})
+			return
+		}
+		go storeFinder.Run(jobCtx)
+		c.JSON(http.StatusAccepted, gin.H{"status": "store pass started"})
+	})
+
+	// Internal: manual shelf correction — the override always wins over the LLM
+	// verdict. ?category= must be a known slug or "excluded"; empty clears the
+	// override.
+	admin.POST("/internal/store-override", func(c *gin.Context) {
+		id := c.Query("id")
+		category := c.Query("category")
+		if id == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "id required (owner/repo)"})
+			return
+		}
+		if category != "" && !service.ValidShelfSlug(category) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "unknown category slug"})
+			return
+		}
+		var update bson.M
+		if category == "" {
+			update = bson.M{"$unset": bson.M{"store.categoryOverride": ""}}
+		} else {
+			update = bson.M{"$set": bson.M{"store.categoryOverride": category}}
+		}
+		res, err := store.Items().UpdateOne(c.Request.Context(),
+			bson.M{"source": domain.SourceGitHub, "externalId": id}, update)
+		if err != nil {
+			slog.Error("store-override failed", "id", id, "err", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
+		if res.MatchedCount == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "id": id, "category": category})
 	})
 
 	// Internal (change 12 migration): reset done/failed items back to pending so
