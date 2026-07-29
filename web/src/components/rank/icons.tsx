@@ -93,6 +93,19 @@ export const ClockIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const CopyIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </Svg>
+);
+
+export const CheckIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <polyline points="20 6 9 17 4 12" />
+  </Svg>
+);
+
 export const BackIcon = (p: IconProps) => (
   <Svg {...p}>
     <line x1="19" y1="12" x2="5" y2="12" />

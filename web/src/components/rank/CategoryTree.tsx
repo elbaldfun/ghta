@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { formatCompact } from '@/lib/rank-data';
 import { categoryLabel, type CategoryNode } from '@/lib/data';
 import { GridIcon } from './icons';
+import { track } from '@/lib/analytics';
 
 /**
  * Two-level domain tree (2a sidebar), rendered from the backend GET /category
@@ -26,6 +27,7 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
   });
 
   function navigate(path: string | null) {
+    track('category_select', { category: path ?? 'all' });
     const next = new URLSearchParams(params.toString());
     next.delete('page');
     next.delete('q');

@@ -47,6 +47,7 @@
     "growth": "Star Growth",
     "keyMetrics": "Key Metrics",
     "artifacts": "Artifacts",
+    "copyCommand": "Copy command",
     "artifactTip": "Publishes installable build artifacts",
     "readmeExpand": "Expand all",
     "readmeCollapse": "Collapse",
@@ -187,13 +188,6 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "RL/Robotics",
     "modelTask_other": "Other"
-  },
-  "consent": {
-    "title": "Cookie notice",
-    "message": "We use cookies for anonymous traffic analytics to understand how the site is used. You can decline — nothing stops working.",
-    "learnMore": "Privacy Policy",
-    "accept": "Accept",
-    "reject": "Decline"
   },
   "privacy": {
     "title": "Privacy Policy",

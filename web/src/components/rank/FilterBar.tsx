@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { FILTER_LANGS, FILTER_LICENSES, SORT_OPTIONS } from '@/lib/rank-data';
 import type { TypeFacet } from '@/lib/data';
+import { track } from '@/lib/analytics';
 
 const selectClass =
   'cursor-pointer appearance-none rounded-lg border border-border bg-surface py-1.5 pl-[11px] pr-[30px] text-xs font-semibold text-fg outline-none ' +
@@ -43,6 +44,7 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
   const activeType = params.get('type');
 
   function setParam(key: string, value: string) {
+    track('filter_change', { filter: key, value });
     const next = new URLSearchParams(params.toString());
     next.delete('page');
     if (value === 'all') next.delete(key);

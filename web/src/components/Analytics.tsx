@@ -7,12 +7,13 @@ import { usePathname, useSearchParams } from 'next/navigation';
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 /**
- * Google Analytics 4 with Consent Mode v2.
+ * Google Analytics 4.
  *
  * Renders nothing unless NEXT_PUBLIC_GA_ID is set, so local dev and previews
- * stay untracked. Consent defaults to denied for every storage type — the
- * cookie banner grants it — which is the shape Google requires for EEA
- * visitors once AdSense is enabled.
+ * stay untracked. Consent defaults to GRANTED (no cookie banner gate) so GA4
+ * reports the full audience — the denied-by-default Consent Mode was under-
+ * reporting ~30x because almost nobody clicked "accept". IP anonymization is
+ * on by GA4 default; revisit this shape before enabling AdSense in the EEA.
  */
 export function GoogleAnalytics() {
   const pathname = usePathname();
@@ -56,22 +57,11 @@ export function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('consent', 'default', {
-            analytics_storage: 'denied',
+            analytics_storage: 'granted',
             ad_storage: 'denied',
             ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            wait_for_update: 500
+            ad_personalization: 'denied'
           });
-          try {
-            if (localStorage.getItem('cookie-consent') === 'granted') {
-              gtag('consent', 'update', {
-                analytics_storage: 'granted',
-                ad_storage: 'granted',
-                ad_user_data: 'granted',
-                ad_personalization: 'granted'
-              });
-            }
-          } catch (e) {}
           gtag('js', new Date());
           gtag('config', '${GA_ID}');
         `}

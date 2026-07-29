@@ -6,6 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { SearchIcon, StarIcon } from './icons';
 import { formatCompact } from '@/lib/rank-data';
+import { track } from '@/lib/analytics';
 
 interface Suggestion {
   externalId: string;
@@ -71,12 +72,14 @@ export function SearchBox() {
 
   function fullSearch() {
     const q = value.trim();
+    if (q) track('search', { search_term: q });
     setOpen(false);
     router.push(q ? `/?q=${encodeURIComponent(q)}` : '/');
   }
 
   function goto(s: Suggestion) {
     const [owner = '', name = ''] = s.externalId.split('/');
+    track('search_result_click', { repo: s.externalId, search_term: value.trim() });
     setOpen(false);
     setValue('');
     router.push(`/repo/${owner}/${name}`);
