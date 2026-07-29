@@ -13,6 +13,7 @@ import { BackLink } from '@/components/rank/BackLink';
 import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { Downloads } from '@/components/rank/Downloads';
 import { PageShell } from '@/components/rank/PageShell';
+import { CopyCommand } from '@/components/rank/CopyCommand';
 
 interface Params {
   locale: string;
@@ -209,9 +210,10 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
           <span className="rounded-full border border-border bg-surface2 px-[11px] py-[3px] text-xs font-bold">
             {artifact.registry}
           </span>
-          <code className="truncate font-mono text-xs text-muted">
-            {installCmd(repo.owner, repo.name, repo.language)}
-          </code>
+          <CopyCommand
+            command={installCmd(repo.owner, repo.name, repo.language)}
+            repo={`${repo.owner}/${repo.name}`}
+          />
         </div>
       )}
 

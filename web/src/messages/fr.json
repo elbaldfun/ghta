@@ -47,6 +47,7 @@
     "growth": "Croissance des étoiles",
     "keyMetrics": "Indicateurs clés",
     "artifacts": "Artefacts",
+    "copyCommand": "Copier la commande",
     "artifactTip": "Publie des artefacts installables",
     "readmeExpand": "Tout afficher",
     "readmeCollapse": "Réduire",
@@ -187,13 +188,6 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "RL/Robotique",
     "modelTask_other": "Autres"
-  },
-  "consent": {
-    "title": "Avis sur les cookies",
-    "message": "Nous utilisons des cookies pour des statistiques de fréquentation anonymes. Vous pouvez refuser : rien ne cesse de fonctionner.",
-    "learnMore": "Politique de confidentialité",
-    "accept": "Accepter",
-    "reject": "Refuser"
   },
   "privacy": {
     "title": "Privacy Policy",

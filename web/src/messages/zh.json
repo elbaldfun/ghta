@@ -47,6 +47,7 @@
     "growth": "Star 增长趋势",
     "keyMetrics": "关键指标",
     "artifacts": "制品库",
+    "copyCommand": "复制命令",
     "artifactTip": "已发布可直接安装的构建制品",
     "readmeExpand": "展开全部",
     "readmeCollapse": "收起",
@@ -187,13 +188,6 @@
     "modelTask_nlp": "传统 NLP",
     "modelTask_rl": "强化学习",
     "modelTask_other": "其他"
-  },
-  "consent": {
-    "title": "Cookie 使用说明",
-    "message": "我们使用 Cookie 进行匿名的访问统计，以了解站点的使用情况。你可以随时拒绝，这不影响任何功能。",
-    "learnMore": "隐私政策",
-    "accept": "接受",
-    "reject": "拒绝"
   },
   "privacy": {
     "title": "隐私政策",

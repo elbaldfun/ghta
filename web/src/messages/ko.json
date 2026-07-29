@@ -47,6 +47,7 @@
     "growth": "스타 성장",
     "keyMetrics": "주요 지표",
     "artifacts": "아티팩트",
+    "copyCommand": "명령 복사",
     "artifactTip": "설치 가능한 빌드 아티팩트 배포",
     "readmeExpand": "전체 보기",
     "readmeCollapse": "접기",
@@ -187,13 +188,6 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "강화학습",
     "modelTask_other": "기타"
-  },
-  "consent": {
-    "title": "쿠키 안내",
-    "message": "사이트 이용 현황 파악을 위해 익명 트래픽 분석에 쿠키를 사용합니다. 거부해도 기능에는 영향이 없습니다.",
-    "learnMore": "개인정보처리방침",
-    "accept": "동의",
-    "reject": "거부"
   },
   "privacy": {
     "title": "Privacy Policy",
