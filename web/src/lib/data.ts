@@ -676,6 +676,8 @@ export interface ModelItem {
   license?: string;
   likes: number;
   downloads30d: number;
+  downloadsAll?: number;
+  params?: number; // parameter count
   growth: number; // daily likes gain
   gated: boolean;
   quantFormats?: string[];

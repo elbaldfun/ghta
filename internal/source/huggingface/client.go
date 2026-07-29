@@ -19,7 +19,8 @@ const apiBase = "https://huggingface.co/api/models"
 type Model struct {
 	ID            string   `json:"id"`
 	Likes         int      `json:"likes"`
-	Downloads     int64    `json:"downloads"` // rolling last-30-days, NOT cumulative
+	Downloads     int64    `json:"downloads"`        // rolling last-30-days, NOT cumulative
+	DownloadsAll  int64    `json:"downloadsAllTime"` // cumulative since creation
 	TrendingScore float64  `json:"trendingScore"`
 	PipelineTag   string   `json:"pipeline_tag"`
 	LibraryName   string   `json:"library_name"`
@@ -28,6 +29,9 @@ type Model struct {
 	Private       bool     `json:"private"`
 	CreatedAt     string   `json:"createdAt"`
 	LastModified  string   `json:"lastModified"`
+	Safetensors   *struct {
+		Total int64 `json:"total"` // parameter count
+	} `json:"safetensors"`
 }
 
 // Client pages through the Hub list API following Link-header cursors.
@@ -48,8 +52,8 @@ func NewClient(token string) *Client {
 // expand lists the exact fields we need; the API then returns only these,
 // keeping pages small and the schema explicit.
 var expand = []string{
-	"downloads", "likes", "trendingScore", "pipeline_tag", "library_name",
-	"tags", "gated", "createdAt", "lastModified",
+	"downloads", "downloadsAllTime", "likes", "trendingScore", "pipeline_tag",
+	"library_name", "tags", "gated", "createdAt", "lastModified", "safetensors",
 }
 
 // ListSorted pages through the list API sorted by `sortKey` (downloads | likes |

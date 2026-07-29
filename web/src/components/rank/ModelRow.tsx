@@ -2,6 +2,14 @@ import { useTranslations } from 'next-intl';
 import type { ModelItem } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 
+// 22713728 -> "23M", 57179884544 -> "57B", 2779931837184 -> "2.8T"
+function formatParams(n: number): string {
+  if (n >= 1e12) return `${(n / 1e12).toFixed(n < 1e13 ? 1 : 0)}T`;
+  if (n >= 1e9) return `${Math.round(n / 1e9)}B`;
+  if (n >= 1e6) return `${Math.round(n / 1e6)}M`;
+  return `${Math.round(n / 1e3)}K`;
+}
+
 function heatColor(growth: number): string {
   if (growth >= 50) return 'rgb(var(--heat4))';
   if (growth >= 20) return 'rgb(var(--heat3))';
@@ -55,6 +63,11 @@ export function ModelRow({
           )}
         </span>
         <span className="mt-1 flex flex-wrap gap-1">
+          {(model.params ?? 0) > 0 && (
+            <span className="rounded-[3px] border border-accent bg-surface2 px-1.5 py-px font-mono text-[9.5px] font-bold text-accent">
+              {formatParams(model.params!)}
+            </span>
+          )}
           {taskLabel && (
             <span className="rounded-[3px] border border-accent bg-surface2 px-1.5 py-px font-mono text-[9.5px] text-accent">
               {taskLabel}

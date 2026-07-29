@@ -38,7 +38,9 @@ type ModelItem struct {
 	License      string     `json:"license,omitempty"`
 	Likes        int        `json:"likes"`
 	Downloads30d int64      `json:"downloads30d"`
-	Growth       int        `json:"growth"` // daily likes gain (velocity axis)
+	DownloadsAll int64      `json:"downloadsAll,omitempty"`
+	Params       int64      `json:"params,omitempty"` // parameter count (safetensors total)
+	Growth       int        `json:"growth"`           // daily likes gain (velocity axis)
 	Gated        bool       `json:"gated"`
 	QuantFormats []string   `json:"quantFormats,omitempty"`
 	CreatedAt    *time.Time `json:"createdAt,omitempty"`
@@ -177,6 +179,17 @@ func mapModelItem(it domain.TrackedItem) ModelItem {
 			}
 		}
 	}
+	i64 := func(k string) int64 {
+		switch v := sd[k].(type) {
+		case int64:
+			return v
+		case int32:
+			return int64(v)
+		case float64:
+			return int64(v)
+		}
+		return 0
+	}
 	growth := 0
 	if it.DailyIncrease != nil {
 		growth = int(*it.DailyIncrease)
@@ -195,6 +208,8 @@ func mapModelItem(it domain.TrackedItem) ModelItem {
 		License:      str("license"),
 		Likes:        int(it.Metrics["likes"]),
 		Downloads30d: int64(it.Metrics["downloads30d"]),
+		DownloadsAll: int64(it.Metrics["downloadsAll"]),
+		Params:       i64("params"),
 		Growth:       growth,
 		Gated:        boolean("gated"),
 		QuantFormats: quant,

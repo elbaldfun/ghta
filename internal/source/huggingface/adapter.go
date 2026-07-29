@@ -90,6 +90,11 @@ func mapModel(m Model) domain.TrackedItem {
 			break
 		}
 	}
+	var params int64
+	if m.Safetensors != nil {
+		params = m.Safetensors.Total
+	}
+	refs := ParseTagRefs(m.Tags)
 	gated := false
 	switch v := m.Gated.(type) {
 	case bool:
@@ -108,6 +113,7 @@ func mapModel(m Model) domain.TrackedItem {
 		Metrics: map[string]float64{
 			"likes":        float64(m.Likes),
 			"downloads30d": float64(m.Downloads),
+			"downloadsAll": float64(m.DownloadsAll),
 		},
 		CategoryPath: domain.PathList{"hf/" + task},
 		SourceData: map[string]any{
@@ -119,6 +125,12 @@ func mapModel(m Model) domain.TrackedItem {
 			"license":       license,
 			"gated":         gated,
 			"quantFormats":  QuantFormats(m.Tags),
+			"params":        params,
+			"tags":          m.Tags,
+			"baseModels":    refs.BaseModels,
+			"datasets":      refs.Datasets,
+			"arxiv":         refs.Arxiv,
+			"languages":     refs.Languages,
 			"trendingScore": m.TrendingScore,
 			"createdAt":     parseTime(m.CreatedAt),
 			"lastModified":  parseTime(m.LastModified),

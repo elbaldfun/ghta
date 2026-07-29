@@ -71,3 +71,21 @@ func TestParseNextLink(t *testing.T) {
 		t.Errorf("empty link -> %q", got)
 	}
 }
+
+func TestParseTagRefs(t *testing.T) {
+	refs := ParseTagRefs([]string{
+		"transformers", "tf", "en", "zh", "gguf",
+		"base_model:meta-llama/Llama-3.1-8B",
+		"base_model:finetune:Qwen/Qwen3-32B",
+		"dataset:ms_marco", "arxiv:2402.12345",
+	})
+	if !reflect.DeepEqual(refs.BaseModels, []string{"meta-llama/Llama-3.1-8B", "Qwen/Qwen3-32B"}) {
+		t.Errorf("baseModels = %v", refs.BaseModels)
+	}
+	if !reflect.DeepEqual(refs.Languages, []string{"en", "zh"}) { // "tf" must not read as a language
+		t.Errorf("languages = %v", refs.Languages)
+	}
+	if !reflect.DeepEqual(refs.Datasets, []string{"ms_marco"}) || !reflect.DeepEqual(refs.Arxiv, []string{"2402.12345"}) {
+		t.Errorf("datasets=%v arxiv=%v", refs.Datasets, refs.Arxiv)
+	}
+}

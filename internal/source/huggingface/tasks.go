@@ -101,3 +101,54 @@ func QuantFormats(tags []string) []string {
 	}
 	return out
 }
+
+// knownLangs whitelists the common bare ISO language tags. Tags mix language
+// codes with framework names ("tf", "jax"), so a bare regex would misread
+// TensorFlow as a language — hence an explicit list of the codes that matter.
+var knownLangs = map[string]bool{
+	"en": true, "zh": true, "ja": true, "ko": true, "fr": true, "de": true,
+	"es": true, "pt": true, "ru": true, "it": true, "ar": true, "hi": true,
+	"vi": true, "th": true, "nl": true, "pl": true, "tr": true, "id": true,
+	"sv": true, "he": true, "cs": true, "uk": true, "fa": true, "ro": true,
+	"multilingual": true,
+}
+
+// TagRefs are the structured relations extracted from a model's raw tags.
+type TagRefs struct {
+	BaseModels []string // "meta-llama/Llama-3.1-8B" — finetune/quant lineage
+	Datasets   []string
+	Arxiv      []string
+	Languages  []string
+}
+
+// ParseTagRefs pulls base_model / dataset / arxiv / language relations out of
+// the raw tag list. base_model tags come as "base_model:owner/name" or
+// "base_model:<relation>:owner/name" (finetune/quantized/adapter/merge).
+func ParseTagRefs(tags []string) TagRefs {
+	var out TagRefs
+	seen := map[string]bool{}
+	add := func(dst *[]string, v string) {
+		if v != "" && !seen[v] {
+			seen[v] = true
+			*dst = append(*dst, v)
+		}
+	}
+	for _, t := range tags {
+		switch {
+		case strings.HasPrefix(t, "base_model:"):
+			ref := strings.TrimPrefix(t, "base_model:")
+			// strip a relation qualifier ("finetune:", "quantized:", ...)
+			if i := strings.IndexByte(ref, ':'); i >= 0 {
+				ref = ref[i+1:]
+			}
+			add(&out.BaseModels, ref)
+		case strings.HasPrefix(t, "dataset:"):
+			add(&out.Datasets, strings.TrimPrefix(t, "dataset:"))
+		case strings.HasPrefix(t, "arxiv:"):
+			add(&out.Arxiv, strings.TrimPrefix(t, "arxiv:"))
+		case knownLangs[t]:
+			add(&out.Languages, t)
+		}
+	}
+	return out
+}
