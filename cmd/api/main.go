@@ -287,8 +287,12 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 			c.JSON(http.StatusAccepted, gin.H{"status": "store drain started"})
 			return
 		}
-		go storeFinder.Run(jobCtx)
-		c.JSON(http.StatusAccepted, gin.H{"status": "store pass started"})
+		limit := 0
+		if v := c.Query("limit"); v != "" {
+			limit, _ = strconv.Atoi(v)
+		}
+		go storeFinder.RunN(jobCtx, limit)
+		c.JSON(http.StatusAccepted, gin.H{"status": "store pass started", "limit": limit})
 	})
 
 	// Internal: manual shelf correction — the override always wins over the LLM

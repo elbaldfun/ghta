@@ -55,13 +55,27 @@ func (f *StoreFinder) pendingFilter() bson.M {
 
 // Run judges up to maxStorePerRun pending items (the daily incremental pass).
 // Returns how many items were processed (0 = nothing pending).
+// RunN judges up to n pending items (n<=0 means the default bound) — the
+// pilot/audit entry point.
+func (f *StoreFinder) RunN(ctx context.Context, n int) int {
+	if n <= 0 || n > maxStorePerRun {
+		n = maxStorePerRun
+	}
+	if !f.running.CompareAndSwap(false, true) {
+		f.log.Warn("storefinder: run already in progress, skipping")
+		return -1
+	}
+	defer f.running.Store(false)
+	return f.runOnce(ctx, n)
+}
+
 func (f *StoreFinder) Run(ctx context.Context) int {
 	if !f.running.CompareAndSwap(false, true) {
 		f.log.Warn("storefinder: run already in progress, skipping")
 		return -1
 	}
 	defer f.running.Store(false)
-	return f.runOnce(ctx)
+	return f.runOnce(ctx, maxStorePerRun)
 }
 
 // RunUntilDone drains the whole pending corpus — the backfill mechanism
@@ -82,7 +96,7 @@ func (f *StoreFinder) RunUntilDone(ctx context.Context) {
 			f.log.Warn("storefinder: drain cancelled", "processed", total)
 			return
 		}
-		n := f.runOnce(ctx)
+		n := f.runOnce(ctx, maxStorePerRun)
 		if n <= 0 {
 			break
 		}
@@ -92,11 +106,11 @@ func (f *StoreFinder) RunUntilDone(ctx context.Context) {
 	f.log.Info("storefinder: drain complete", "processed", total)
 }
 
-func (f *StoreFinder) runOnce(ctx context.Context) int {
+func (f *StoreFinder) runOnce(ctx context.Context, limit int) int {
 	cur, err := f.store.Items().Find(ctx, f.pendingFilter(),
 		options.Find().
 			SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).
-			SetLimit(maxStorePerRun))
+			SetLimit(int64(limit)))
 	if err != nil {
 		f.log.Error("storefinder: query failed", "err", err)
 		return 0
