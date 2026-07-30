@@ -75,6 +75,9 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
             .filter((ty) => ty.count > 0)
             .map((ty) => {
               const on = activeType === ty.key;
+              // Translate by stable key; fall back to the backend name for any
+              // facet key we haven't localized yet.
+              const label = t.has(`typeFacet.${ty.key}`) ? t(`typeFacet.${ty.key}`) : ty.name;
               return (
                 <button
                   key={ty.key}
@@ -85,7 +88,7 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
                       : 'border-border text-muted hover:bg-surface2/60'
                   }`}
                 >
-                  {ty.name}
+                  {label}
                 </button>
               );
             })}

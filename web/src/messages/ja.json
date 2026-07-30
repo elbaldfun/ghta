@@ -187,7 +187,17 @@
     "modelTask_vision": "画像理解",
     "modelTask_nlp": "NLP",
     "modelTask_rl": "強化学習",
-    "modelTask_other": "その他"
+    "modelTask_other": "その他",
+    "typeFacet": {
+      "awesome": "リソース集",
+      "interview": "面接対策",
+      "tutorial": "チュートリアル",
+      "skill": "スキル",
+      "cli": "CLIツール",
+      "app": "アプリ",
+      "library": "ライブラリ",
+      "software": "ソフトウェア"
+    }
   },
   "privacy": {
     "title": "Privacy Policy",
