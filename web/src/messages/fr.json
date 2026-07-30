@@ -187,7 +187,17 @@
     "modelTask_vision": "Vision",
     "modelTask_nlp": "NLP",
     "modelTask_rl": "RL/Robotique",
-    "modelTask_other": "Autres"
+    "modelTask_other": "Autres",
+    "typeFacet": {
+      "awesome": "Listes",
+      "interview": "Entretiens",
+      "tutorial": "Tutoriels",
+      "skill": "Skills",
+      "cli": "Outils CLI",
+      "app": "Applications",
+      "library": "Bibliothèques",
+      "software": "Logiciels"
+    }
   },
   "privacy": {
     "title": "Privacy Policy",

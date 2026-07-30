@@ -187,7 +187,17 @@
     "modelTask_vision": "비전",
     "modelTask_nlp": "NLP",
     "modelTask_rl": "강화학습",
-    "modelTask_other": "기타"
+    "modelTask_other": "기타",
+    "typeFacet": {
+      "awesome": "리소스 모음",
+      "interview": "면접 준비",
+      "tutorial": "튜토리얼",
+      "skill": "스킬",
+      "cli": "CLI 도구",
+      "app": "앱",
+      "library": "라이브러리",
+      "software": "소프트웨어"
+    }
   },
   "privacy": {
     "title": "Privacy Policy",

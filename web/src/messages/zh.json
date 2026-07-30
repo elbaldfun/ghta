@@ -187,7 +187,17 @@
     "modelTask_vision": "视觉理解",
     "modelTask_nlp": "传统 NLP",
     "modelTask_rl": "强化学习",
-    "modelTask_other": "其他"
+    "modelTask_other": "其他",
+    "typeFacet": {
+      "awesome": "资源清单",
+      "interview": "面试准备",
+      "tutorial": "教程",
+      "skill": "能力包",
+      "cli": "命令行工具",
+      "app": "应用",
+      "library": "库/框架",
+      "software": "软件项目"
+    }
   },
   "privacy": {
     "title": "隐私政策",
