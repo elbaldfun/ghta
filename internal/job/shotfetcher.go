@@ -75,15 +75,14 @@ func (f *ShotFetcher) Run(ctx context.Context) {
 			f.log.Warn("shotfetcher: cancelled", "done", done)
 			return
 		}
-		url := f.find(ctx, it)
+		url, source := f.find(ctx, it)
 		set := bson.M{"shotStatus": "done"}
 		if url != "" {
 			set["screenshotUrl"] = url
+			set["shotSource"] = source // "readme" (wall-eligible) | "og" (detail fallback only)
 			found++
-			if it.SourceData != nil {
-				if hp, _ := it.SourceData["homepageUrl"].(string); hp != "" && !isRawGithub(url) {
-					viaOG++
-				}
+			if source == "og" {
+				viaOG++
 			}
 		}
 		if _, err := f.store.Items().UpdateByID(ctx, it.ID, bson.M{"$set": set}); err != nil {
@@ -103,27 +102,25 @@ func (f *ShotFetcher) Run(ctx context.Context) {
 }
 
 // find tries README candidates in order (dimension-verified), then og:image.
-func (f *ShotFetcher) find(ctx context.Context, it domain.TrackedItem) string {
+// The source rides along: README images are wall-eligible; og images (often
+// marketing cards) are detail-page fallback only.
+func (f *ShotFetcher) find(ctx context.Context, it domain.TrackedItem) (string, string) {
 	sd := it.SourceData
 	if sd == nil {
-		return ""
+		return "", ""
 	}
 	readme, _ := sd["readme"].(string)
 	for _, cand := range shot.Candidates(readme, it.ExternalID) {
 		if shot.Verify(ctx, f.hc, cand) {
-			return cand
+			return cand, "readme"
 		}
 	}
 	if hp, _ := sd["homepageUrl"].(string); hp != "" {
 		if og := shot.OGImage(ctx, f.hc, hp); og != "" && shot.Verify(ctx, f.hc, og) {
-			return og
+			return og, "og"
 		}
 	}
-	return ""
-}
-
-func isRawGithub(u string) bool {
-	return len(u) > 34 && u[:34] == "https://raw.githubusercontent.com/"
+	return "", ""
 }
 
 func pct(n, of int) int {

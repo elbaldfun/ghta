@@ -38,6 +38,10 @@ var noiseWords = []string{
 	"badge", "logo", "icon", "sponsor", "banner", "shield", "button",
 	"download-on", "app-store", "google-play", "playstore", "f-droid",
 	"contributors", "stargazers", "forkers", "trend",
+	// Round-1 audit failures: benchmark charts, social/OG marketing cards,
+	// sponsor walls, architecture diagrams — images, not screenshots.
+	"graph", "chart", "benchmark", "social", "opengraph", "og-image",
+	"companies", "sponsors", "backers", "diagram", "architecture",
 }
 
 var mdImg = regexp.MustCompile(`!\[[^\]]*\]\(([^)\s]+)`)
@@ -186,10 +190,14 @@ func OGImage(ctx context.Context, hc *http.Client, homepage string) string {
 	}
 	head, _ := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
 	if m := ogImg.FindSubmatch(head); m != nil {
-		return absolutize(string(m[1]), base.Scheme, base.Host)
+		if u := absolutize(string(m[1]), base.Scheme, base.Host); urlLooksLikeShot(u) {
+			return u
+		}
 	}
 	if m := ogImgRev.FindSubmatch(head); m != nil {
-		return absolutize(string(m[1]), base.Scheme, base.Host)
+		if u := absolutize(string(m[1]), base.Scheme, base.Host); urlLooksLikeShot(u) {
+			return u
+		}
 	}
 	return ""
 }

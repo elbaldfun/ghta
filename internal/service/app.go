@@ -42,6 +42,7 @@ type AppItem struct {
 	Language        string               `json:"language,omitempty"`
 	IconURL         string               `json:"iconUrl,omitempty"`
 	ScreenshotURL   string               `json:"screenshotUrl,omitempty"`
+	ScreenshotSrc   string               `json:"screenshotSrc,omitempty"` // readme | og
 	Homepage        string               `json:"homepage,omitempty"`
 	License         string               `json:"license,omitempty"`
 	Stars           int                  `json:"stars"`
@@ -260,6 +261,7 @@ func appProjection() bson.M {
 		"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
 		"iconUrl":         1,
 		"screenshotUrl":   1,
+		"shotSource":      1,
 		"homepage":        "$sourceData.homepageUrl",
 		"license":         "$sourceData.license",
 		"alternativeTo":   1,
@@ -330,6 +332,7 @@ func appItemsFromRows(raw []appRow) []AppItem {
 			Language:        r.Language,
 			IconURL:         r.IconURL,
 			ScreenshotURL:   cnFriendlyShot(r.ScreenshotURL),
+			ScreenshotSrc:   r.ShotSource,
 			Homepage:        r.Homepage,
 			License:         r.License,
 			Stars:           int(r.Stars),
@@ -360,6 +363,7 @@ type appRow struct {
 	Language        string               `bson:"language"`
 	IconURL         string               `bson:"iconUrl"`
 	ScreenshotURL   string               `bson:"screenshotUrl"`
+	ShotSource      string               `bson:"shotSource"`
 	Homepage        string               `bson:"homepage"`
 	License         string               `bson:"license"`
 	Stars           float64              `bson:"stars"`
