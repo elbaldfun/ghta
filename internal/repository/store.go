@@ -133,6 +133,14 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		// hot CountDocuments (was a COLLSCAN under $ne) index-only, and the
 		// stars suffix serves the default sort + Ranks' stars-range counts.
 		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "metrics.stars", Value: -1}}},
+		// Count-covering indexes for the filtered boards: when the user narrows
+		// by type / language / category, CountDocuments needs every filter field
+		// in the index or it re-reads documents to tally. These make the total
+		// index-only (Find still rides the stars index + a cheap residual to
+		// fill one page).
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "type", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "language", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "categoryPath", Value: 1}}},
 		{Keys: bson.D{{Key: "metrics.forks", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}}},
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},
