@@ -41,6 +41,7 @@ func searchItem(externalID, name, desc string, topics []string, stars float64) a
 		"language":    "JavaScript",
 		"metrics":     bson.M{"stars": stars, "forks": stars / 5},
 		"sourceData":  bson.M{"topicNames": topics},
+		"stale":       false, // live docs carry explicit stale:false in prod
 	}
 }
 
@@ -161,9 +162,7 @@ func TestRanks(t *testing.T) {
 		doc := bson.M{
 			"source": domain.SourceGitHub, "externalId": id, "name": id,
 			"language": lang, "metrics": bson.M{"stars": stars}, "categoryPath": paths,
-		}
-		if stale {
-			doc["stale"] = true
+			"stale": stale,
 		}
 		if _, err := store.Items().InsertOne(ctx, doc); err != nil {
 			t.Fatalf("insert %s: %v", id, err)
