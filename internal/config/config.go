@@ -41,6 +41,7 @@ type Config struct {
 	DevSyncCron     string
 	AltFindCron     string
 	StoreCron       string
+	ShotCron        string
 	IconCron        string
 	ReconcileCron   string
 	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this

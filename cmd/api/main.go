@@ -98,6 +98,7 @@ func main() {
 	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
 	altFinder := job.NewAltFinder(store, aiProvider, logger)
 	storeFinder := job.NewStoreFinder(store, aiProvider, logger)
+	shotFetcher := job.NewShotFetcher(store, logger)
 	iconFetcher := job.NewIconFetcher(store, logger)
 	reconciler := job.NewReconciler(store, ghAdapter, cfg.RateLimitBuffer, logger)
 
@@ -128,6 +129,10 @@ func main() {
 		slog.Error("invalid ALTFIND_CRON", "err", err)
 		os.Exit(1)
 	}
+	if _, err := scheduler.AddFunc(cfg.ShotCron, func() { shotFetcher.Run(rootCtx) }); err != nil {
+		slog.Error("invalid SHOT_CRON", "err", err)
+		os.Exit(1)
+	}
 	if _, err := scheduler.AddFunc(cfg.IconCron, func() { iconFetcher.Run(rootCtx) }); err != nil {
 		slog.Error("invalid ICON_CRON", "err", err)
 		os.Exit(1)
@@ -147,7 +152,7 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, altFinder, storeFinder, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, altFinder, storeFinder, shotFetcher, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -184,7 +189,7 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, storeFinder *job.StoreFinder, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, storeFinder *job.StoreFinder, shotFetcher *job.ShotFetcher, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -293,6 +298,14 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 		}
 		go storeFinder.RunN(jobCtx, limit)
 		c.JSON(http.StatusAccepted, gin.H{"status": "store pass started", "limit": limit})
+	})
+
+	// Internal: screenshot extraction pass (README first-image + og:image),
+	// most-popular-first, resumable. Background; watch logs for the coverage
+	// number that gates the UI decision.
+	admin.POST("/internal/shot-fetch", func(c *gin.Context) {
+		go shotFetcher.Run(jobCtx)
+		c.JSON(http.StatusAccepted, gin.H{"status": "shot-fetch started"})
 	})
 
 	// Internal: manual shelf correction — the override always wins over the LLM

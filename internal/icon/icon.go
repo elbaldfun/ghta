@@ -22,7 +22,7 @@ const maxHTMLBytes = 512 * 1024
 // loads — the frontend falls back to the owner avatar on error — so this stays a
 // single request.
 func Extract(ctx context.Context, hc *http.Client, homepage string) string {
-	base, ok := safeURL(homepage)
+	base, ok := SafeURL(homepage)
 	if !ok {
 		return ""
 	}
@@ -116,7 +116,9 @@ func scoreIcon(rel, sizes string) int {
 // safeURL parses homepage and rejects anything that isn't a plain public
 // http(s) URL — a basic SSRF guard so a repo's homepage field can't point the
 // fetcher at cloud metadata (169.254.169.254) or internal hosts.
-func safeURL(homepage string) (*url.URL, bool) {
+// SafeURL is exported for sibling fetchers (screenshots) that hit user-supplied
+// homepages and need the same SSRF guard.
+func SafeURL(homepage string) (*url.URL, bool) {
 	homepage = strings.TrimSpace(homepage)
 	if homepage == "" {
 		return nil, false

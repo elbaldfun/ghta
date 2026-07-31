@@ -41,6 +41,7 @@ type AppItem struct {
 	Description     string               `json:"description,omitempty"`
 	Language        string               `json:"language,omitempty"`
 	IconURL         string               `json:"iconUrl,omitempty"`
+	ScreenshotURL   string               `json:"screenshotUrl,omitempty"`
 	Homepage        string               `json:"homepage,omitempty"`
 	License         string               `json:"license,omitempty"`
 	Stars           int                  `json:"stars"`
@@ -223,6 +224,24 @@ func appMatch(os, kind, category, shelf string) bson.M {
 	return m
 }
 
+// cnFriendlyShot rewrites raw.githubusercontent.com screenshot URLs to the
+// jsdelivr mirror at serve time (review H3: raw.githubusercontent is blocked in
+// mainland China, and zh users are a first-class audience). The original URL
+// stays in the DB; only the API response is rewritten.
+func cnFriendlyShot(u string) string {
+	const rawPrefix = "https://raw.githubusercontent.com/"
+	if !strings.HasPrefix(u, rawPrefix) {
+		return u
+	}
+	// raw…/<owner>/<repo>/HEAD/<path> -> cdn.jsdelivr.net/gh/<owner>/<repo>@HEAD/<path>
+	rest := strings.TrimPrefix(u, rawPrefix)
+	parts := strings.SplitN(rest, "/", 4)
+	if len(parts) != 4 {
+		return u
+	}
+	return "https://cdn.jsdelivr.net/gh/" + parts[0] + "/" + parts[1] + "@" + parts[2] + "/" + parts[3]
+}
+
 // appProjection is the shared $project stage that shapes an AppItem, reused by
 // the directory board and the /alternatives reverse lookup.
 func appProjection() bson.M {
@@ -240,6 +259,7 @@ func appProjection() bson.M {
 		"categoryPath":    1,
 		"latestReleaseAt": "$sourceData.latestRelease.publishedAt",
 		"iconUrl":         1,
+		"screenshotUrl":   1,
 		"homepage":        "$sourceData.homepageUrl",
 		"license":         "$sourceData.license",
 		"alternativeTo":   1,
@@ -309,6 +329,7 @@ func appItemsFromRows(raw []appRow) []AppItem {
 			Description:     r.Description,
 			Language:        r.Language,
 			IconURL:         r.IconURL,
+			ScreenshotURL:   cnFriendlyShot(r.ScreenshotURL),
 			Homepage:        r.Homepage,
 			License:         r.License,
 			Stars:           int(r.Stars),
@@ -338,6 +359,7 @@ type appRow struct {
 	Description     string               `bson:"description"`
 	Language        string               `bson:"language"`
 	IconURL         string               `bson:"iconUrl"`
+	ScreenshotURL   string               `bson:"screenshotUrl"`
 	Homepage        string               `bson:"homepage"`
 	License         string               `bson:"license"`
 	Stars           float64              `bson:"stars"`

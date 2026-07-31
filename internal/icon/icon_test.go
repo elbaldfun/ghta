@@ -44,8 +44,8 @@ func TestBestIconHref(t *testing.T) {
 func TestSafeURL(t *testing.T) {
 	ok := []string{"https://obsidian.md", "http://example.com/app", "logseq.com"}
 	for _, u := range ok {
-		if _, valid := safeURL(u); !valid {
-			t.Errorf("safeURL(%q) = invalid, want valid", u)
+		if _, valid := SafeURL(u); !valid {
+			t.Errorf("SafeURL(%q) = invalid, want valid", u)
 		}
 	}
 	// SSRF / junk must be rejected.
@@ -55,8 +55,8 @@ func TestSafeURL(t *testing.T) {
 		"http://example.com:8080", "javascript:alert(1)",
 	}
 	for _, u := range bad {
-		if _, valid := safeURL(u); valid {
-			t.Errorf("safeURL(%q) = valid, want rejected", u)
+		if _, valid := SafeURL(u); valid {
+			t.Errorf("SafeURL(%q) = valid, want rejected", u)
 		}
 	}
 }
