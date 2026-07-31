@@ -5,6 +5,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -60,7 +61,28 @@ func (s *Store) EnsureSchema(ctx context.Context) error {
 	if err := s.ensureSnapshotCollection(ctx); err != nil {
 		return err
 	}
-	return s.ensureIndexes(ctx)
+	if err := s.ensureIndexes(ctx); err != nil {
+		return err
+	}
+	return s.backfillStale(ctx)
+}
+
+// backfillStale gives every pre-reconciler document an explicit stale:false so
+// the leaderboard filters can match on equality (index-friendly) instead of
+// $ne (which forced a full collection scan). Idempotent: matches nothing on
+// later startups. Never touches docs already tombstoned (stale:true) — the
+// $exists:false filter only hits documents with no stale field yet.
+func (s *Store) backfillStale(ctx context.Context) error {
+	res, err := s.Items().UpdateMany(ctx,
+		bson.M{"stale": bson.M{"$exists": false}},
+		bson.M{"$set": bson.M{"stale": false}})
+	if err != nil {
+		return fmt.Errorf("backfill stale: %w", err)
+	}
+	if res.ModifiedCount > 0 {
+		slog.Info("backfilled stale:false", "docs", res.ModifiedCount)
+	}
+	return nil
 }
 
 func (s *Store) ensureSnapshotCollection(ctx context.Context) error {
@@ -107,6 +129,18 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "weeklyIncrease", Value: -1}}},
 		{Keys: bson.D{{Key: "monthlyIncrease", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.stars", Value: -1}}},
+		// Live-leaderboard workhorse: source+stale equality prefix serves the
+		// hot CountDocuments (was a COLLSCAN under $ne) index-only, and the
+		// stars suffix serves the default sort + Ranks' stars-range counts.
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "metrics.stars", Value: -1}}},
+		// Count-covering indexes for the filtered boards: when the user narrows
+		// by type / language / category, CountDocuments needs every filter field
+		// in the index or it re-reads documents to tally. These make the total
+		// index-only (Find still rides the stars index + a cheap residual to
+		// fill one page).
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "type", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "language", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "categoryPath", Value: 1}}},
 		{Keys: bson.D{{Key: "metrics.forks", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}}},
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},

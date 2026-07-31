@@ -56,6 +56,7 @@ func insertAged(t *testing.T, store *repository.Store, externalID string, stars 
 		"name":       externalID,
 		"metrics":    bson.M{"stars": stars},
 		"fetchedAt":  fetched,
+		"stale":      false,
 	})
 	if err != nil {
 		t.Fatalf("insert %s: %v", externalID, err)

@@ -42,6 +42,7 @@ func (s *Store) UpsertItems(ctx context.Context, items []domain.TrackedItem) (in
 			"categoryPath":      []string{},
 			"analysisStatus":    domain.AnalysisPending,
 			"analysisFailCount": 0,
+			"stale":             false, // live by default; the reconciler flips it to true
 			"createdAt":         now,
 		}
 		// Sources that classify at fetch time (HF: categoryPath = "hf/<task>"
@@ -139,7 +140,7 @@ func snapKey(s domain.Source, id string) string { return string(s) + "\x00" + id
 // silently freezes; this surfaces those records for verification.
 func (s *Store) StaleCandidates(ctx context.Context, source domain.Source, cutoff time.Time, limit int) ([]domain.TrackedItem, error) {
 	cur, err := s.Items().Find(ctx,
-		bson.M{"source": source, "fetchedAt": bson.M{"$lt": cutoff}, "stale": bson.M{"$ne": true}},
+		bson.M{"source": source, "fetchedAt": bson.M{"$lt": cutoff}, "stale": false},
 		options.Find().
 			SetSort(bson.D{{Key: "fetchedAt", Value: 1}}).
 			SetLimit(int64(limit)).

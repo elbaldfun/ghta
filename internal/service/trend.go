@@ -103,13 +103,17 @@ const maxLimit = 50
 
 // liveFilter excludes reconciler-tombstoned records (deleted upstream or
 // rename ghosts) from a query filter. Every user-facing ranking applies it.
+// Equality on stale (not $ne): $ne can't use an index, so it forced a full
+// COLLSCAN that read every document's blobs and pushed CountDocuments to
+// 14–30s (1-vCPU CPU pegged at 100%). Every live doc carries stale:false
+// (backfilled + set on insert), so equality is index-friendly.
 func liveFilter(m bson.M) bson.M {
-	m["stale"] = bson.M{"$ne": true}
+	m["stale"] = false
 	return m
 }
 
 // liveMatch is liveFilter as a ready-made aggregation stage.
-var liveMatch = bson.D{{Key: "$match", Value: bson.M{"stale": bson.M{"$ne": true}}}}
+var liveMatch = bson.D{{Key: "$match", Value: bson.M{"stale": false}}}
 
 // sortFields whitelists user-facing sort fields and maps them to stored paths.
 // "stars" is the documented alias for the GitHub primary metric.
