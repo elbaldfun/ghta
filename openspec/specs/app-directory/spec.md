@@ -61,3 +61,44 @@
 
 - **WHEN** 客户端请求 `/alternatives/cursor`
 - **THEN** 返回 alternativeTo.slug 含 cursor 的应用及显示名 "Cursor"
+
+### Requirement: 商店语义层(change 15)
+
+系统 SHALL 由 LLM 批推断为每个 app 候选产出:货架分类(53 受控 slug 或 excluded)、中/英用途一句话、hasGui 判定,存顶层 `store` 子文档(版本门控可重判;人工 categoryOverride 永远优先)。excluded SHALL 以单一 `$ne` 子句从 app 语料剔除(标记不删除)。推断 SHALL 有毒批守卫(item 级失败计数、阈值停牌)且整批调用失败视为重试而非判决。
+
+#### Scenario: 语料清洗
+
+- **WHEN** awesome 清单/框架经 topic 兜底混入 app 候选
+- **THEN** 判为 excluded,不再出现于 /apps 及其派生页
+
+#### Scenario: 人工纠错
+
+- **WHEN** 管理端设置 store.categoryOverride
+- **THEN** 货架筛选与展示以 override 为准,后续 LLM 重判不覆盖它
+
+### Requirement: 货架浏览与中文搜索
+
+`GET /apps` SHALL 支持 `shelf=`(完整 slug 或大类前缀,白名单)按生效货架筛选;卡片 SHALL 以用途 tagline(zh 语言用中文)为主描述。CJK 搜索查询 SHALL 子串匹配 store.taglineZh+名称+描述(Mongo $text 无 CJK 分词),按星标排序。
+
+#### Scenario: 中文功能词搜索
+
+- **WHEN** 用户搜索「下载」
+- **THEN** 结果含 yt-dlp 等 taglineZh 命中的下载工具
+
+### Requirement: 质量分合集(试水)
+
+系统 SHALL 提供 `GET /apps/best/{shelf}`(白名单试水货架):按可解释质量分(ln 星标 + 2·ln 日增 + 90 天内发行加成 + 有安装包加成)排序,top-12 封顶。合集页 SHALL 含手写导语与方法论说明;扩展受 90 天 GSC 数据门控。
+
+#### Scenario: 质量分非纯星标
+
+- **WHEN** 一个低星但高增速、近期发行、有安装包的应用与高星但停滞的应用同货架
+- **THEN** 质量分可使前者排位高于纯星标排序
+
+### Requirement: 截图管线(展示层关闭)
+
+系统 SHALL 持续提取应用截图(README 首图启发式 + 尺寸校验 + og:image 兜底,标注来源),API 输出经 CN 可达镜像改写。**展示层当前关闭**(审计精确率 80% 未达上墙线且展示形态未获认可);数据留存待展示方案定稿。
+
+#### Scenario: 来源门控
+
+- **WHEN** 截图来源为 og(营销卡概率高)
+- **THEN** 该图不具备卡片墙资格,仅可用于未来的详情页兜底

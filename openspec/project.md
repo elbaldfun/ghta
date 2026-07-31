@@ -52,6 +52,8 @@ Apple App Store 应用、Chrome Web Store 扩展、Microsoft Store 软件——�
 | 11 | Web 前端 + 专业 UI（源维度感知） | frontend | ❌ 未实现（新建） |
 | 12 | 用户管理 | backend | ⚠️ 模板，随 auth 收敛 |
 | 13 | 开源应用目录（按系统筛选下载 + 开源替代落地页） | backend+frontend | ✅ 已上线（change 13，见 specs/app-directory） |
+| 14 | HuggingFace 模型排行（第二数据源） | backend+frontend | ✅ 已上线（change 14，见 specs/hf-model-ranking） |
+| 15 | 应用商店化：货架/双语介绍/语料清洗/合集试水 | backend+frontend | ✅ 已上线（change 15′,见 specs/app-directory 商店语义层） |
 
 ## 目标技术架构
 

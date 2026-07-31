@@ -1,5 +1,7 @@
 # Change: HuggingFace 模型源(AI 模型排行)
 
+> **状态:已交付并上线,归档于 2026-07-31。** 能力规范见 `openspec/specs/hf-model-ranking/spec.md`;完成清单见本目录 `tasks.md`。
+
 ## Why
 
 站点定位"聚焦 AI",但目前只覆盖 GitHub(代码/工具)。AI 生态的另一半主体是**模型**——它们活在 HuggingFace 上。给 HF 模型做「谁在涨、按任务筛、速度优先」的排行,把情报面从"AI 工具"扩到"AI 模型",是主线上的自然扩张,也是 project.md 多源架构(TrackedItem + Source 适配器)设计之初就预期的第二个源。
