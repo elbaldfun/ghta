@@ -15,6 +15,30 @@ export const dynamic = 'force-dynamic';
 const PER_PAGE = 30;
 const BOARD_CAP = 300;
 const OSES: OS[] = ['macos', 'windows', 'linux', 'android', 'ios', 'web'];
+const SHELF_MAJORS = [
+  'productivity', 'creative', 'devtools', 'ai', 'selfhosted', 'network',
+  'media', 'social', 'system', 'security', 'games',
+] as const;
+const SHELF_SUBS: Record<string, string[]> = {
+  productivity: ['notes', 'todo', 'docs', 'knowledge'],
+  creative: ['image', 'video', 'audio', 'whiteboard', 'cad', 'writing'],
+  devtools: ['editor', 'terminal', 'api', 'database', 'git', 'pkg', 'devops', 'gamedev'],
+  ai: ['assistant', 'coding', 'image-gen', 'media-gen', 'local-llm', 'platform'],
+  selfhosted: ['cloud', 'photos', 'media-server', 'monitoring', 'tunnel', 'automation'],
+  network: ['browser', 'download', 'proxy', 'remote'],
+  media: ['player', 'music', 'reader'],
+  social: ['chat', 'mail', 'social-tools'],
+  system: ['screenshot', 'launcher', 'files', 'transfer', 'phone', 'backup'],
+  security: ['passwords', 'privacy', 'adblock', 'pentest'],
+  games: ['games', 'emulator', 'smart-home'],
+};
+function validShelf(s: string): boolean {
+  if (!s) return true;
+  const [major, sub] = s.split('/');
+  const subs = SHELF_SUBS[major];
+  if (!subs) return false;
+  return sub === undefined || subs.includes(sub);
+}
 const OS_LABEL: Record<OS, string> = {
   macos: 'macOS',
   windows: 'Windows',
@@ -39,13 +63,15 @@ export default async function AppsPage({
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { os?: string; kind?: string; category?: string; sort?: string; page?: string };
+  searchParams: { os?: string; kind?: string; category?: string; shelf?: string; sort?: string; page?: string };
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('rank');
 
   const os = (OSES as string[]).includes(searchParams.os ?? '') ? (searchParams.os as OS) : '';
   const kind = searchParams.kind === 'app' || searchParams.kind === 'cli' ? searchParams.kind : '';
+  const shelf = validShelf(searchParams.shelf ?? '') ? (searchParams.shelf ?? '') : '';
+  const shelfMajor = shelf.split('/')[0] ?? '';
   const sort: AppSort =
     searchParams.sort === 'popular' || searchParams.sort === 'new' ? searchParams.sort : 'hot';
   const page = Math.max(1, Number(searchParams.page) || 1);
@@ -57,13 +83,14 @@ export default async function AppsPage({
   const category = domains.some((d) => d.path === searchParams.category) ? (searchParams.category as string) : '';
   const activeDomain = domains.find((d) => d.path === category);
 
-  const { items, total } = await getApps({ os, kind, category, sort, limit: PER_PAGE, page });
+  const { items, total } = await getApps({ os, kind, category, shelf, sort, limit: PER_PAGE, page });
 
   const qp = (over: Record<string, string>) => {
     const base: Record<string, string> = {};
     if (os) base.os = os;
     if (kind) base.kind = kind;
     if (category) base.category = category;
+    if (shelf) base.shelf = shelf;
     base.sort = sort;
     return new URLSearchParams({ ...base, ...over }).toString();
   };
@@ -104,6 +131,47 @@ export default async function AppsPage({
         {osTab('', t('appsAll'))}
         {OSES.map((o) => osTab(o, OS_LABEL[o]))}
       </div>
+
+      {/* shelf shelves: 11 major groups; picking one reveals its sub-shelves */}
+      <div className="scrollbar-hide -ml-[12px] mb-1 flex items-center gap-1 overflow-x-auto">
+        <Link
+          href={`/apps?${(() => { const p = new URLSearchParams(); if (os) p.set('os', os); if (kind) p.set('kind', kind); p.set('sort', sort); p.set('page', '1'); return p.toString(); })()}`}
+          className={`whitespace-nowrap rounded-lg border px-[11px] py-[5px] text-[12px] font-bold ${
+            shelf === '' ? 'border-accent bg-accent/10 text-accent' : 'border-transparent text-muted hover:text-fg'
+          }`}
+        >
+          {t('appsAllShelves')}
+        </Link>
+        {SHELF_MAJORS.map((m) => (
+          <Link
+            key={m}
+            href={`/apps?${qp({ shelf: m, page: '1' })}`}
+            className={`whitespace-nowrap rounded-lg border px-[11px] py-[5px] text-[12px] font-bold ${
+              shelfMajor === m ? 'border-accent bg-accent/10 text-accent' : 'border-transparent text-muted hover:text-fg'
+            }`}
+          >
+            {t(`shelfM_${m}` as never) as string}
+          </Link>
+        ))}
+      </div>
+      {shelfMajor && SHELF_SUBS[shelfMajor] && (
+        <div className="scrollbar-hide mb-2 flex items-center gap-1 overflow-x-auto pl-1">
+          {SHELF_SUBS[shelfMajor].map((sub) => {
+            const full = `${shelfMajor}/${sub}`;
+            return (
+              <Link
+                key={full}
+                href={`/apps?${qp({ shelf: shelf === full ? shelfMajor : full, page: '1' })}`}
+                className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11.5px] font-semibold ${
+                  shelf === full ? 'text-accent' : 'text-muted hover:text-fg'
+                }`}
+              >
+                {t(`shelf_${full.replace(/[/-]/g, '_')}` as never) as string}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {/* kind + domain + sort */}
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
@@ -147,7 +215,7 @@ export default async function AppsPage({
       )}
 
       {items.length > 0 && (
-        <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, category, sort }} />
+        <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, category, shelf, sort }} />
       )}
     </PageShell>
   );

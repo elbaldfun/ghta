@@ -1,7 +1,34 @@
 {
-  "site": {
-    "name": "GHTA",
-    "tagline": "多源开发者与软件趋势"
+  "privacy": {
+    "title": "隐私政策",
+    "updated": "最后更新：2026 年 7 月 21 日",
+    "intro": "StarRank Explorer（starrank.dev，以下简称「本站」）尊重你的隐私。本政策说明我们收集哪些信息、如何使用，以及你可以做出的选择。",
+    "sections": {
+      "collect": {
+        "h": "我们收集的信息",
+        "p": "本站不要求注册，也不收集你的姓名、邮箱等可直接识别身份的信息。\n我们仅收集匿名的使用数据：访问的页面、来源渠道、大致地理区域（国家/地区级别）、设备与浏览器类型。这些数据用于统计访问量和改进产品，无法用于识别具体个人。"
+      },
+      "cookies": {
+        "h": "Cookie",
+        "p": "在你点击「接受」之前，本站不会写入任何统计或广告类 Cookie。\n你的选择会保存在浏览器本地存储中，以便下次访问时不再重复询问。若你选择「拒绝」，分析工具将以不写入 Cookie 的方式运行或完全不加载。"
+      },
+      "thirdParty": {
+        "h": "第三方服务",
+        "p": "本站使用以下第三方服务：\n· Google Analytics（Google LLC）——网站访问统计\n· Vercel Analytics（Vercel Inc.）——不使用 Cookie 的访问统计\n· Vercel——网站托管，会记录标准的服务器访问日志\n这些服务各自的隐私政策适用于其所收集的数据。"
+      },
+      "ads": {
+        "h": "广告",
+        "p": "本站目前不展示广告。\n未来若接入 Google AdSense，第三方广告商可能使用 Cookie 基于你对本站及其他网站的访问投放广告。届时本页面将同步更新，你也可以通过 Google 的广告设置页面关闭个性化广告。"
+      },
+      "choices": {
+        "h": "你的选择",
+        "p": "· 通过页面底部的 Cookie 横幅接受或拒绝统计 Cookie\n· 清除浏览器的本地存储可重置你的选择，横幅会再次出现\n· 通过浏览器设置阻止或删除 Cookie\n· 使用浏览器的「请勿追踪」或隐私模式"
+      },
+      "contact": {
+        "h": "联系我们",
+        "p": "对本政策有疑问，或希望了解与你相关的数据处理情况，可通过本站 GitHub 仓库提交 issue 联系我们。"
+      }
+    }
   },
   "rank": {
     "homeTitle": "GitHub 高星仓库排行榜",
@@ -47,7 +74,6 @@
     "growth": "Star 增长趋势",
     "keyMetrics": "关键指标",
     "artifacts": "制品库",
-    "copyCommand": "复制命令",
     "artifactTip": "已发布可直接安装的构建制品",
     "readmeExpand": "展开全部",
     "readmeCollapse": "收起",
@@ -188,6 +214,80 @@
     "modelTask_nlp": "传统 NLP",
     "modelTask_rl": "强化学习",
     "modelTask_other": "其他",
+    "shelfM_productivity": "效率办公",
+    "shelfM_creative": "创作设计",
+    "shelfM_devtools": "开发工具",
+    "shelfM_ai": "AI 应用",
+    "shelfM_selfhosted": "自托管",
+    "shelfM_network": "网络",
+    "shelfM_media": "影音",
+    "shelfM_social": "通讯社交",
+    "shelfM_system": "系统工具",
+    "shelfM_security": "安全",
+    "shelfM_games": "游戏娱乐",
+    "shelf_productivity_notes": "笔记",
+    "shelf_productivity_todo": "待办日历",
+    "shelf_productivity_docs": "文档/PDF",
+    "shelf_productivity_knowledge": "知识管理",
+    "shelf_creative_image": "图像编辑",
+    "shelf_creative_video": "视频剪辑",
+    "shelf_creative_audio": "音频",
+    "shelf_creative_whiteboard": "绘图白板",
+    "shelf_creative_cad": "CAD/3D",
+    "shelf_creative_writing": "写作",
+    "shelf_devtools_editor": "编辑器/IDE",
+    "shelf_devtools_terminal": "终端",
+    "shelf_devtools_api": "API 工具",
+    "shelf_devtools_database": "数据库客户端",
+    "shelf_devtools_git": "Git 工具",
+    "shelf_devtools_pkg": "包管理构建",
+    "shelf_devtools_devops": "容器/DevOps",
+    "shelf_devtools_gamedev": "游戏引擎",
+    "shelf_ai_assistant": "AI 助手",
+    "shelf_ai_coding": "AI 编码",
+    "shelf_ai_image_gen": "AI 绘图",
+    "shelf_ai_media_gen": "AI 音视频",
+    "shelf_ai_local_llm": "本地推理",
+    "shelf_ai_platform": "AI 平台/RAG",
+    "shelf_selfhosted_cloud": "个人云/同步",
+    "shelf_selfhosted_photos": "照片/媒体库",
+    "shelf_selfhosted_media_server": "媒体服务器",
+    "shelf_selfhosted_monitoring": "监控面板",
+    "shelf_selfhosted_tunnel": "内网穿透/反代",
+    "shelf_selfhosted_automation": "自动化工作流",
+    "shelf_network_browser": "浏览器",
+    "shelf_network_download": "下载工具",
+    "shelf_network_proxy": "代理",
+    "shelf_network_remote": "远程桌面",
+    "shelf_media_player": "播放器",
+    "shelf_media_music": "音乐",
+    "shelf_media_reader": "阅读器",
+    "shelf_social_chat": "聊天",
+    "shelf_social_mail": "邮件",
+    "shelf_social_social_tools": "社交工具",
+    "shelf_system_screenshot": "截图录屏",
+    "shelf_system_launcher": "启动器/剪贴板",
+    "shelf_system_files": "文件管理",
+    "shelf_system_transfer": "文件传输",
+    "shelf_system_phone": "手机管理/投屏",
+    "shelf_system_backup": "备份恢复",
+    "shelf_security_passwords": "密码管理",
+    "shelf_security_privacy": "加密隐私",
+    "shelf_security_adblock": "广告拦截",
+    "shelf_security_pentest": "安全工具",
+    "shelf_games_games": "游戏",
+    "shelf_games_emulator": "模拟器",
+    "shelf_games_smart_home": "智能家居",
+    "appsAllShelves": "全部",
+    "bestTitle": "最佳开源{label}应用",
+    "bestMethodology": "排名 = 星标规模 + 近期增速 + 90 天内有新发行 + 有可下载安装包,每日自动更新;共 {count} 款。",
+    "bestSeeShelf": "查看全部{label}",
+    "bestIntro_productivity_notes": "开源笔记应用让你的知识真正属于自己:本地存储、随意迁移、没有订阅费。这份榜单由真实数据驱动——星标规模、近期增速与发行活跃度加权排序,每日自动更新,帮你在 Obsidian 替代、双链笔记、Markdown 编辑器之间做出选择。",
+    "bestIntro_network_download": "从视频抓取到多线程下载,开源下载工具往往比商业软件更强、更干净。榜单按星标规模、增长动量与维护活跃度加权,每日更新——yt-dlp 这类命令行利器与图形界面下载器同场竞技。",
+    "bestIntro_system_screenshot": "截图与录屏是最高频的效率动作,开源方案早已够好:标注、滚动截屏、GIF 录制一应俱全。榜单由星标、增速与发行活跃度加权,每日更新,覆盖 Snipaste 类标注工具到 OBS 类录制方案。",
+    "bestIntro_security_passwords": "密码管理器是最不该闭源的软件:你有权审计保管你所有秘密的代码。这份榜单按星标规模、增长与维护活跃度加权,每日更新——覆盖 Bitwarden 系自托管方案与本地优先的 KeePass 家族。",
+    "bestIntro_ai_local_llm": "本地跑大模型意味着隐私、零 API 账单与离线可用。榜单按星标、增速与发行活跃度加权,每日更新——从 Ollama 这类一键运行器到 GGUF 推理引擎,帮你把 AI 搬回自己的机器。",
+    "copyCommand": "复制命令",
     "typeFacet": {
       "awesome": "资源清单",
       "interview": "面试准备",
@@ -199,36 +299,9 @@
       "software": "软件项目"
     }
   },
-  "privacy": {
-    "title": "隐私政策",
-    "updated": "最后更新：2026 年 7 月 21 日",
-    "intro": "StarRank Explorer（starrank.dev，以下简称「本站」）尊重你的隐私。本政策说明我们收集哪些信息、如何使用，以及你可以做出的选择。",
-    "sections": {
-      "collect": {
-        "h": "我们收集的信息",
-        "p": "本站不要求注册，也不收集你的姓名、邮箱等可直接识别身份的信息。\n我们仅收集匿名的使用数据：访问的页面、来源渠道、大致地理区域（国家/地区级别）、设备与浏览器类型。这些数据用于统计访问量和改进产品，无法用于识别具体个人。"
-      },
-      "cookies": {
-        "h": "Cookie",
-        "p": "在你点击「接受」之前，本站不会写入任何统计或广告类 Cookie。\n你的选择会保存在浏览器本地存储中，以便下次访问时不再重复询问。若你选择「拒绝」，分析工具将以不写入 Cookie 的方式运行或完全不加载。"
-      },
-      "thirdParty": {
-        "h": "第三方服务",
-        "p": "本站使用以下第三方服务：\n· Google Analytics（Google LLC）——网站访问统计\n· Vercel Analytics（Vercel Inc.）——不使用 Cookie 的访问统计\n· Vercel——网站托管，会记录标准的服务器访问日志\n这些服务各自的隐私政策适用于其所收集的数据。"
-      },
-      "ads": {
-        "h": "广告",
-        "p": "本站目前不展示广告。\n未来若接入 Google AdSense，第三方广告商可能使用 Cookie 基于你对本站及其他网站的访问投放广告。届时本页面将同步更新，你也可以通过 Google 的广告设置页面关闭个性化广告。"
-      },
-      "choices": {
-        "h": "你的选择",
-        "p": "· 通过页面底部的 Cookie 横幅接受或拒绝统计 Cookie\n· 清除浏览器的本地存储可重置你的选择，横幅会再次出现\n· 通过浏览器设置阻止或删除 Cookie\n· 使用浏览器的「请勿追踪」或隐私模式"
-      },
-      "contact": {
-        "h": "联系我们",
-        "p": "对本政策有疑问，或希望了解与你相关的数据处理情况，可通过本站 GitHub 仓库提交 issue 联系我们。"
-      }
-    }
+  "site": {
+    "name": "GHTA",
+    "tagline": "多源开发者与软件趋势"
   },
   "blog": {
     "title": "数据洞察",
@@ -256,5 +329,12 @@
       "dormant": "1–2 年",
       "stale": "超过 2 年"
     }
+  },
+  "consent": {
+    "title": "Cookie 使用说明",
+    "message": "我们使用 Cookie 进行匿名的访问统计，以了解站点的使用情况。你可以随时拒绝，这不影响任何功能。",
+    "learnMore": "隐私政策",
+    "accept": "接受",
+    "reject": "拒绝"
   }
 }

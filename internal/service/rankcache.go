@@ -11,7 +11,7 @@ import (
 // maxRankCacheKeys bounds every board cache's key space. Some board keys embed
 // an unvalidated `domain`/`lang` query param, so without a cap a client could
 // enumerate distinct values and grow the map without limit (memory exhaustion).
-const maxRankCacheKeys = 256
+const maxRankCacheKeys = 1024
 
 // ttlCache is a small TTL cache shared by the board services. It exists to fix
 // two problems the hand-rolled caches had: (1) they held a single mutex across

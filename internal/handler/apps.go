@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,24 @@ func NewAppHandler(svc *service.AppService) *AppHandler {
 func (h *AppHandler) Register(r gin.IRoutes) {
 	r.GET("/apps", h.List)
 	r.GET("/alternatives", h.AltIndex)
+	r.GET("/apps/best/:major/:sub", h.BestOf)
 	r.GET("/alternatives/:slug", h.ByAlternative)
+}
+
+// BestOf handles GET /apps/best/:major/:sub — the quality-scored collection for
+// one shelf ("best open source note-taking apps").
+func (h *AppHandler) BestOf(c *gin.Context) {
+	shelf := c.Param("major") + "/" + c.Param("sub")
+	rows, err := h.svc.BestOf(c.Request.Context(), shelf)
+	if err != nil {
+		if errors.As(err, &service.InputError{}) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "unknown shelf"})
+			return
+		}
+		respondErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": rows, "shelf": shelf})
 }
 
 // AltIndex handles GET /alternatives — paid products with the most open-source
@@ -58,6 +76,7 @@ func (h *AppHandler) List(c *gin.Context) {
 	os := c.Query("os")
 	kind := c.Query("kind")
 	category := c.Query("category")
+	shelf := c.Query("shelf")
 	sort := c.DefaultQuery("sort", "hot")
 
 	limit := 30
@@ -79,10 +98,10 @@ func (h *AppHandler) List(c *gin.Context) {
 		page = n
 	}
 
-	rows, total, err := h.svc.Ranking(c.Request.Context(), os, kind, category, sort, limit, page)
+	rows, total, err := h.svc.Ranking(c.Request.Context(), os, kind, category, shelf, sort, limit, page)
 	if err != nil {
 		respondErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": rows, "total": total, "os": os, "kind": kind, "sort": sort, "page": page})
+	c.JSON(http.StatusOK, gin.H{"data": rows, "total": total, "os": os, "kind": kind, "shelf": shelf, "sort": sort, "page": page})
 }

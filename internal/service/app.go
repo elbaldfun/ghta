@@ -47,7 +47,11 @@ type AppItem struct {
 	Forks           int                  `json:"forks"`
 	Growth          int                  `json:"growth"`
 	Type            string               `json:"type,omitempty"`
-	Kind            string               `json:"kind"` // app | cli
+	Kind            string               `json:"kind"`            // app | cli
+	Shelf           string               `json:"shelf,omitempty"` // effective store shelf (override wins)
+	TaglineZh       string               `json:"taglineZh,omitempty"`
+	TaglineEn       string               `json:"taglineEn,omitempty"`
+	HasGui          *bool                `json:"hasGui,omitempty"`
 	Platforms       []string             `json:"platforms"`
 	PlatformSource  string               `json:"platformSource,omitempty"`
 	CategoryPath    []string             `json:"categoryPath,omitempty"`
@@ -119,9 +123,12 @@ func NewAppService(store *repository.Store) *AppService {
 // Ranking returns one page of the directory. os filters to a platform;
 // kind is app|cli|"" (all); category is a domain subtree; sort is
 // hot|popular|new. Values are normalized so the cache key space stays bounded.
-func (s *AppService) Ranking(ctx context.Context, os, kind, category, sort string, limit, page int) ([]AppItem, int, error) {
+func (s *AppService) Ranking(ctx context.Context, os, kind, category, shelf, sort string, limit, page int) ([]AppItem, int, error) {
 	if !validOS[os] {
 		os = ""
+	}
+	if !validShelfFilter(shelf) {
+		shelf = ""
 	}
 	if kind != "app" && kind != "cli" {
 		kind = ""
@@ -138,7 +145,7 @@ func (s *AppService) Ranking(ctx context.Context, os, kind, category, sort strin
 		page = 1
 	}
 
-	rows, err := s.board(ctx, os, kind, category, sort)
+	rows, err := s.board(ctx, os, kind, category, shelf, sort)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -154,16 +161,49 @@ func (s *AppService) Ranking(ctx context.Context, os, kind, category, sort strin
 	return rows[start:end], total, nil
 }
 
-func (s *AppService) board(ctx context.Context, os, kind, category, sort string) ([]AppItem, error) {
-	key := os + "|" + kind + "|" + category + "|" + sort
+func (s *AppService) board(ctx context.Context, os, kind, category, shelf, sort string) ([]AppItem, error) {
+	key := os + "|" + kind + "|" + category + "|" + shelf + "|" + sort
 	return s.cache.get(ctx, key, func(ctx context.Context) ([]AppItem, error) {
-		return s.compute(ctx, os, kind, category, sort)
+		return s.compute(ctx, os, kind, category, shelf, sort)
 	})
+}
+
+// validShelfFilter accepts a full shelf slug ("system/screenshot") or a bare
+// major group ("system") — both whitelisted so the cache key space stays bounded.
+func validShelfFilter(shelf string) bool {
+	if shelf == "" {
+		return true
+	}
+	if ValidShelfSlug(shelf) && shelf != StoreExcluded {
+		return true
+	}
+	for _, sl := range AppShelves {
+		if strings.HasPrefix(sl, shelf+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// shelfFilter matches the EFFECTIVE shelf (manual override wins over the LLM
+// verdict). A bare major group prefix-matches all its sub-shelves.
+func shelfFilter(m bson.M, shelf string) {
+	if shelf == "" {
+		return
+	}
+	var cond any = shelf
+	if !strings.Contains(shelf, "/") {
+		cond = bson.M{"$regex": "^" + regexp.QuoteMeta(shelf) + "/"}
+	}
+	m["$and"] = bson.A{bson.M{"$or": bson.A{
+		bson.M{"store.categoryOverride": cond},
+		bson.M{"store.categoryOverride": bson.M{"$exists": false}, "store.category": cond},
+	}}}
 }
 
 // appMatch builds the corpus filter: an item is in the directory when it's an
 // app/cli OR ships platform builds, never a library. os/kind/category narrow it.
-func appMatch(os, kind, category string) bson.M {
+func appMatch(os, kind, category, shelf string) bson.M {
 	// Shared corpus rule (single source of truth, review M3) — includes the
 	// store-judgement excluded cleanse; liveFilter drops reconciler tombstones.
 	m := liveFilter(repository.AppCorpusFilter())
@@ -179,6 +219,7 @@ func appMatch(os, kind, category string) bson.M {
 	if category != "" {
 		m["categoryPath"] = bson.M{"$regex": "^" + regexp.QuoteMeta(category) + "/"}
 	}
+	shelfFilter(m, shelf)
 	return m
 }
 
@@ -202,12 +243,13 @@ func appProjection() bson.M {
 		"homepage":        "$sourceData.homepageUrl",
 		"license":         "$sourceData.license",
 		"alternativeTo":   1,
+		"store":           1,
 		"releaseAssets":   bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}},
 		"assetCount":      bson.M{"$size": bson.M{"$ifNull": bson.A{"$sourceData.releaseAssets", bson.A{}}}},
 	}
 }
 
-func (s *AppService) compute(ctx context.Context, os, kind, category, sort string) ([]AppItem, error) {
+func (s *AppService) compute(ctx context.Context, os, kind, category, shelf, sort string) ([]AppItem, error) {
 	sortKey := "dailyIncrease"
 	switch sort {
 	case "popular":
@@ -217,7 +259,7 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 	}
 
 	pipeline := mongo.Pipeline{
-		bson.D{{Key: "$match", Value: appMatch(os, kind, category)}},
+		bson.D{{Key: "$match", Value: appMatch(os, kind, category, shelf)}},
 		bson.D{{Key: "$sort", Value: bson.D{{Key: sortKey, Value: -1}}}},
 		bson.D{{Key: "$limit", Value: appTopN}},
 		bson.D{{Key: "$project", Value: appProjection()}},
@@ -238,9 +280,28 @@ func (s *AppService) compute(ctx context.Context, os, kind, category, sort strin
 func appItemsFromRows(raw []appRow) []AppItem {
 	rows := make([]AppItem, 0, len(raw))
 	for _, r := range raw {
+		// Display layer prefers the LLM's hasGui verdict over the type facet
+		// (review M2: Windows Terminal is type=cli but very much a GUI app).
 		kind := "app"
 		if r.Type == "cli" {
 			kind = "cli"
+		}
+		var shelf, tagZh, tagEn string
+		var hasGui *bool
+		if r.Store != nil && r.Store.Status == "done" {
+			shelf = r.Store.Category
+			if r.Store.CategoryOverride != "" {
+				shelf = r.Store.CategoryOverride
+			}
+			tagZh, tagEn = r.Store.TaglineZh, r.Store.TaglineEn
+			hasGui = r.Store.HasGui
+			if hasGui != nil {
+				if *hasGui {
+					kind = "app"
+				} else {
+					kind = "cli"
+				}
+			}
 		}
 		rows = append(rows, AppItem{
 			ExternalID:      r.ExternalID,
@@ -255,6 +316,10 @@ func appItemsFromRows(raw []appRow) []AppItem {
 			Growth:          int(r.Growth),
 			Type:            r.Type,
 			Kind:            kind,
+			Shelf:           shelf,
+			TaglineZh:       tagZh,
+			TaglineEn:       tagEn,
+			HasGui:          hasGui,
 			Platforms:       r.Platforms,
 			PlatformSource:  r.PlatformSource,
 			CategoryPath:    r.CategoryPath,
@@ -284,6 +349,7 @@ type appRow struct {
 	CategoryPath    []string             `bson:"categoryPath"`
 	LatestReleaseAt *time.Time           `bson:"latestReleaseAt"`
 	AlternativeTo   []domain.Alternative `bson:"alternativeTo"`
+	Store           *domain.StoreInfo    `bson:"store"`
 	ReleaseAssets   []assetRow           `bson:"releaseAssets"`
 	AssetCount      int                  `bson:"assetCount"`
 }

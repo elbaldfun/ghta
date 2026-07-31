@@ -1,7 +1,34 @@
 {
-  "site": {
-    "name": "GHTA",
-    "tagline": "マルチソースの開発者・ソフトウェアトレンド"
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
   },
   "rank": {
     "homeTitle": "GitHub スターランキング",
@@ -47,7 +74,6 @@
     "growth": "スター成長",
     "keyMetrics": "主要指標",
     "artifacts": "成果物",
-    "copyCommand": "コマンドをコピー",
     "artifactTip": "インストール可能なビルド成果物を公開",
     "readmeExpand": "すべて表示",
     "readmeCollapse": "折りたたむ",
@@ -188,6 +214,80 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "強化学習",
     "modelTask_other": "その他",
+    "shelfM_productivity": "仕事効率化",
+    "shelfM_creative": "クリエイティブ",
+    "shelfM_devtools": "開発ツール",
+    "shelfM_ai": "AIアプリ",
+    "shelfM_selfhosted": "セルフホスト",
+    "shelfM_network": "ネットワーク",
+    "shelfM_media": "メディア",
+    "shelfM_social": "コミュニケーション",
+    "shelfM_system": "システムツール",
+    "shelfM_security": "セキュリティ",
+    "shelfM_games": "ゲーム",
+    "shelf_productivity_notes": "ノート",
+    "shelf_productivity_todo": "タスク・カレンダー",
+    "shelf_productivity_docs": "文書・PDF",
+    "shelf_productivity_knowledge": "ナレッジ管理",
+    "shelf_creative_image": "画像編集",
+    "shelf_creative_video": "動画編集",
+    "shelf_creative_audio": "オーディオ",
+    "shelf_creative_whiteboard": "ホワイトボード",
+    "shelf_creative_cad": "CAD・3D",
+    "shelf_creative_writing": "ライティング",
+    "shelf_devtools_editor": "エディタ・IDE",
+    "shelf_devtools_terminal": "ターミナル",
+    "shelf_devtools_api": "APIツール",
+    "shelf_devtools_database": "DBクライアント",
+    "shelf_devtools_git": "Gitツール",
+    "shelf_devtools_pkg": "パッケージ管理",
+    "shelf_devtools_devops": "コンテナ・DevOps",
+    "shelf_devtools_gamedev": "ゲームエンジン",
+    "shelf_ai_assistant": "AIアシスタント",
+    "shelf_ai_coding": "AIコーディング",
+    "shelf_ai_image_gen": "AI画像生成",
+    "shelf_ai_media_gen": "AIメディア生成",
+    "shelf_ai_local_llm": "ローカルLLM",
+    "shelf_ai_platform": "AIプラットフォーム",
+    "shelf_selfhosted_cloud": "個人クラウド",
+    "shelf_selfhosted_photos": "写真ライブラリ",
+    "shelf_selfhosted_media_server": "メディアサーバー",
+    "shelf_selfhosted_monitoring": "モニタリング",
+    "shelf_selfhosted_tunnel": "トンネル・リバプロ",
+    "shelf_selfhosted_automation": "ワークフロー自動化",
+    "shelf_network_browser": "ブラウザ",
+    "shelf_network_download": "ダウンローダー",
+    "shelf_network_proxy": "プロキシ",
+    "shelf_network_remote": "リモートデスクトップ",
+    "shelf_media_player": "プレイヤー",
+    "shelf_media_music": "音楽",
+    "shelf_media_reader": "リーダー",
+    "shelf_social_chat": "チャット",
+    "shelf_social_mail": "メール",
+    "shelf_social_social_tools": "ソーシャルツール",
+    "shelf_system_screenshot": "スクショ・録画",
+    "shelf_system_launcher": "ランチャー",
+    "shelf_system_files": "ファイル管理",
+    "shelf_system_transfer": "ファイル転送",
+    "shelf_system_phone": "スマホ連携",
+    "shelf_system_backup": "バックアップ",
+    "shelf_security_passwords": "パスワード管理",
+    "shelf_security_privacy": "プライバシー",
+    "shelf_security_adblock": "広告ブロック",
+    "shelf_security_pentest": "セキュリティツール",
+    "shelf_games_games": "ゲーム",
+    "shelf_games_emulator": "エミュレータ",
+    "shelf_games_smart_home": "スマートホーム",
+    "appsAllShelves": "すべて",
+    "bestTitle": "ベストオープンソース{label}アプリ",
+    "bestMethodology": "ランキングはスター数・直近の伸び・90日以内のリリース・DL可能なビルドで算出、毎日更新({count}件)。",
+    "bestSeeShelf": "{label}をすべて見る",
+    "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
+    "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
+    "bestIntro_system_screenshot": "Screenshots and screen recording are everyday actions, and open source has you covered — annotation, scrolling capture, GIF recording and more. Ranked daily by stars, momentum, and release activity, from annotation tools to full recording suites.",
+    "bestIntro_security_passwords": "A password manager is the last software that should be closed source: you deserve to audit the code guarding your secrets. Ranked daily by stars, growth, and maintenance activity — spanning self-hostable Bitwarden-style vaults and local-first KeePass descendants.",
+    "bestIntro_ai_local_llm": "Running LLMs locally means privacy, zero API bills, and offline capability. Ranked daily by stars, momentum, and release activity — from one-command runners like Ollama to GGUF inference engines that bring AI back onto your own machine.",
+    "copyCommand": "コマンドをコピー",
     "typeFacet": {
       "awesome": "リソース集",
       "interview": "面接対策",
@@ -199,36 +299,9 @@
       "software": "ソフトウェア"
     }
   },
-  "privacy": {
-    "title": "Privacy Policy",
-    "updated": "Last updated: 21 July 2026",
-    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
-    "sections": {
-      "collect": {
-        "h": "What we collect",
-        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
-      },
-      "cookies": {
-        "h": "Cookies",
-        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
-      },
-      "thirdParty": {
-        "h": "Third-party services",
-        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
-      },
-      "ads": {
-        "h": "Advertising",
-        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
-      },
-      "choices": {
-        "h": "Your choices",
-        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
-      },
-      "contact": {
-        "h": "Contact",
-        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
-      }
-    }
+  "site": {
+    "name": "GHTA",
+    "tagline": "マルチソースの開発者・ソフトウェアトレンド"
   },
   "blog": {
     "title": "インサイト",
@@ -256,5 +329,12 @@
       "dormant": "1〜2 年",
       "stale": "2 年超"
     }
+  },
+  "consent": {
+    "title": "Cookie について",
+    "message": "サイトの利用状況を把握するため、匿名のアクセス解析に Cookie を使用します。拒否しても機能に影響はありません。",
+    "learnMore": "プライバシーポリシー",
+    "accept": "同意する",
+    "reject": "拒否する"
   }
 }

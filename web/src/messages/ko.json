@@ -1,7 +1,34 @@
 {
-  "site": {
-    "name": "GHTA",
-    "tagline": "멀티소스 개발자·소프트웨어 트렌드"
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
   },
   "rank": {
     "homeTitle": "GitHub 스타 랭킹",
@@ -47,7 +74,6 @@
     "growth": "스타 성장",
     "keyMetrics": "주요 지표",
     "artifacts": "아티팩트",
-    "copyCommand": "명령 복사",
     "artifactTip": "설치 가능한 빌드 아티팩트 배포",
     "readmeExpand": "전체 보기",
     "readmeCollapse": "접기",
@@ -188,6 +214,80 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "강화학습",
     "modelTask_other": "기타",
+    "shelfM_productivity": "생산성",
+    "shelfM_creative": "창작",
+    "shelfM_devtools": "개발 도구",
+    "shelfM_ai": "AI 앱",
+    "shelfM_selfhosted": "셀프호스팅",
+    "shelfM_network": "네트워크",
+    "shelfM_media": "미디어",
+    "shelfM_social": "커뮤니케이션",
+    "shelfM_system": "시스템 도구",
+    "shelfM_security": "보안",
+    "shelfM_games": "게임",
+    "shelf_productivity_notes": "노트",
+    "shelf_productivity_todo": "할 일·캘린더",
+    "shelf_productivity_docs": "문서·PDF",
+    "shelf_productivity_knowledge": "지식 관리",
+    "shelf_creative_image": "이미지 편집",
+    "shelf_creative_video": "영상 편집",
+    "shelf_creative_audio": "오디오",
+    "shelf_creative_whiteboard": "화이트보드",
+    "shelf_creative_cad": "CAD·3D",
+    "shelf_creative_writing": "글쓰기",
+    "shelf_devtools_editor": "에디터·IDE",
+    "shelf_devtools_terminal": "터미널",
+    "shelf_devtools_api": "API 도구",
+    "shelf_devtools_database": "DB 클라이언트",
+    "shelf_devtools_git": "Git 도구",
+    "shelf_devtools_pkg": "패키지·빌드",
+    "shelf_devtools_devops": "컨테이너·DevOps",
+    "shelf_devtools_gamedev": "게임 엔진",
+    "shelf_ai_assistant": "AI 어시스턴트",
+    "shelf_ai_coding": "AI 코딩",
+    "shelf_ai_image_gen": "AI 이미지",
+    "shelf_ai_media_gen": "AI 미디어",
+    "shelf_ai_local_llm": "로컬 LLM",
+    "shelf_ai_platform": "AI 플랫폼",
+    "shelf_selfhosted_cloud": "개인 클라우드",
+    "shelf_selfhosted_photos": "사진 라이브러리",
+    "shelf_selfhosted_media_server": "미디어 서버",
+    "shelf_selfhosted_monitoring": "모니터링",
+    "shelf_selfhosted_tunnel": "터널·프록시",
+    "shelf_selfhosted_automation": "워크플로 자동화",
+    "shelf_network_browser": "브라우저",
+    "shelf_network_download": "다운로드 도구",
+    "shelf_network_proxy": "프록시",
+    "shelf_network_remote": "원격 데스크톱",
+    "shelf_media_player": "플레이어",
+    "shelf_media_music": "음악",
+    "shelf_media_reader": "리더",
+    "shelf_social_chat": "채팅",
+    "shelf_social_mail": "메일",
+    "shelf_social_social_tools": "소셜 도구",
+    "shelf_system_screenshot": "스크린샷·녹화",
+    "shelf_system_launcher": "런처·클립보드",
+    "shelf_system_files": "파일 관리",
+    "shelf_system_transfer": "파일 전송",
+    "shelf_system_phone": "폰 미러링",
+    "shelf_system_backup": "백업",
+    "shelf_security_passwords": "비밀번호 관리",
+    "shelf_security_privacy": "프라이버시",
+    "shelf_security_adblock": "광고 차단",
+    "shelf_security_pentest": "보안 도구",
+    "shelf_games_games": "게임",
+    "shelf_games_emulator": "에뮬레이터",
+    "shelf_games_smart_home": "스마트홈",
+    "appsAllShelves": "전체",
+    "bestTitle": "최고의 오픈소스 {label} 앱",
+    "bestMethodology": "순위 = 스타 규모 + 최근 성장 + 90일 내 릴리스 + 다운로드 가능 빌드, 매일 갱신({count}개).",
+    "bestSeeShelf": "{label} 전체 보기",
+    "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
+    "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
+    "bestIntro_system_screenshot": "Screenshots and screen recording are everyday actions, and open source has you covered — annotation, scrolling capture, GIF recording and more. Ranked daily by stars, momentum, and release activity, from annotation tools to full recording suites.",
+    "bestIntro_security_passwords": "A password manager is the last software that should be closed source: you deserve to audit the code guarding your secrets. Ranked daily by stars, growth, and maintenance activity — spanning self-hostable Bitwarden-style vaults and local-first KeePass descendants.",
+    "bestIntro_ai_local_llm": "Running LLMs locally means privacy, zero API bills, and offline capability. Ranked daily by stars, momentum, and release activity — from one-command runners like Ollama to GGUF inference engines that bring AI back onto your own machine.",
+    "copyCommand": "명령 복사",
     "typeFacet": {
       "awesome": "리소스 모음",
       "interview": "면접 준비",
@@ -199,36 +299,9 @@
       "software": "소프트웨어"
     }
   },
-  "privacy": {
-    "title": "Privacy Policy",
-    "updated": "Last updated: 21 July 2026",
-    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
-    "sections": {
-      "collect": {
-        "h": "What we collect",
-        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
-      },
-      "cookies": {
-        "h": "Cookies",
-        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
-      },
-      "thirdParty": {
-        "h": "Third-party services",
-        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
-      },
-      "ads": {
-        "h": "Advertising",
-        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
-      },
-      "choices": {
-        "h": "Your choices",
-        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
-      },
-      "contact": {
-        "h": "Contact",
-        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
-      }
-    }
+  "site": {
+    "name": "GHTA",
+    "tagline": "멀티소스 개발자·소프트웨어 트렌드"
   },
   "blog": {
     "title": "인사이트",
@@ -256,5 +329,12 @@
       "dormant": "1~2년",
       "stale": "2년 초과"
     }
+  },
+  "consent": {
+    "title": "쿠키 안내",
+    "message": "사이트 이용 현황 파악을 위해 익명 트래픽 분석에 쿠키를 사용합니다. 거부해도 기능에는 영향이 없습니다.",
+    "learnMore": "개인정보처리방침",
+    "accept": "동의",
+    "reject": "거부"
   }
 }

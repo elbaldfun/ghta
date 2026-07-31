@@ -1,7 +1,34 @@
 {
-  "site": {
-    "name": "GHTA",
-    "tagline": "Tendencias de desarrollo y software de múltiples fuentes"
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 21 July 2026",
+    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
+    "sections": {
+      "collect": {
+        "h": "What we collect",
+        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
+      },
+      "cookies": {
+        "h": "Cookies",
+        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
+      },
+      "thirdParty": {
+        "h": "Third-party services",
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+      },
+      "ads": {
+        "h": "Advertising",
+        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
+      },
+      "choices": {
+        "h": "Your choices",
+        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
+      },
+      "contact": {
+        "h": "Contact",
+        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
+      }
+    }
   },
   "rank": {
     "homeTitle": "Ranking de estrellas de GitHub",
@@ -47,7 +74,6 @@
     "growth": "Crecimiento de estrellas",
     "keyMetrics": "Métricas clave",
     "artifacts": "Artefactos",
-    "copyCommand": "Copiar comando",
     "artifactTip": "Publica artefactos instalables",
     "readmeExpand": "Ver todo",
     "readmeCollapse": "Contraer",
@@ -188,6 +214,80 @@
     "modelTask_nlp": "NLP",
     "modelTask_rl": "RL/Robótica",
     "modelTask_other": "Otros",
+    "shelfM_productivity": "Productividad",
+    "shelfM_creative": "Creatividad",
+    "shelfM_devtools": "Herramientas dev",
+    "shelfM_ai": "Apps de IA",
+    "shelfM_selfhosted": "Autoalojado",
+    "shelfM_network": "Red",
+    "shelfM_media": "Multimedia",
+    "shelfM_social": "Comunicación",
+    "shelfM_system": "Herramientas de sistema",
+    "shelfM_security": "Seguridad",
+    "shelfM_games": "Juegos",
+    "shelf_productivity_notes": "Notas",
+    "shelf_productivity_todo": "Tareas y calendario",
+    "shelf_productivity_docs": "Docs y PDF",
+    "shelf_productivity_knowledge": "Base de conocimiento",
+    "shelf_creative_image": "Edición de imagen",
+    "shelf_creative_video": "Edición de vídeo",
+    "shelf_creative_audio": "Audio",
+    "shelf_creative_whiteboard": "Pizarra",
+    "shelf_creative_cad": "CAD y 3D",
+    "shelf_creative_writing": "Escritura",
+    "shelf_devtools_editor": "Editores e IDEs",
+    "shelf_devtools_terminal": "Terminal",
+    "shelf_devtools_api": "Herramientas API",
+    "shelf_devtools_database": "Clientes de BD",
+    "shelf_devtools_git": "Herramientas Git",
+    "shelf_devtools_pkg": "Paquetes y build",
+    "shelf_devtools_devops": "Contenedores y DevOps",
+    "shelf_devtools_gamedev": "Motores de juego",
+    "shelf_ai_assistant": "Asistentes de IA",
+    "shelf_ai_coding": "Codificación IA",
+    "shelf_ai_image_gen": "Imágenes IA",
+    "shelf_ai_media_gen": "Medios IA",
+    "shelf_ai_local_llm": "LLMs locales",
+    "shelf_ai_platform": "Plataformas IA",
+    "shelf_selfhosted_cloud": "Nube personal",
+    "shelf_selfhosted_photos": "Fototeca",
+    "shelf_selfhosted_media_server": "Servidores multimedia",
+    "shelf_selfhosted_monitoring": "Monitorización",
+    "shelf_selfhosted_tunnel": "Túneles y proxies",
+    "shelf_selfhosted_automation": "Automatización",
+    "shelf_network_browser": "Navegadores",
+    "shelf_network_download": "Descargas",
+    "shelf_network_proxy": "Proxies",
+    "shelf_network_remote": "Escritorio remoto",
+    "shelf_media_player": "Reproductores",
+    "shelf_media_music": "Música",
+    "shelf_media_reader": "Lectores",
+    "shelf_social_chat": "Chat",
+    "shelf_social_mail": "Correo",
+    "shelf_social_social_tools": "Herramientas sociales",
+    "shelf_system_screenshot": "Capturas y grabación",
+    "shelf_system_launcher": "Lanzadores",
+    "shelf_system_files": "Gestores de archivos",
+    "shelf_system_transfer": "Transferencia",
+    "shelf_system_phone": "Duplicación móvil",
+    "shelf_system_backup": "Copia de seguridad",
+    "shelf_security_passwords": "Gestores de contraseñas",
+    "shelf_security_privacy": "Privacidad",
+    "shelf_security_adblock": "Bloqueo de anuncios",
+    "shelf_security_pentest": "Herramientas de seguridad",
+    "shelf_games_games": "Juegos",
+    "shelf_games_emulator": "Emuladores",
+    "shelf_games_smart_home": "Domótica",
+    "appsAllShelves": "Todos",
+    "bestTitle": "Mejores apps open source: {label}",
+    "bestMethodology": "Ranking = estrellas + impulso reciente + release en 90 días + builds descargables; actualizado a diario; {count} apps.",
+    "bestSeeShelf": "Ver todo: {label}",
+    "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
+    "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
+    "bestIntro_system_screenshot": "Screenshots and screen recording are everyday actions, and open source has you covered — annotation, scrolling capture, GIF recording and more. Ranked daily by stars, momentum, and release activity, from annotation tools to full recording suites.",
+    "bestIntro_security_passwords": "A password manager is the last software that should be closed source: you deserve to audit the code guarding your secrets. Ranked daily by stars, growth, and maintenance activity — spanning self-hostable Bitwarden-style vaults and local-first KeePass descendants.",
+    "bestIntro_ai_local_llm": "Running LLMs locally means privacy, zero API bills, and offline capability. Ranked daily by stars, momentum, and release activity — from one-command runners like Ollama to GGUF inference engines that bring AI back onto your own machine.",
+    "copyCommand": "Copiar comando",
     "typeFacet": {
       "awesome": "Listas",
       "interview": "Entrevistas",
@@ -199,36 +299,9 @@
       "software": "Software"
     }
   },
-  "privacy": {
-    "title": "Privacy Policy",
-    "updated": "Last updated: 21 July 2026",
-    "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
-    "sections": {
-      "collect": {
-        "h": "What we collect",
-        "p": "The site has no accounts and does not collect directly identifying information such as your name or email address.\nWe collect anonymous usage data only: pages visited, referring source, approximate region (country level), and device and browser type. It is used to measure traffic and improve the product, and cannot identify you personally."
-      },
-      "cookies": {
-        "h": "Cookies",
-        "p": "No analytics or advertising cookies are written until you press “Accept”.\nYour choice is stored in your browser's local storage so you are not asked again on your next visit. If you decline, analytics either runs without cookies or does not load at all."
-      },
-      "thirdParty": {
-        "h": "Third-party services",
-        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
-      },
-      "ads": {
-        "h": "Advertising",
-        "p": "The site currently shows no advertising.\nIf Google AdSense is added later, third-party vendors may use cookies to serve ads based on your visits to this and other sites. This page will be updated at that point, and you can opt out of personalised advertising through Google's Ads Settings."
-      },
-      "choices": {
-        "h": "Your choices",
-        "p": "· Accept or decline analytics cookies via the banner at the bottom of the page\n· Clearing your browser's local storage resets the choice and brings the banner back\n· Block or delete cookies in your browser settings\n· Use your browser's Do Not Track setting or a private window"
-      },
-      "contact": {
-        "h": "Contact",
-        "p": "For questions about this policy, or about how data relating to you is handled, open an issue on the site's GitHub repository."
-      }
-    }
+  "site": {
+    "name": "GHTA",
+    "tagline": "Tendencias de desarrollo y software de múltiples fuentes"
   },
   "blog": {
     "title": "Análisis",
@@ -256,5 +329,12 @@
       "dormant": "1–2 años",
       "stale": "Más de 2 años"
     }
+  },
+  "consent": {
+    "title": "Aviso de cookies",
+    "message": "Usamos cookies para análisis anónimo de tráfico y así entender cómo se usa el sitio. Puedes rechazarlas: nada deja de funcionar.",
+    "learnMore": "Política de privacidad",
+    "accept": "Aceptar",
+    "reject": "Rechazar"
   }
 }

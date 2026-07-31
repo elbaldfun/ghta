@@ -258,6 +258,10 @@ export interface AppItem {
   growth: number;
   type?: string;
   kind: AppKind;
+  shelf?: string; // store shelf slug, e.g. "system/screenshot"
+  taglineZh?: string;
+  taglineEn?: string;
+  hasGui?: boolean;
   platforms: OS[];
   platformSource?: string; // asset | topic | heuristic
   categoryPath?: string[];
@@ -307,6 +311,7 @@ export async function getApps(params: {
   os?: string;
   kind?: string;
   category?: string;
+  shelf?: string;
   sort?: AppSort;
   limit?: number;
   page?: number;
@@ -315,6 +320,7 @@ export async function getApps(params: {
   if (params.os) q.set('os', params.os);
   if (params.kind) q.set('kind', params.kind);
   if (params.category) q.set('category', params.category);
+  if (params.shelf) q.set('shelf', params.shelf);
   q.set('sort', params.sort ?? 'hot');
   q.set('limit', String(params.limit ?? 30));
   q.set('page', String(params.page ?? 1));
@@ -700,4 +706,11 @@ export async function getModels(opts: {
   const res = await apiGet<{ data: ModelItem[]; total: number }>(`/models?${params}`, 1800);
   if (res.error !== null || !Array.isArray(res.data?.data)) return { items: [], total: 0 };
   return { items: res.data.data, total: res.data.total ?? res.data.data.length };
+}
+
+/** Quality-ranked collection for one shelf (/apps/best/<major>/<sub>). */
+export async function getBestOf(shelf: string): Promise<AppItem[]> {
+  const res = await apiGet<{ data: AppItem[] }>(`/apps/best/${shelf}`, 1800);
+  if (res.error !== null || !Array.isArray(res.data?.data)) return [];
+  return res.data.data;
 }

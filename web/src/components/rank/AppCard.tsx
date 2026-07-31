@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { AppItem, OS } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
@@ -35,7 +35,12 @@ function appName(repoName: string): string {
  */
 export function AppCard({ app }: { app: AppItem }) {
   const t = useTranslations('rank');
+  const locale = useLocale();
   const [owner = '', name = ''] = app.externalId.split('/');
+  // Plain-language tagline (store layer, change 15): zh for the Chinese locale,
+  // English elsewhere; the raw dev description remains the fallback.
+  const tagline = (locale === 'zh' ? app.taglineZh : app.taglineEn) || app.taglineEn || '';
+  const shelfKey = app.shelf ? `shelf_${app.shelf.replace(/[/-]/g, '_')}` : '';
   const title = appName(name);
   const downloads = app.downloads ?? [];
   const hasWeb = app.platforms.includes('web');
@@ -59,8 +64,17 @@ export function AppCard({ app }: { app: AppItem }) {
             </span>
           )}
         </div>
-        {app.description && (
-          <p className="mt-0.5 line-clamp-2 max-w-[62ch] text-[12.5px] text-muted">{app.description}</p>
+        {(tagline || app.description) && (
+          <p className="mt-0.5 line-clamp-2 max-w-[62ch] text-[12.5px] text-muted">
+            {tagline ? (
+              <>
+                <span className="font-medium text-fg/80">{tagline}</span>
+                {app.description && <span className="hidden sm:inline"> — {app.description}</span>}
+              </>
+            ) : (
+              app.description
+            )}
+          </p>
         )}
         {app.alternativeTo && app.alternativeTo.length > 0 && (
           <p className="mt-1 text-[11.5px] text-muted">
@@ -87,6 +101,11 @@ export function AppCard({ app }: { app: AppItem }) {
             </span>
           )}
           {app.license && <span className="truncate">{app.license}</span>}
+          {shelfKey && (
+            <span className="rounded-[3px] border border-border bg-surface2 px-1.5 py-px text-[9.5px] font-semibold text-muted">
+              {t(shelfKey as never) as string}
+            </span>
+          )}
           <span className="truncate text-muted/80">
             {owner}/{name}
           </span>
