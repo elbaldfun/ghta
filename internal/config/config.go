@@ -81,6 +81,7 @@ func Load() (*Config, error) {
 		DevSyncCron:     getEnv("DEVSYNC_CRON", "0 0 4 * * *"),
 		AltFindCron:     getEnv("ALTFIND_CRON", "0 0 6 * * *"),   // after categorize, so newly-classified apps get alternatives
 		StoreCron:       getEnv("STORE_CRON", "0 30 5 * * *"),    // after categorize; shelf/tagline/excluded judgement (change 15)
+		ShotCron:        getEnv("SHOT_CRON", "0 0 7 * * *"),      // screenshots from READMEs/og:image (change 15 v2b)
 		IconCron:        getEnv("ICON_CRON", "0 30 6 * * *"),     // after categorize; extracts app icons from homepages
 		ReconcileCron:   getEnv("RECONCILE_CRON", "0 0 7 * * *"), // rename-ghost hunt: verify oldest-unfetched repos against GitHub
 	}
