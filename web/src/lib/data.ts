@@ -52,6 +52,8 @@ export interface RepoRank {
 
 export interface RepoDetail extends RepoSummary {
   ranks: RepoRank[];
+  screenshotUrl?: string;
+  shotSource?: string; // readme | og
   platforms: OS[];
   platformSource?: string;
   releaseAssets: ReleaseAsset[];
@@ -454,6 +456,8 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
       ranks: Array.isArray(res.data.ranks)
         ? res.data.ranks.filter((r: any) => typeof r?.rank === 'number' && r.rank > 0)
         : [],
+      screenshotUrl: it.screenshotUrl || undefined,
+      shotSource: it.shotSource || undefined,
       platforms: (sd.platforms ?? []) as OS[],
       platformSource: sd.platformSource ?? undefined,
       releaseAssets: (sd.releaseAssets ?? []) as ReleaseAsset[],

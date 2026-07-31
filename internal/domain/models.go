@@ -131,6 +131,13 @@ type TrackedItem struct {
 	// IconStatus marks the item as processed. TOP-LEVEL, same reason as above.
 	IconURL    string `bson:"iconUrl,omitempty" json:"iconUrl,omitempty"`
 	IconStatus string `bson:"iconStatus,omitempty" json:"iconStatus,omitempty"`
+	// ScreenshotURL is the app's UI screenshot (change 15 v2b): README-extracted
+	// (ShotSource "readme", wall-eligible) or homepage og:image ("og", detail
+	// fallback only). ShotStatus marks the item processed. Top-level: written by
+	// the shot job, must survive sourceData overwrites.
+	ScreenshotURL string `bson:"screenshotUrl,omitempty" json:"screenshotUrl,omitempty"`
+	ShotSource    string `bson:"shotSource,omitempty" json:"shotSource,omitempty"`
+	ShotStatus    string `bson:"shotStatus,omitempty" json:"shotStatus,omitempty"`
 	// Store is the app-store layer (change 15): consumer shelf classification,
 	// plain-language taglines, GUI/exclusion verdicts — LLM-inferred. One
 	// top-level subdocument (survives sourceData overwrites) instead of more

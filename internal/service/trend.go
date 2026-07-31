@@ -414,6 +414,9 @@ func (s *TrendService) Item(ctx context.Context, source, externalID string) (*do
 	if err != nil {
 		return nil, nil, err
 	}
+	// Serve-time mirror rewrite (raw.githubusercontent is blocked in mainland
+	// China); the DB keeps the original.
+	item.ScreenshotURL = cnFriendlyShot(item.ScreenshotURL)
 
 	cur, err := s.store.Snapshots().Find(ctx,
 		bson.M{"meta.source": source, "meta.externalId": externalID},

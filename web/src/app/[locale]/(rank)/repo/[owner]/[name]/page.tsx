@@ -12,6 +12,7 @@ import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
 import { BackLink } from '@/components/rank/BackLink';
 import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { Downloads } from '@/components/rank/Downloads';
+import { Screenshot } from '@/components/rank/Screenshot';
 import { PageShell } from '@/components/rank/PageShell';
 import { CopyCommand } from '@/components/rank/CopyCommand';
 
@@ -193,6 +194,12 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
         </div>
       ) : (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{statTiles}</div>
+      )}
+
+      {repo.screenshotUrl && (
+        <div className="mb-6">
+          <Screenshot url={repo.screenshotUrl} alt={`${repo.fullName} screenshot`} />
+        </div>
       )}
 
       {repo.releaseAssets.length > 0 && (
