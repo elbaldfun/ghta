@@ -8,3 +8,4 @@ next-env.d.ts
 *.tsbuildinfo
 .vercel
 .env*
+src/lib/blog-generated.ts

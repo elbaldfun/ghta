@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "node scripts/layout-guard.mjs && next build",
+    "dev": "node scripts/gen-blog.mjs && next dev",
+    "build": "node scripts/gen-blog.mjs && node scripts/layout-guard.mjs && next build",
     "lint:layout": "node scripts/layout-guard.mjs",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:blog": "node scripts/gen-blog.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

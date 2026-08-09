@@ -11,13 +11,10 @@
 // rendered Markdown with server components. The set of block types is fixed
 // (see DataBlockName) — posts cannot execute arbitrary code.
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-
-const BLOG_DIR = path.join(process.cwd(), 'content', 'blog');
+import { BLOG_RAW } from './blog-generated';
 
 export const DATA_BLOCKS = ['languages', 'top-repos', 'staleness', 'stale-repos'] as const;
 export type DataBlockName = (typeof DATA_BLOCKS)[number];
@@ -69,11 +66,8 @@ function readingMinutes(body: string): number {
 }
 
 async function readPostFile(locale: string, slug: string): Promise<Post | null> {
-  const file = path.join(BLOG_DIR, locale, `${slug}.md`);
-  let raw: string;
-  try {
-    raw = await fs.readFile(file, 'utf8');
-  } catch {
+  const raw = BLOG_RAW[locale]?.[slug];
+  if (raw === undefined) {
     return null; // No such post for this locale — a normal 404.
   }
 
@@ -95,18 +89,13 @@ async function readPostFile(locale: string, slug: string): Promise<Post | null> 
   } catch (e) {
     // Malformed front matter would otherwise make the post vanish from the site
     // with no signal at all — an unquoted "title: A: B" is enough to do it.
-    console.error(`[blog] failed to parse ${file}:`, e instanceof Error ? e.message : e);
+    console.error(`[blog] failed to parse ${locale}/${slug}:`, e instanceof Error ? e.message : e);
     return null;
   }
 }
 
 async function slugsFor(locale: string): Promise<string[]> {
-  try {
-    const files = await fs.readdir(path.join(BLOG_DIR, locale));
-    return files.filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''));
-  } catch {
-    return [];
-  }
+  return Object.keys(BLOG_RAW[locale] ?? {});
 }
 
 /**
