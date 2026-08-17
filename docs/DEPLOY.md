@@ -1,17 +1,19 @@
 # 部署手册：starrank.dev
 
-架构：**Vercel**（Next.js 前端）→ **DigitalOcean droplet**（Go API + MongoDB + Caddy）。
+架构：单台 **DigitalOcean droplet** 上的 Docker Compose（Next.js 前端 + Go API + MongoDB + Caddy）。
+
+> 2026-08 前端从 Vercel 迁回 droplet：Hobby 免费额度被爬虫流量打爆，
+> 团队被 fair-use 封锁（部署被拒、整站 402）。
 
 前端所有数据获取都在服务端完成，浏览器从不直连后端，因此**后端无需 CORS**，
 后端地址也不会出现在浏览器 bundle 里（`API_URL` 刻意不带 `NEXT_PUBLIC_` 前缀）。
 
 ```
-用户 ──HTTPS──> starrank.dev (Vercel)
-                     │ 服务端 fetch（API_URL）
-                     ▼
-              api.starrank.dev ──> Caddy（自动 TLS）
-                                     └─> api:3000 ──> mongo:27017
-                                          （均不对公网发布端口）
+用户 ──HTTPS──> starrank.dev / api.starrank.dev ──> Caddy（自动 TLS）
+                              ├─> web:3000（Next.js standalone）
+                              │        │ 服务端 fetch（API_URL=http://api:3000）
+                              └────────┴─> api:3000 ──> mongo:27017
+                                            （均不对公网发布端口）
 ```
 
 ## 生产环境
@@ -85,28 +87,31 @@ ssh 24.199.88.38 'cd /opt/ghta && set -a && . ./.env && set +a && \
 
 ---
 
-## 前端：Vercel
+## 前端：droplet 上的 Next.js（standalone）
 
-Git 集成，推送到 `main` 自动部署。
+镜像 `ghta-web`，源在 `web/Dockerfile`；compose 服务名 `web`，由 Caddy 反代
+`starrank.dev`。发布方式与后端一致（交叉编译 + save/load）：
 
-项目：`top-trends/starrank`。
+```bash
+cd /Users/clawbot/go/src/ghta
+docker buildx build --platform linux/amd64 -t ghta-web:latest --load \
+  --build-arg API_URL=https://api.starrank.dev \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://starrank.dev \
+  --build-arg NEXT_PUBLIC_GA_ID=<GA 衡量 ID> \
+  -f web/Dockerfile web/
+docker save ghta-web:latest | gzip -1 | ssh 24.199.88.38 'gunzip | docker load'
+ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d web'
+```
 
-| 设置项 | 值 |
-|---|---|
-| **Root Directory** | **`web`** ← 仓库根是 Go 项目，不设会构建失败 |
-| Production Branch | `main` |
-| `API_URL` | `https://api.starrank.dev` |
-| `NEXT_PUBLIC_SITE_URL` | `https://starrank.dev` |
+要点：
 
-手动发布：**在仓库根执行** `vercel deploy --prod`。
-因为项目的 Root Directory 设成了 `web`，Vercel 会在上传内容里找 `web/` 子目录——
-从 `web/` 目录内执行会变成找 `web/web/` 而失败。
-
-> Root Directory 在面板的 **Settings → Build and Deployment**（不在 General）。
-
-> 自动生成的 `*.vercel.app` 部署地址受 Deployment Protection 保护（需登录 Vercel 才能访问），
-> 属正常行为。正式域名 `starrank.dev` 不受影响；若绑定后仍要求登录，
-> 去 Project Settings → Deployment Protection 关闭。
+- **build-arg 的 `API_URL` 用公网地址**：`next build` 期间 SSG 页面会真的拉数据，
+  此时 compose 内网的 `http://api:3000` 还不存在；运行时环境变量会覆盖为内网地址。
+- `NEXT_PUBLIC_*` 在构建时内联进浏览器 bundle，改值必须重新构建镜像。
+- 博客 Markdown（`web/content/blog/`）是运行时从磁盘读的，Dockerfile 已显式
+  COPY 进镜像；新增文章要重新构建镜像。
+- compose / Caddyfile 有改动时：`scp deploy/docker-compose.yml deploy/Caddyfile 24.199.88.38:/opt/ghta/`
+  再 `docker compose up -d`。
 
 ## DNS（Cloudflare）
 
@@ -115,11 +120,12 @@ Git 集成，推送到 `main` 自动部署。
 | 类型 | 名称 | 值 | 代理状态 |
 |---|---|---|---|
 | A | `api` | `24.199.88.38` | **DNS only（灰云）** |
-| A | `@` | `76.76.21.21` | **DNS only（灰云）** |
-| CNAME | `www` | `cname.vercel-dns.com` | **DNS only（灰云）** |
+| A | `@` | `24.199.88.38` | **DNS only（灰云）** |
+| A | `www` | `24.199.88.38` | **DNS only（灰云）** |
 
-> ⚠️ **云朵必须是灰色。** 橙云（Proxied）会让 Caddy 的 ACME 验证拿不到证书，
-> 也会让 Vercel 的证书签发失败并造成双层 CDN 缓存冲突。
+> ⚠️ **云朵必须是灰色。** 橙云（Proxied）会让 Caddy 的 ACME HTTP 验证拿不到证书。
+> 若以后要用 Cloudflare 的缓存/防爬（橙云），需给 Caddy 换 DNS-01 验证
+> （cloudflare 插件 + API token）后再开。
 
 ---
 

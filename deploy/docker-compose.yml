@@ -57,6 +57,18 @@ services:
     # No `ports:` — traffic arrives through Caddy.
     mem_limit: 640m
 
+  web:
+    image: ghta-web:latest
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      # Compose-internal at runtime: SSR/ISR fetches skip Caddy and TLS.
+      API_URL: http://api:3000
+      NEXT_PUBLIC_SITE_URL: https://starrank.dev
+      PORT: "3000"
+    # No `ports:` — traffic arrives through Caddy.
+    mem_limit: 512m
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

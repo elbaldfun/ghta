@@ -1,6 +1,27 @@
-# Caddy fetches and renews the Let's Encrypt certificate automatically.
-# Requires api.starrank.dev to resolve to this droplet with Cloudflare proxying
-# OFF (grey cloud), otherwise the ACME challenge cannot reach us.
+# Caddy fetches and renews the Let's Encrypt certificates automatically.
+# Requires every hostname below to resolve to this droplet with Cloudflare
+# proxying OFF (grey cloud), otherwise the ACME challenge cannot reach us.
+
+starrank.dev {
+	encode gzip zstd
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+
+	reverse_proxy web:3000
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+www.starrank.dev {
+	redir https://starrank.dev{uri} permanent
+}
 
 api.starrank.dev {
 	encode gzip zstd
