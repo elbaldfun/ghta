@@ -13,24 +13,40 @@ import (
 
 // CurrentStoreVersion is the prompt/enum generation. Bumping it re-queues every
 // item for re-judgement (the job picks up store.version < CurrentStoreVersion),
-// so the enum can evolve without deleting anything.
-const CurrentStoreVersion = 1
+// so the enum can evolve without deleting anything. v2 = taxonomy v3 shelves:
+// the migration stamps mechanically-mapped items with this version so only the
+// rejudge shelves (devtools/devops) actually go back through the model.
+const CurrentStoreVersion = 2
 
-// AppShelves is the controlled consumer-shelf enum (change 15 §2). Slugs are
-// frozen per version; display names live in the frontend i18n files.
+// AppShelves is the consumer-shelf enum: the leaves of the taxonomy's apps
+// branch minus the "apps/" prefix (taxonomy.ShelfSlug). Slugs are frozen per
+// store version; display names live in the frontend i18n files. Keep this in
+// step with taxonomy.yaml — TestShelvesMatchTree enforces it.
 var AppShelves = []string{
 	"productivity/notes", "productivity/todo", "productivity/docs", "productivity/knowledge",
 	"creative/image", "creative/video", "creative/audio", "creative/whiteboard", "creative/cad", "creative/writing",
-	"devtools/editor", "devtools/terminal", "devtools/api", "devtools/database", "devtools/git", "devtools/pkg", "devtools/devops", "devtools/gamedev",
-	"ai/assistant", "ai/coding", "ai/image-gen", "ai/media-gen", "ai/local-llm", "ai/platform",
-	"selfhosted/cloud", "selfhosted/photos", "selfhosted/media-server", "selfhosted/monitoring", "selfhosted/tunnel", "selfhosted/automation",
-	"network/browser", "network/download", "network/proxy", "network/remote",
+	"ai/assistant", "ai/local-llm", "ai/generation", "ai/builder",
+	"selfhosted/cloud", "selfhosted/media-server", "selfhosted/monitoring", "selfhosted/tunnel", "selfhosted/automation",
+	"network/browser", "network/download", "network/proxy", "network/remote", "network/browser-ext",
 	"media/player", "media/music", "media/reader",
-	"social/chat", "social/mail", "social/social-tools",
+	"social/messaging", "social/tools",
 	"system/screenshot", "system/launcher", "system/files", "system/transfer", "system/phone", "system/backup",
-	"security/passwords", "security/privacy", "security/adblock", "security/pentest",
-	"games/games", "games/emulator", "games/smart-home",
+	"security/passwords", "security/privacy",
+	"games/games", "games/emulator",
 }
+
+// DevShelves are the developer-facing apps that left the consumer shelves in
+// taxonomy v3. They are plain domain leaves (the item's store.category holds
+// the leaf path), surfaced in the store under one "dev" view rather than as
+// consumer shelves, so the storefront's first screen is for end users.
+var DevShelves = []string{
+	"devtools/terminal", "devtools/editors", "devtools/api-tools", "devtools/vcs", "devtools/package-manager", "devtools/code-quality",
+	"data/database", "infra/containers", "infra/automation", "infra/monitoring",
+	"gamedev/engines", "security/offensive", "agents/coding",
+}
+
+// DevShelfGroup is the pseudo-major that selects every DevShelves entry.
+const DevShelfGroup = "dev"
 
 // StoreExcluded marks "not a runnable app" (framework/library/list/service).
 const StoreExcluded = "excluded"
@@ -41,19 +57,44 @@ var validShelf = func() map[string]bool {
 	for _, s := range AppShelves {
 		m[s] = true
 	}
+	for _, s := range DevShelves {
+		m[s] = true
+	}
 	return m
 }()
 
-// ValidShelfSlug reports whether s is a known shelf slug (or "excluded").
+// ValidShelfSlug reports whether s is a known shelf slug (consumer or dev) or "excluded".
 func ValidShelfSlug(s string) bool { return validShelf[s] }
+
+// IsDevShelf reports whether s is one of the developer-app leaves.
+func IsDevShelf(s string) bool {
+	for _, d := range DevShelves {
+		if d == s {
+			return true
+		}
+	}
+	return false
+}
+
+// ShelfDomainPath is the taxonomy leaf an effective shelf corresponds to:
+// consumer shelves live under apps/, dev shelves are the leaf itself.
+func ShelfDomainPath(slug string) string {
+	if IsDevShelf(slug) {
+		return slug
+	}
+	return "apps/" + slug
+}
 
 const storeSystemPrompt = `You classify open-source GitHub projects for an app store of downloadable, runnable software.
 
 For EACH project decide:
 
-1. "category": which ONE shelf it belongs on, from EXACTLY this list (copy the slug verbatim):
+1. "category": which ONE shelf it belongs on, from EXACTLY this list (copy the slug verbatim).
+   Consumer shelves (software a non-developer would install):
 %s
-   OR "excluded" if it is NOT a runnable application: a framework, a library/SDK, an awesome/list/tutorial/interview collection, a dataset, a spec, or a hosted-only service with nothing to download or self-host. Rule of thumb: "excluded" unless a user can download/run/self-host it. CLI tools ARE apps (yt-dlp -> network/download). Game engines with a downloadable editor ARE apps (devtools/gamedev).
+   Developer shelves (software developers install for their own work; pick these for terminals, editors, API clients, DB clients, git tools, package managers, linters, containers/CI/monitoring tools, game engines, offensive-security tools, coding agents):
+%s
+   OR "excluded" if it is NOT a runnable application: a framework, a library/SDK, an awesome/list/tutorial/interview collection, a dataset, a spec, or a hosted-only service with nothing to download or self-host. Rule of thumb: "excluded" unless a user can download/run/self-host it. CLI tools ARE apps (yt-dlp -> network/download). Game engines with a downloadable editor ARE apps (gamedev/engines).
 
 2. "taglineZh": ONE plain-Chinese sentence (<=20 chars) telling a normal user what this app does for them. Plain words, no hype, no "开源" prefix. Example: "跨平台截图与标注工具".
 
@@ -167,7 +208,7 @@ func InferStore(ctx context.Context, p provider.Provider, items []domain.Tracked
 	if len(items) == 0 {
 		return map[string]StoreResult{}, nil
 	}
-	system := fmt.Sprintf(storeSystemPrompt, strings.Join(AppShelves, ", "))
+	system := fmt.Sprintf(storeSystemPrompt, strings.Join(AppShelves, ", "), strings.Join(DevShelves, ", "))
 	raw, err := p.AnalyzeJSON(ctx, system, buildStorePrompt(items))
 	if err != nil {
 		return nil, err

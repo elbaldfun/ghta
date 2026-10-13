@@ -8,14 +8,14 @@ import (
 )
 
 func TestValidShelfSlug(t *testing.T) {
-	for _, ok := range []string{"system/screenshot", "network/download", "excluded"} {
+	for _, ok := range []string{"system/screenshot", "network/download", "devtools/terminal", "excluded"} {
 		if !ValidShelfSlug(ok) {
 			t.Errorf("ValidShelfSlug(%q) = false, want true", ok)
 		}
 	}
 	// The exact failure modes the review predicted: plural drift, bare major,
 	// invented slugs.
-	for _, bad := range []string{"system/screenshots", "system", "notes", "utilities/misc", ""} {
+	for _, bad := range []string{"system/screenshots", "system", "notes", "utilities/misc", "devtools/devops", "security/pentest", ""} {
 		if ValidShelfSlug(bad) {
 			t.Errorf("ValidShelfSlug(%q) = true, want false", bad)
 		}

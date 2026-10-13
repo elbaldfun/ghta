@@ -117,6 +117,14 @@ type TrackedItem struct {
 	AnalysisStatus    string `bson:"analysisStatus" json:"analysisStatus"`
 	AnalysisFailCount int    `bson:"analysisFailCount" json:"analysisFailCount"`
 	ClassifiedBy      string `bson:"classifiedBy,omitempty" json:"classifiedBy,omitempty"` // rule | embedding | llm
+	// TaxonomyVersion is the tree generation the item was classified on
+	// (taxonomy.yaml `version`). Missing means v2 (pre-versioning). An item
+	// behind the loaded tree is re-queued by the categorizer after a migration.
+	TaxonomyVersion int `bson:"taxonomyVersion,omitempty" json:"taxonomyVersion,omitempty"`
+	// CategoryPathPrev snapshots categoryPath before the first migration rewrite
+	// touches it, so a bad migration can be rolled back wholesale. Cleared once
+	// the rollback window has passed (see taxonomy.Migrate).
+	CategoryPathPrev PathList `bson:"categoryPathPrev,omitempty" json:"-"`
 	// GeneratedTopics are LLM-derived tags for no-topic repos (change 12). A
 	// TOP-LEVEL field, not under sourceData, because the fetcher fully replaces
 	// sourceData each pass and would otherwise wipe these.

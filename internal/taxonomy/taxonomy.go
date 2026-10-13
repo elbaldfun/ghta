@@ -19,37 +19,134 @@ import (
 	"github.com/elbaldfun/ghta/internal/repository"
 )
 
-// Node is one category in taxonomy.yaml.
+// Node is one category in taxonomy.yaml. Est/From are human-facing notes
+// (estimated size, v2 origin leaves) that the loader carries but never uses.
 type Node struct {
-	Path     string `yaml:"path"`
-	Name     string `yaml:"name"`
-	NameEn   string `yaml:"nameEn"`
-	Desc     string `yaml:"desc"`
-	Children []Node `yaml:"children"`
+	Path     string   `yaml:"path"`
+	Name     string   `yaml:"name"`
+	NameEn   string   `yaml:"nameEn"`
+	Desc     string   `yaml:"desc"`
+	Est      int      `yaml:"est,omitempty"`
+	From     []string `yaml:"from,omitempty"`
+	Children []Node   `yaml:"children"`
 }
 
-// Load parses taxonomy.yaml and returns the flattened node list (parents first).
-func Load(path string) ([]Node, error) {
+// ShelfPrefix is the apps branch: the only branch with a third level. Its
+// leaves are the store shelves; the shelf slug is the path minus this prefix
+// (apps/productivity/notes -> productivity/notes), which keeps store.category
+// values and /apps?shelf= URLs short and stable across tree versions.
+const ShelfPrefix = "apps/"
+
+// IsShelfPath reports whether p is a leaf of the apps branch (three segments).
+func IsShelfPath(p string) bool {
+	return strings.HasPrefix(p, ShelfPrefix) && strings.Count(p, "/") == 2
+}
+
+// ShelfSlug strips the apps/ prefix; ShelfPath adds it back.
+func ShelfSlug(p string) string { return strings.TrimPrefix(p, ShelfPrefix) }
+func ShelfPath(slug string) string {
+	if strings.HasPrefix(slug, ShelfPrefix) {
+		return slug
+	}
+	return ShelfPrefix + slug
+}
+
+// Tree is the parsed taxonomy.yaml: a version number plus the flattened node
+// list (parents first). Version is what items record as taxonomyVersion; an
+// item behind it is due for re-classification (see migrations.yaml).
+type Tree struct {
+	Version int
+	Nodes   []Node
+}
+
+// Leaves returns the assignment targets: nodes that have no children.
+func (t Tree) Leaves() []Node {
+	isParent := map[string]bool{}
+	for _, n := range t.Nodes {
+		if i := strings.LastIndex(n.Path, "/"); i > 0 {
+			isParent[n.Path[:i]] = true
+		}
+	}
+	var out []Node
+	for _, n := range t.Nodes {
+		if !isParent[n.Path] {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// PathSet returns every node path for membership checks.
+func (t Tree) PathSet() map[string]bool {
+	m := make(map[string]bool, len(t.Nodes))
+	for _, n := range t.Nodes {
+		m[n.Path] = true
+	}
+	return m
+}
+
+// treeFile is the on-disk shape since v3: a mapping with version + nodes. The
+// v2 file was a bare node list; LoadTree still accepts that and reports it as
+// version 2 so an un-migrated checkout keeps booting.
+type treeFile struct {
+	Version int    `yaml:"version"`
+	Nodes   []Node `yaml:"nodes"`
+}
+
+// LoadTree parses taxonomy.yaml (either shape) into a flattened Tree.
+func LoadTree(path string) (Tree, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read taxonomy: %w", err)
+		return Tree{}, fmt.Errorf("read taxonomy: %w", err)
 	}
 	var roots []Node
-	if err := yaml.Unmarshal(raw, &roots); err != nil {
-		return nil, fmt.Errorf("parse taxonomy: %w", err)
+	version := 2
+	var tf treeFile
+	if err := yaml.Unmarshal(raw, &tf); err == nil && len(tf.Nodes) > 0 {
+		roots, version = tf.Nodes, tf.Version
+	} else if err := yaml.Unmarshal(raw, &roots); err != nil {
+		return Tree{}, fmt.Errorf("parse taxonomy: %w", err)
+	}
+	if version < 1 {
+		return Tree{}, fmt.Errorf("parse taxonomy: version must be >= 1")
 	}
 	var flat []Node
-	var walk func(nodes []Node)
-	walk = func(nodes []Node) {
+	var walk func(nodes []Node, depth int) error
+	walk = func(nodes []Node, depth int) error {
 		for _, n := range nodes {
 			children := n.Children
 			n.Children = nil
+			segs := strings.Count(n.Path, "/") + 1
+			if segs != depth {
+				return fmt.Errorf("node %q nested at depth %d but its path has %d segments", n.Path, depth, segs)
+			}
+			// Only the apps branch may go three deep; everything else is big-group/leaf.
+			if segs > 2 && !strings.HasPrefix(n.Path, ShelfPrefix) {
+				return fmt.Errorf("node %q: only the apps branch may have a third level", n.Path)
+			}
+			if segs > 3 {
+				return fmt.Errorf("node %q: tree is at most three levels deep", n.Path)
+			}
 			flat = append(flat, n)
-			walk(children)
+			if err := walk(children, depth+1); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
-	walk(roots)
-	return flat, nil
+	if err := walk(roots, 1); err != nil {
+		return Tree{}, fmt.Errorf("parse taxonomy: %w", err)
+	}
+	return Tree{Version: version, Nodes: flat}, nil
+}
+
+// Load is LoadTree without the version — kept for callers that only need nodes.
+func Load(path string) ([]Node, error) {
+	t, err := LoadTree(path)
+	if err != nil {
+		return nil, err
+	}
+	return t.Nodes, nil
 }
 
 // Sync upserts the taxonomy into the categories collection (matched by path,
@@ -82,19 +179,39 @@ func Sync(ctx context.Context, store *repository.Store, nodes []Node) error {
 		idByPath[n.Path] = cat.ID
 	}
 
-	// Prune taxonomy categories no longer in the tree (e.g. change 12 removed
-	// learning/*, lang/stdlib-utils, *-framework). Without this they linger in
-	// the categories collection and still render in GET /category. Only prunes
-	// createdBy=taxonomy — human/legacy-ai categories are never touched.
+	// Prune taxonomy categories no longer in the tree — but only once nothing
+	// references them. During a tree migration the old leaves keep serving
+	// (items carry the old path until re-classified, GET /category still lists
+	// it); deleting them at the first restart would leave dangling categoryIds
+	// and empty navigation. A stale node with zero live items is gone for good.
+	// Only prunes createdBy=taxonomy — human/legacy-ai categories are never touched.
 	current := make([]string, 0, len(nodes))
 	for _, n := range nodes {
 		current = append(current, n.Path)
 	}
-	if _, err := store.Categories().DeleteMany(ctx, bson.M{
+	cur, err := store.Categories().Find(ctx, bson.M{
 		"createdBy": "taxonomy",
 		"path":      bson.M{"$nin": current},
-	}); err != nil {
-		return fmt.Errorf("prune stale categories: %w", err)
+	})
+	if err != nil {
+		return fmt.Errorf("list stale categories: %w", err)
+	}
+	var stale []domain.Category
+	if err := cur.All(ctx, &stale); err != nil {
+		return fmt.Errorf("decode stale categories: %w", err)
+	}
+	for _, c := range stale {
+		// Answered from the categoryPath index; no document scan.
+		n, err := store.Items().CountDocuments(ctx, bson.M{"categoryPath": c.Path}, options.Count().SetLimit(1))
+		if err != nil {
+			return fmt.Errorf("count refs of %s: %w", c.Path, err)
+		}
+		if n > 0 {
+			continue // still referenced: keep until the migration drains it
+		}
+		if _, err := store.Categories().DeleteOne(ctx, bson.M{"_id": c.ID}); err != nil {
+			return fmt.Errorf("prune %s: %w", c.Path, err)
+		}
 	}
 	return nil
 }

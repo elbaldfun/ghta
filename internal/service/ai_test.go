@@ -40,8 +40,8 @@ func TestParseBatchResponse(t *testing.T) {
 		if _, err := parseBatchResponse("no json here"); err == nil {
 			t.Errorf("expected error")
 		}
-		if _, err := parseBatchResponse(`{"results":[]}`); err == nil {
-			t.Errorf("expected error for empty results")
+		if out, err := parseBatchResponse(`{"results":[]}`); err != nil || len(out) != 0 {
+			t.Errorf("empty results should parse as a successful call with nothing in it, got %v %v", out, err)
 		}
 	})
 }

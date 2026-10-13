@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarRank 线框</title>
+<style>
+:root{--bg:#f4f7f4;--surface:#fff;--surface2:#eef3ee;--border:#d3e0d6;--fg:#132016;--muted:#5c6d60;--accent:#1e8e3e;--up:#1e8e3e;--down:#dc2626;--warn:#c88a2e;--bad:#d8321f;--src-gh:#6e5494;--src-ios:#0a84ff;--src-chrome:#4285f4;--src-hf:#ff9d00;--r:12px}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0e0c;--surface:#101512;--surface2:#141a16;--border:#1f2b23;--fg:#d6e8d9;--muted:#8fa394}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 ui-sans-serif,system-ui,sans-serif;padding:0 16px 60px}
+h1,h2,h3{margin:0}h1{font-size:22px}h2{font-size:17px;margin:40px 0 6px}h3{font-size:14px;font-weight:700}
+.note{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+.frame{border:1px solid var(--border);border-radius:var(--r);background:var(--surface);overflow:hidden;margin-bottom:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:900px){.pair{grid-template-columns:1fr}}
+.cap{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:8px 12px;border-bottom:1px dashed var(--border);background:var(--surface2)}
+.pad{padding:12px}
+.slot{border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin:6px 0;color:var(--muted);font-size:12.5px}
+.slot b{color:var(--fg)}
+.nav{display:flex;gap:14px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.nav .logo{font-weight:800;color:var(--accent);font-size:16px}.nav a{color:var(--fg);text-decoration:none;font-weight:600;font-size:13px}.nav .on{border-bottom:2px solid var(--accent)}
+.nav .sp{flex:1}.nav .search{border:1px solid var(--border);border-radius:999px;padding:4px 10px;color:var(--muted);font-size:12px;min-width:160px}
+.chip{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:2px 9px;font-size:11.5px;margin:2px 2px 2px 0;color:var(--fg);background:var(--surface)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.sig{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700}
+.sig.up{color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+.sig.c{color:var(--muted);background:var(--surface2)}.sig.d{color:#fff;background:var(--bad)}
+.sig.rank{color:var(--fg);background:var(--surface2)}
+.row{display:grid;grid-template-columns:28px 28px 1fr auto auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid var(--border);font-size:13px}
+.row .n{color:var(--muted);text-align:right}.ico{width:26px;height:26px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);position:relative}
+.ico.gh::after,.ico.ios::after,.ico.chrome::after,.ico.hf::after{content:"";position:absolute;right:-4px;bottom:-4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--surface)}
+.ico.gh::after{background:var(--src-gh)}.ico.ios::after{background:var(--src-ios)}.ico.chrome::after{background:var(--src-chrome)}.ico.hf::after{background:var(--src-hf)}
+.row .t{font-weight:700}.row .s{color:var(--muted);font-size:12px;font-weight:400}
+.row .m{text-align:right;font-variant-numeric:tabular-nums}.row .m small{display:block;color:var(--muted);font-size:10.5px;font-weight:400}
+.grid{display:grid;grid-template-columns:220px 1fr;gap:0}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.side{border-right:1px solid var(--border);padding:10px 12px;font-size:12.5px;background:var(--surface2)}
+.side div{padding:3px 0}.side .k{color:var(--muted);float:right}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.metric{border:1px solid var(--border);border-radius:8px;padding:8px 10px}.metric small{display:block;color:var(--muted);font-size:10.5px}.metric b{font-size:16px}
+.chart{height:90px;border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;margin:8px 0}
+.q{border-left:4px solid var(--up);background:var(--surface2);border-radius:6px;padding:8px 10px;font-size:12.5px;margin:8px 0}.q.d{border-left-color:var(--bad)}
+.q b{display:block}.q ul{margin:4px 0 0 16px;padding:0}
+.act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.btn{border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:600;background:var(--surface)}.btn.p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.fold{padding:8px 12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;background:var(--surface2)}
+.cols{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:900px){.cols{grid-template-columns:1fr 1fr}}
+.col h3{display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px}
+.mini{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-top:1px dashed var(--border)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:700px){.cards{grid-template-columns:1fr 1fr}}
+.card{border:1px solid var(--border);border-radius:10px;overflow:hidden}.shot{height:70px;background:var(--surface2);border-bottom:1px solid var(--border)}.card .b{padding:8px;font-size:12px}.card .b b{display:block;font-size:13px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:6px 0 16px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+</style>
+</head>
+<body>
+<h1 style="margin-top:24px">StarRank 线框（多源版）</h1>
+<p class="note">四个模板各出 GitHub 与 iOS 对照，用来检验"只换槽位、不换模板"是否成立。颜色沿用现有令牌；虚线框是槽位说明，不是最终 UI。</p>
+<div class="legend"><span><i class="dot" style="background:var(--src-gh)"></i>GitHub</span><span><i class="dot" style="background:var(--src-ios)"></i>iOS</span><span><i class="dot" style="background:var(--src-chrome)"></i>Chrome</span><span><i class="dot" style="background:var(--src-hf)"></i>HF</span><span><span class="sig up">+1.8k ★</span> 增长</span><span><span class="sig rank">↑12</span> 名次变化</span><span><span class="sig c">C</span> <span class="sig d">D 可疑</span> 质量档位</span></div>
+
+<h2>0 · 页头与一级导航</h2>
+<p class="note">五个入口按源分，搜索跨源，国家与语言分开。</p>
+<div class="frame"><div class="nav"><span class="logo">StarRank</span><a class="on">今天在涨</a><a>GitHub</a><a>应用</a><a>扩展</a><a>模型</a><span class="sp"></span><span class="search">搜索仓库、应用、扩展…</span><span class="chip">🇺🇸 美区 ▾</span><span class="chip">中文 ▾</span><span class="chip">◐</span></div>
+<div class="pad"><div class="slot"><b>国家选择器</b>只在商店类页面出现；默认按访客地区推断，记住上次选择。语言与国家互不影响。</div></div></div>
+
+<h2>1 · 首页 `/`</h2>
+<p class="note">不是榜单页。三段：按源分列的真涨、可疑爆款、领域热度。</p>
+<div class="frame"><div class="cap">今天在涨 · 2026-10-13</div><div class="pad">
+<div class="cols">
+<div class="col"><h3><span>GitHub</span><span class="s">查看 →</span></h3><div class="mini"><span>heygen/hyperframes</span><span class="sig up">+4.5k ★</span></div><div class="mini"><span>cursor/plugins</span><span class="sig up">+1.1k ★</span></div><div class="mini"><span>tester-army/e2e</span><span class="sig up">+5.6k ★</span></div><div class="mini s"><span>…5 条</span></div></div>
+<div class="col"><h3><span>应用 · iOS 美区</span><span class="s">查看 →</span></h3><div class="mini"><span>Sora</span><span class="sig rank">↑38 名</span></div><div class="mini"><span>Threads</span><span class="sig rank">↑7 名</span></div><div class="mini"><span>Zepp</span><span class="sig rank">新进榜</span></div></div>
+<div class="col"><h3><span>扩展 · Chrome</span><span class="s">查看 →</span></h3><div class="mini"><span>Tab Manager X</span><span class="sig up">+40k 用户</span></div><div class="mini"><span>ReadAloud</span><span class="sig up">+12k 用户</span></div></div>
+<div class="col"><h3><span>模型 · HF</span><span class="s">查看 →</span></h3><div class="mini"><span>Qwen3-Omni</span><span class="sig up">+2.1k ♥</span></div><div class="mini"><span>FLUX.2</span><span class="sig up">+900 ♥</span></div></div>
+</div>
+<div class="cap" style="margin:14px -12px 0;border-top:1px dashed var(--border)">本周可疑爆款</div>
+<div class="q d"><b>morluto/rea · 一周 +130.5k ★ · 档位 D</b><ul><li>71% 的 star 来自注册不到 30 天的账号</li><li>star 事件集中在 3 个小时窗口内</li><li>与 boykopovar/AnyPS5 共享 2,400 个 star 账号</li></ul></div>
+<div class="slot">再列 2 条；底部链接"我们如何判断"说明页。这是站点差异化在首页的直接体现。</div>
+<div class="cap" style="margin:14px -12px 0;border-top:1px dashed var(--border)">领域热度</div>
+<div class="slot">现有热力图压成一行色块（AI · Web · DevTools · Infra …），点击进 /github/c/{path}。</div>
+<div class="act"><span class="btn p">订阅周报</span><span class="btn">RSS</span><span class="btn">洞察 · 最新 3 篇</span></div>
+</div></div>
+
+<h2>2 · 榜单页模板（Board）</h2>
+<p class="note">左：/github/c/ai/agents；右：/ios/c/productivity。同一模板，筛选维度与指标槽位不同。</p>
+<div class="pair">
+<div class="frame"><div class="cap">GitHub › AI › AI Agents</div>
+<div class="grid"><div class="side"><div><b>AI</b><span class="k">12.9k</span></div><div style="padding-left:10px;font-weight:700">AI Agents<span class="k">1.9k</span></div><div style="padding-left:10px">LLM<span class="k">4.1k</span></div><div style="padding-left:10px">ML 框架<span class="k">3.9k</span></div><div>Web 开发<span class="k">14.1k</span></div><div>开发工具<span class="k">9.2k</span></div><div class="slot" style="margin-top:10px">DimensionTree · 领域树</div></div>
+<div><div class="pad"><h3>AI Agents <span class="s" style="font-weight:400;color:var(--muted)">1,912 个仓库 · 按 7 日真实增长排名</span></h3>
+<div style="margin:8px 0"><span class="chip on">真涨</span><span class="chip">总榜</span><span class="chip">新进前 1000</span> &nbsp; <span class="chip">形态 ▾ 软件</span><span class="chip">语言 ▾</span><span class="chip">7 日 ▾</span></div></div>
+<div class="row"><span class="n">1</span><span class="ico gh"></span><span><span class="t">heygen-com/hyperframes</span><br><span class="s">Write HTML. Render video. Built for agents. · TypeScript · library</span></span><span class="m">61.8k<small>★ 总数</small></span><span class="sig up">+4.5k / 7d</span></div>
+<div class="row"><span class="n">2</span><span class="ico gh"></span><span><span class="t">thedotmack/claude-mem</span><br><span class="s">Persistent context across sessions · TypeScript · skill</span></span><span class="m">100.1k<small>★ 总数</small></span><span class="sig up">+3.8k / 7d</span></div>
+<div class="row"><span class="n">3</span><span class="ico gh"></span><span><span class="t">mvschwarz/openrig</span> <span class="sig c">C</span><br><span class="s">Network of agents · TypeScript</span></span><span class="m">7.2k<small>★ 总数</small></span><span class="sig up">+2.1k / 7d</span></div>
+<div class="fold">已折叠 4 个档位 D 的可疑仓库 · 查看</div>
+<div class="pad act"><span class="btn p">订阅本榜</span><span class="btn">RSS</span><span class="btn">分页 1 2 3 …</span></div></div></div></div>
+
+<div class="frame"><div class="cap">应用 › iOS · 🇺🇸 美区 › 效率</div>
+<div class="grid"><div class="side"><div><b>效率</b><span class="k">榜</span></div><div style="padding-left:10px">免费榜</div><div style="padding-left:10px;font-weight:700">付费榜</div><div style="padding-left:10px">畅销榜</div><div>社交</div><div>工具</div><div class="slot" style="margin-top:10px">DimensionTree · 商店分类 + 榜单类型</div></div>
+<div><div class="pad"><h3>效率 · 付费榜 <span class="s" style="font-weight:400;color:var(--muted)">美区 · 按名次变化排名</span></h3>
+<div style="margin:8px 0"><span class="chip">🇺🇸 美区 ▾</span> &nbsp; <span class="chip on">上升最快</span><span class="chip">当前榜</span><span class="chip">新进榜</span> &nbsp; <span class="chip">7 日 ▾</span></div></div>
+<div class="row"><span class="n">1</span><span class="ico ios"></span><span><span class="t">Things 3</span><br><span class="s">Cultured Code · $9.99 · ★ 4.8 (31k)</span></span><span class="m">#4<small>当前名次</small></span><span class="sig rank">↑38</span></div>
+<div class="row"><span class="n">2</span><span class="ico ios"></span><span><span class="t">Procreate</span><br><span class="s">Savage · $12.99 · ★ 4.7</span></span><span class="m">#2<small>当前名次</small></span><span class="sig rank">↑9</span></div>
+<div class="row"><span class="n">3</span><span class="ico ios"></span><span><span class="t">PDF Expert Pro</span> <span class="sig c">C</span><br><span class="s">Readdle · $9.99</span></span><span class="m">#11<small>当前名次</small></span><span class="sig rank">新进榜</span></div>
+<div class="fold">已折叠 2 个评分异常的应用 · 查看</div>
+<div class="pad act"><span class="btn p">订阅本榜</span><span class="btn">RSS</span><span class="btn">分页</span></div></div></div></div>
+</div>
+<div class="slot"><b>槽位差异清单：</b>侧栏树来源（领域树 ↔ 商店分类）；筛选第一项（形态 ↔ 国家）；主指标（★ 总数 ↔ 当前名次）；增长表达（+N ★ ↔ ↑N 名 / 新进榜）；质量档位含义（刷 star ↔ 刷评分）。其余完全一致。</div>
+
+<h2>3 · 详情页模板（Entry）</h2>
+<div class="pair">
+<div class="frame"><div class="cap">/github/mattpocock/skills</div><div class="pad">
+<div style="display:flex;gap:10px;align-items:center"><span class="ico gh" style="width:36px;height:36px"></span><div><h3>mattpocock/skills <span class="chip">Shell</span></h3><span class="s" style="color:var(--muted);font-size:12px">aihero.dev/skills · 由 <b>Matt Pocock</b> 𝕏 @mattpocockuk</span></div></div>
+<div style="margin:8px 0"><span class="sig rank">总榜 #13</span> <span class="sig rank">Shell #2</span> <span class="sig rank">AI Coding #2</span> <span class="sig up">↑3 本周</span></div>
+<div class="metrics"><div class="metric"><small>Stars</small><b>286.5k</b></div><div class="metric"><small>7 日增长</small><b>+10.2k</b></div><div class="metric"><small>Forks</small><b>24k</b></div><div class="metric"><small>Issues</small><b>153</b></div></div>
+<div class="chart">增长曲线（star_history + 快照）</div>
+<div class="q"><b>质量档位 A · 增长可信</b><ul><li>star 账号年龄中位 3.2 年</li><li>增长分布在 90 天内，无单日尖峰</li><li>作者有 12 个 1k+ 仓库</li></ul></div>
+<div class="slot"><b>主体槽位：</b>README + 目录（现有）</div>
+<div class="slot"><b>侧栏：</b>作者卡（其他仓库、X、公司）· 同类 6 个（同 labels.domain，质量加权）· 替代关系</div>
+<div class="act"><span class="btn p">复制徽章到 README</span><span class="btn">订阅更新</span><span class="btn">GitHub ↗</span></div>
+</div></div>
+
+<div class="frame"><div class="cap">/ios/id904237743 · 🇺🇸</div><div class="pad">
+<div style="display:flex;gap:10px;align-items:center"><span class="ico ios" style="width:36px;height:36px"></span><div><h3>Things 3 <span class="chip">效率</span> <span class="chip">$9.99</span></h3><span class="s" style="color:var(--muted);font-size:12px">Cultured Code GmbH · 开发者页 →</span></div></div>
+<div style="margin:8px 0"><span class="sig rank">效率付费 #4</span> <span class="sig rank">总付费 #27</span> <span class="sig rank">↑38 本周</span> <span class="chip">🇯🇵 日区 #9</span></div>
+<div class="metrics"><div class="metric"><small>当前名次</small><b>#4</b></div><div class="metric"><small>7 日变化</small><b>↑38</b></div><div class="metric"><small>评分</small><b>4.8</b></div><div class="metric"><small>评论数</small><b>31k</b></div></div>
+<div class="chart">名次曲线（rank_snapshots，按国家切换）</div>
+<div class="q"><b>质量档位 A · 评分可信</b><ul><li>评分分布自然（无 5 星尖峰）</li><li>评论账号活跃度正常</li><li>上榜 8 年，名次波动平稳</li></ul></div>
+<div class="slot"><b>主体槽位：</b>截图轮播 + 商店描述 + 评分分布 + 版本记录</div>
+<div class="slot"><b>侧栏：</b>开发者卡（其他应用）· 同货架 6 个（跨平台）· <b>开源替代：</b>Super Productivity、Vikunja</div>
+<div class="act"><span class="btn p">复制徽章</span><span class="btn">订阅更新</span><span class="btn">App Store ↗</span></div>
+</div></div>
+</div>
+
+<h2>4 · 货架页模板（Shelf）· 跨源</h2>
+<p class="note">唯一按"用途"组织的页面。同一货架内开源桌面应用、iOS、Android、扩展混排，行首源徽标区分。</p>
+<div class="frame"><div class="cap">应用 › 效率办公 › 笔记</div>
+<div class="grid"><div class="side"><div><b>效率办公</b></div><div style="padding-left:10px;font-weight:700">笔记</div><div style="padding-left:10px">待办日历</div><div style="padding-left:10px">文档/PDF</div><div style="padding-left:10px">知识管理</div><div>创作设计</div><div>开发工具</div><div>AI 应用</div><div class="slot" style="margin-top:10px">DimensionTree · 货架树 11×46</div></div>
+<div><div class="pad"><h3>笔记 <span class="s" style="font-weight:400;color:var(--muted)">开源 142 · iOS 38 · Android 27 · 扩展 11</span></h3>
+<div style="margin:8px 0"><span class="chip on">全部平台</span><span class="chip">开源</span><span class="chip">iOS</span><span class="chip">Android</span><span class="chip">扩展</span> &nbsp; <span class="chip">macOS ▾</span><span class="chip">真涨 ▾</span></div>
+<div class="cards">
+<div class="card"><div class="shot"></div><div class="b"><span class="ico gh" style="float:right"></span><b>Obsidian 替代 · Logseq</b>本地优先的大纲笔记<br><span class="sig up">+320 ★</span> · macOS Win Linux ↓</div></div>
+<div class="card"><div class="shot"></div><div class="b"><span class="ico ios" style="float:right"></span><b>Bear</b>Markdown 笔记 · $2.99/月<br><span class="sig rank">↑5 名</span> · 美区效率 #18</div></div>
+<div class="card"><div class="shot"></div><div class="b"><span class="ico chrome" style="float:right"></span><b>Notion Web Clipper</b>一键剪藏到 Notion<br><span class="sig up">+8k 用户</span> · 2M 用户</div></div>
+</div>
+<div class="slot" style="margin-top:10px">同一开发者最多连续出现 2 个；图标缺失用首字母色块。</div>
+<div class="act"><span class="btn p">订阅货架</span><span class="btn">最佳开源笔记应用 →</span><span class="btn">Notion 的替代品 →</span></div></div></div></div></div>
+
+<h2>5 · 人物页模板（Person）</h2>
+<div class="pair">
+<div class="frame"><div class="cap">/developers · 榜单模式 · AI · 上升</div>
+<div class="row"><span class="n">1</span><span class="ico"></span><span><span class="t">Jesse Vincent</span> <span class="s">𝕏 @obra · Prime Radiant</span><br><span class="s">obra/superpowers 297.8k · 3 个作品</span></span><span class="m">A<small>质量</small></span><span class="sig up">+507 ★/d</span></div>
+<div class="row"><span class="n">2</span><span class="ico"></span><span><span class="t">yetone</span> <span class="s">𝕏 @yetone · Isoform</span><br><span class="s">yetone/magpie 9.6k · 2 个作品</span></span><span class="m">A<small>质量</small></span><span class="sig up">+905 ★/d</span></div>
+<div class="fold">已折叠 6 个单仓库、档位 D 的账号 · 查看</div>
+<div class="pad slot">上升榜要求 ≥ 2 个作品或 A/B 档；X 账号在名字旁，这是上榜者会转发的元素。</div></div>
+<div class="frame"><div class="cap">/developers/obra · 详情模式</div><div class="pad">
+<div style="display:flex;gap:10px;align-items:center"><span class="ico" style="width:36px;height:36px;border-radius:50%"></span><div><h3>Jesse Vincent</h3><span class="s" style="color:var(--muted);font-size:12px">𝕏 @obra · Prime Radiant · AI Coding · DevTools</span></div></div>
+<div class="metrics"><div class="metric"><small>作品总 ★</small><b>312k</b></div><div class="metric"><small>本周</small><b>+3.5k</b></div><div class="metric"><small>质量</small><b>A</b></div><div class="metric"><small>AI 榜</small><b>#9</b></div></div>
+<div class="slot"><b>作品列表</b>（EntryRow，跨源：GitHub 仓库 + 未来同开发者的商店应用）</div>
+<div class="act"><span class="btn p">分享卡片 "AI builder 本周 #9"</span><span class="btn">GitHub ↗</span><span class="btn">𝕏 ↗</span></div>
+</div></div>
+</div>
+
+<h2>6 · 组件槽位总览</h2>
+<div class="frame"><div class="pad">
+<div class="slot"><b>EntryRow</b> = 名次 · 图标(源角标) · 标题/副标题/标签 · Metric×1–3 · SignalChip · 行尾动作。替代 RepoRow / RankTable / BreakoutBoard / ModelRow / DeveloperCard。</div>
+<div class="slot"><b>SignalChip</b> 类型：growth（+N ★ / +N 用户 / +N ♥）· rankDelta（↑N / 新进榜）· quality（C / D 可疑）。A/B 不显示。</div>
+<div class="slot"><b>FilterBar</b> 维度顺序：国家 › 子分类 › 形态/平台 › 时间窗 › 排序；不存在的维度不渲染。</div>
+<div class="slot"><b>ActionBar</b>：订阅 · RSS · 徽章 · 分享 · 查看被折叠。每页至少一个。</div>
+<div class="slot"><b>删除</b>：HotBar、Carousel、EcosystemMap、NavDropdown、PlatformBadges（并入 SourceBadge）。</div>
+</div></div>
+</body>
+</html>

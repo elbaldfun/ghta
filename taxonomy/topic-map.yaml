@@ -1,62 +1,105 @@
-# GitHub topic / 主语言 → 领域 path 的规则映射 v2（change 12 定稿，待人审）
+# GitHub topic / 主语言 → 领域 path 的规则映射 v3（对应 taxonomy.yaml version 3）
 # 命中即归类（免费、确定性），多命中 = 多标签。key 全小写。
 # ─────────────────────────────────────────────────────────────
-# v2 相对 v1 的清理（依据 golden 误判分析，规则 firing 精度 48%→62%）：
-#   · 删「平台/环境」词：android/ios/linux/docker/raspberry-pi/embedded/flutter
-#     —— 它们表示「跑在什么上/支持什么」而非「是什么」，误判率极高，改落 LLM
-#   · 删「用了某组件≠是该组件」：redis/mysql/postgresql/elasticsearch/mongodb/sql/cache
-#   · 删过宽 AI 词：openai/ai-agents/deep-learning/neural-network（易压过更精确的叶子）
-#   · 删弱信号：data-visualization/automation/productivity/nextjs/svelte
-#   · 新增 ai/media-gen、devtools/ai-coding、data/analytics 的映射
-#   · 路径迁移到新树（web/frontend 等）；删 learning 段（→ facets.yaml type）
+# v3 相对 v2：
+#   · 目标路径全部换成 v3 叶子
+#   · 删 cli / command-line：形态词，facets.yaml 已管；terminal/tui/zsh 归 devtools/terminal
+#   · 新增 agents/* 五组信号（mcp、claude-code、agent-skills、langchain、rag …）
+#   · 新增 client/* 的"库"信号（swiftui、cocoapods、jetpack-compose …）；
+#     沿用 v2 教训，不加 android / ios / linux 这类平台词（它们表示"跑在什么上"，误判率高）
+#   · lang/utils 的 algorithms / serialization 改落新叶子
+#   · apps 规则只指向货架叶子（apps/<大类>/<货架>），不再指向大类
 
 topics:
-  # ai/llm
-  llm: ai/llm
-  large-language-models: ai/llm
-  gpt: ai/llm
-  chatgpt: ai/llm
-  language-model: ai/llm
-  rag: ai/llm
-  prompt-engineering: ai/llm
-  fine-tuning: ai/llm
-  llama: ai/llm
-  llm-inference: ai/llm
-  # ai/agents
-  agents: ai/agents
-  autonomous-agents: ai/agents
-  multi-agent: ai/agents
-  # ai/ml-framework
+  # ── agents ──
+  mcp: agents/mcp
+  mcp-server: agents/mcp
+  mcp-servers: agents/mcp
+  model-context-protocol: agents/mcp
+  function-calling: agents/mcp
+  tool-calling: agents/mcp
+  claude-code: agents/coding
+  codex: agents/coding
+  codex-cli: agents/coding
+  coding-agent: agents/coding
+  coding-agents: agents/coding
+  ai-coding: agents/coding
+  agentic-coding: agents/coding
+  opencode: agents/coding
+  gemini-cli: agents/coding
+  vibe-coding: agents/coding
+  agent-skills: agents/skills
+  agent-skill: agents/skills
+  claude-skills: agents/skills
+  claude-skill: agents/skills
+  cursor-rules: agents/skills
+  prompt-pack: agents/skills
+  agents: agents/frameworks
+  autonomous-agents: agents/frameworks
+  multi-agent: agents/frameworks
+  multi-agent-systems: agents/frameworks
+  agent-framework: agents/frameworks
+  agent-orchestration: agents/frameworks
+  agentic-workflow: agents/frameworks
+  langchain: agents/frameworks
+  langgraph: agents/frameworks
+  crewai: agents/frameworks
+  rag: agents/memory
+  retrieval-augmented-generation: agents/memory
+  vector-search: agents/memory
+  memory: agents/memory
+  context-engineering: agents/memory
+  chatbot: agents/assistants
+  chat-ui: agents/assistants
+  chatgpt-ui: agents/assistants
+  ai-assistant: agents/assistants
+
+  # ── ai ──
+  llm-inference: ai/llm-serving
+  inference: ai/llm-serving
+  ollama: ai/llm-serving
+  vllm: ai/llm-serving
+  quantization: ai/llm-serving
+  llm-serving: ai/llm-serving
+  model-serving: ai/llm-serving
+  llama: ai/llm-serving
+  llama-cpp: ai/llm-serving
+  fine-tuning: ai/llm-training
+  finetuning: ai/llm-training
+  lora: ai/llm-training
+  rlhf: ai/llm-training
+  pretraining: ai/llm-training
+  llm-training: ai/llm-training
+  dataset: ai/llm-training
+  benchmark: ai/llm-training
   machine-learning: ai/ml-framework
   pytorch: ai/ml-framework
   tensorflow: ai/ml-framework
-  # ai/cv
   computer-vision: ai/cv
   object-detection: ai/cv
   opencv: ai/cv
   ocr: ai/cv
-  # ai/media-gen
   stable-diffusion: ai/media-gen
   image-generation: ai/media-gen
   text-to-image: ai/media-gen
   img2img: ai/media-gen
   diffusion: ai/media-gen
-  # ai/speech-audio
   speech-recognition: ai/speech-audio
   text-to-speech: ai/speech-audio
   whisper: ai/speech-audio
   speech-to-text: ai/speech-audio
-  # ai/data-science
   data-science: ai/data-science
   jupyter: ai/data-science
   pandas: ai/data-science
 
-  # web
+  # ── web ──
   react: web/frontend
   vue: web/frontend
   angular: web/frontend
   svelte: web/frontend
   frontend: web/frontend
+  nextjs: web/frontend
+  state-management: web/frontend
   django: web/backend
   flask: web/backend
   fastapi: web/backend
@@ -64,11 +107,21 @@ topics:
   express: web/backend
   rails: web/backend
   backend-as-a-service: web/backend
-  css: web/css-ui
-  tailwindcss: web/css-ui
-  css-framework: web/css-ui
-  ui-components: web/css-ui
-  design-system: web/css-ui
+  css: web/ui-components
+  tailwindcss: web/ui-components
+  css-framework: web/ui-components
+  ui-components: web/ui-components
+  component-library: web/ui-components
+  react-components: web/ui-components
+  design-system: web/ui-components
+  shadcn-ui: web/ui-components
+  visualization: web/data-viz
+  data-visualization: web/data-viz
+  charts: web/data-viz
+  charting-library: web/data-viz
+  d3: web/data-viz
+  d3js: web/data-viz
+  webgl: web/data-viz
   webpack: web/build-tools
   vite: web/build-tools
   bundler: web/build-tools
@@ -76,41 +129,49 @@ topics:
   static-site-generator: web/static-site
   blog-engine: web/static-site
 
-  # devtools
-  cli: devtools/cli
-  command-line: devtools/cli
-  terminal: devtools/cli
-  zsh: devtools/cli
-  tui: devtools/cli
+  # ── devtools ──
+  terminal: devtools/terminal
+  terminal-emulator: devtools/terminal
+  tui: devtools/terminal
+  zsh: devtools/terminal
+  shell: devtools/terminal
+  bash: devtools/terminal
+  fish: devtools/terminal
+  tmux: devtools/terminal
+  dotfiles: devtools/terminal
+  linter: devtools/code-quality
+  formatter: devtools/code-quality
+  static-analysis: devtools/code-quality
+  code-quality: devtools/code-quality
   vscode: devtools/editors
   neovim: devtools/editors
   vim: devtools/editors
   editor: devtools/editors
   ide: devtools/editors
   language-server: devtools/editors
-  ai-coding: devtools/ai-coding
-  agentic-coding: devtools/ai-coding
-  coding-agent: devtools/ai-coding
-  claude-code: devtools/ai-coding
-  agent-skills: devtools/ai-coding
   git: devtools/vcs
   code-review: devtools/vcs
   testing: devtools/testing
   test-automation: devtools/testing
   e2e-testing: devtools/testing
   browser-automation: devtools/testing
+  api-client: devtools/api-tools
+  api-testing: devtools/api-tools
+  openapi: devtools/api-tools
+  swagger: devtools/api-tools
+  api-documentation: devtools/api-tools
   package-manager: devtools/package-manager
 
-  # infra
+  # ── infra ──
   kubernetes: infra/containers
   containers: infra/containers
   helm: infra/containers
-  ci-cd: infra/ci-cd
-  continuous-integration: infra/ci-cd
-  github-actions: infra/ci-cd
-  terraform: infra/iac
-  infrastructure-as-code: infra/iac
-  ansible: infra/iac
+  ci-cd: infra/automation
+  continuous-integration: infra/automation
+  github-actions: infra/automation
+  terraform: infra/automation
+  infrastructure-as-code: infra/automation
+  ansible: infra/automation
   monitoring: infra/monitoring
   observability: infra/monitoring
   prometheus: infra/monitoring
@@ -121,39 +182,89 @@ topics:
   load-balancer: infra/networking
   tunnel: infra/networking
 
-  # data
+  # ── data ──
   database: data/database
-  vector-database: data/search
+  vector-database: data/analytics
   etl: data/pipeline
   stream-processing: data/pipeline
   kafka: data/pipeline
   message-queue: data/pipeline
-  search-engine: data/search
-  full-text-search: data/search
+  search-engine: data/analytics
+  full-text-search: data/analytics
   olap: data/analytics
   analytics: data/analytics
 
-  # lang
+  # ── lang ──
   compiler: lang/implementations
   interpreter: lang/implementations
   programming-language: lang/implementations
-  algorithms: lang/utils
-  data-structures: lang/utils
-  serialization: lang/utils
+  algorithms: lang/algorithms
+  algorithm: lang/algorithms
+  data-structures: lang/algorithms
+  serialization: lang/parsing
+  parser: lang/parsing
+  parsing: lang/parsing
+  json: lang/parsing
+  yaml: lang/parsing
+  markdown-parser: lang/parsing
+  pdf: lang/parsing
+  http-client: lang/concurrency-net
+  async: lang/concurrency-net
+  asyncio: lang/concurrency-net
+  concurrency: lang/concurrency-net
+  rpc: lang/concurrency-net
+  grpc: lang/concurrency-net
+  websocket: lang/concurrency-net
 
-  # mobile
-  react-native: mobile/cross-platform
-  swift: mobile/native
+  # ── client ──
+  react-native: client/cross-platform
+  flutter-package: client/cross-platform
+  swift: client/apple
+  swiftui: client/apple
+  swift-package-manager: client/apple
+  cocoapods: client/apple
+  carthage: client/apple
+  uikit: client/apple
+  objective-c: client/apple
+  kotlin-android: client/android
+  android-library: client/android
+  jetpack-compose: client/android
+  android-ui: client/android
+  material-design: client/android
+  electron: client/desktop
+  tauri: client/desktop
+  qt: client/desktop
+  gtk: client/desktop
+  gui-toolkit: client/desktop
+  wails: client/desktop
 
-  # security
-  penetration-testing: security/pentest
-  ctf: security/pentest
-  reverse-engineering: security/pentest
+  # ── security ──
+  penetration-testing: security/offensive
+  pentesting: security/offensive
+  pentest: security/offensive
+  ctf: security/offensive
+  redteam: security/offensive
+  red-team: security/offensive
+  exploit: security/offensive
+  vulnerability-scanners: security/offensive
+  reverse-engineering: security/reverse
+  malware-analysis: security/reverse
+  binary-analysis: security/reverse
+  disassembler: security/reverse
+  decompiler: security/reverse
+  forensics: security/reverse
+  osint: security/recon
+  recon: security/recon
+  reconnaissance: security/recon
+  bugbounty: security/recon
+  bug-bounty: security/recon
+  information-gathering: security/recon
+  subdomain-enumeration: security/recon
   cryptography: security/crypto-auth
   authentication: security/crypto-auth
   oauth: security/crypto-auth
 
-  # systems
+  # ── systems ──
   operating-system: systems/os
   kernel: systems/os
   emulator: systems/emulation
@@ -164,34 +275,51 @@ topics:
   esp32: systems/embedded
   firmware: systems/embedded
 
-  # apps
-  note-taking: apps/productivity
-  self-hosted: apps/selfhosted
-  selfhosted: apps/selfhosted
-  homelab: apps/selfhosted
-  media-server: apps/media
-  video: apps/media
-  browser-extension: apps/browser-ext
-  chrome-extension: apps/browser-ext
-  userscript: apps/browser-ext
+  # ── apps（只指向货架叶子）──
+  note-taking: apps/productivity/notes
+  todo: apps/productivity/todo
+  todo-app: apps/productivity/todo
+  media-server: apps/selfhosted/media-server
+  home-automation: apps/selfhosted/automation
+  smart-home: apps/selfhosted/automation
+  home-assistant: apps/selfhosted/automation
+  password-manager: apps/security/passwords
+  adblock: apps/security/privacy
+  adblocker: apps/security/privacy
+  browser-extension: apps/network/browser-ext
+  chrome-extension: apps/network/browser-ext
+  firefox-addon: apps/network/browser-ext
+  userscript: apps/network/browser-ext
+  downloader: apps/network/download
+  video-downloader: apps/network/download
+  media-player: apps/media/player
+  video-player: apps/media/player
+  music-player: apps/media/music
+  ebook-reader: apps/media/reader
+  rss-reader: apps/media/reader
+  screenshot: apps/system/screenshot
+  screen-recorder: apps/system/screenshot
+  launcher: apps/system/launcher
+  file-manager: apps/system/files
+  backup: apps/system/backup
 
-  # gamedev
+  # ── gamedev ──
   game-engine: gamedev/engines
   game-development: gamedev/engines
   gamedev: gamedev/engines
   game: gamedev/games
   minecraft: gamedev/games
 
-  # blockchain
-  blockchain: blockchain/protocols
-  ethereum: blockchain/protocols
-  bitcoin: blockchain/protocols
-  web3: blockchain/contracts
-  solidity: blockchain/contracts
-  smart-contracts: blockchain/contracts
+  # ── blockchain ──
+  blockchain: blockchain/core
+  ethereum: blockchain/core
+  bitcoin: blockchain/core
+  web3: blockchain/core
+  solidity: blockchain/core
+  smart-contracts: blockchain/core
 
 # 主语言兜底：仅当 topics 全部未命中时使用（信号弱，只映射指向性强的语言）
 languages:
   verilog: systems/embedded
   vhdl: systems/embedded
-  solidity: blockchain/contracts
+  solidity: blockchain/core

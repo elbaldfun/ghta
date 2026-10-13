@@ -37,18 +37,59 @@ type Categorizer struct {
 	concurrency atomic.Int64 // LLM batches in flight; retunable at runtime
 	running     atomic.Bool  // guards against overlapping runs (cron + manual)
 	log         *slog.Logger
+
+	// treeVersion is stamped on every classification; items behind it are
+	// re-queued (that is how a tree migration drains).
+	treeVersion int
+	// Gate for the long tail: items under minStars are classified only once
+	// they show growth (weeklyIncrease >= hotWeekly). An item that never
+	// reaches a board never needs a category, and the corpus below 1k stars
+	// is 2-10x the corpus above it. minStars <= 0 disables the gate.
+	minStars  float64
+	hotWeekly float64
 }
 
-func NewCategorizer(store *repository.Store, rules *taxonomy.Rules, facets *taxonomy.Facets, ai *service.AIService, batchSize, maxLabels, concurrency int, log *slog.Logger) *Categorizer {
+// Gate is the long-tail classification gate (see Categorizer.minStars).
+type Gate struct {
+	MinStars  float64
+	HotWeekly float64
+}
+
+func NewCategorizer(store *repository.Store, rules *taxonomy.Rules, facets *taxonomy.Facets, ai *service.AIService, batchSize, maxLabels, concurrency int, treeVersion int, gate Gate, log *slog.Logger) *Categorizer {
 	if batchSize < 1 {
 		batchSize = 15
 	}
 	if maxLabels < 1 {
 		maxLabels = defaultMaxLabels
 	}
-	c := &Categorizer{store: store, rules: rules, facets: facets, ai: ai, batchSize: batchSize, maxLabels: maxLabels, log: log}
+	if treeVersion < 1 {
+		treeVersion = 1
+	}
+	c := &Categorizer{store: store, rules: rules, facets: facets, ai: ai, batchSize: batchSize, maxLabels: maxLabels, log: log,
+		treeVersion: treeVersion, minStars: gate.MinStars, hotWeekly: gate.HotWeekly}
 	c.SetConcurrency(concurrency)
 	return c
+}
+
+// pendingFilter selects what this run classifies: never-classified items and
+// items classified on an older tree. Failed items stay parked (a version bump
+// via migration resets their failure count explicitly). The gate applies to
+// GitHub only — store/HF sources classify at fetch time or are small.
+func (c *Categorizer) pendingFilter() bson.M {
+	due := bson.A{
+		bson.M{"analysisStatus": bson.M{"$nin": []string{domain.AnalysisDone, domain.AnalysisFailed}}},
+		bson.M{"analysisStatus": domain.AnalysisDone, "taxonomyVersion": bson.M{"$lt": c.treeVersion}},
+		bson.M{"analysisStatus": domain.AnalysisDone, "taxonomyVersion": bson.M{"$exists": false}},
+	}
+	f := bson.M{"$or": due}
+	if c.minStars > 0 {
+		f["$and"] = bson.A{bson.M{"$or": bson.A{
+			bson.M{"source": bson.M{"$ne": domain.SourceGitHub}},
+			bson.M{"metrics.stars": bson.M{"$gte": c.minStars}},
+			bson.M{"weeklyIncrease": bson.M{"$gte": c.hotWeekly}},
+		}}}
+	}
+	return f
 }
 
 // SetConcurrency retunes how many LLM batches run in parallel (clamped 1..32).
@@ -92,8 +133,10 @@ func (c *Categorizer) Run(ctx context.Context) {
 		return
 	}
 
-	filter := bson.M{"analysisStatus": bson.M{"$nin": []string{domain.AnalysisDone, domain.AnalysisFailed}}}
-	cur, err := c.store.Items().Find(ctx, filter, options.Find().SetLimit(maxItemsPerRun))
+	// Most-popular-first so a migration drains the visible head of every
+	// board before the tail (the storefinder does the same).
+	cur, err := c.store.Items().Find(ctx, c.pendingFilter(),
+		options.Find().SetSort(bson.D{{Key: "metrics.stars", Value: -1}}).SetLimit(maxItemsPerRun))
 	if err != nil {
 		c.log.Error("categorizer: query failed", "err", err)
 		return
@@ -116,7 +159,7 @@ func (c *Categorizer) Run(ctx context.Context) {
 			unresolved = append(unresolved, pending{item: item, ftype: ftype})
 			continue
 		}
-		if err := c.markDone(ctx, item.ID, ids.ids, ids.paths, ftype, nil, "rule"); err == nil {
+		if err := c.markDone(ctx, item, ids.ids, ids.paths, ftype, nil, "rule", idByPath); err == nil {
 			ruleDone++
 		}
 	}
@@ -212,7 +255,7 @@ func (c *Categorizer) processBatch(ctx context.Context, cats []domain.Category, 
 	for _, p := range batch {
 		r, ok := results[p.item.ExternalID]
 		if !ok {
-			c.failOrTypeOnly(ctx, p) // omitted by the model
+			c.failOrTypeOnly(ctx, p, idByPath) // omitted by the model
 			continue
 		}
 		ids := c.resolveIDs(r.Paths, idByPath)
@@ -223,10 +266,10 @@ func (c *Categorizer) processBatch(ctx context.Context, cats []domain.Category, 
 		// Resource-class items may legitimately have no domain; that is a
 		// success (marked done with type), not a failure.
 		if len(ids.paths) == 0 && !isResourceType(ftype) {
-			c.failOrTypeOnly(ctx, p)
+			c.failOrTypeOnly(ctx, p, idByPath)
 			continue
 		}
-		if err := c.markDone(ctx, p.item.ID, ids.ids, ids.paths, ftype, r.Tags, "llm"); err != nil {
+		if err := c.markDone(ctx, p.item, ids.ids, ids.paths, ftype, r.Tags, "llm", idByPath); err != nil {
 			c.log.Error("categorize update failed", "item", p.item.ExternalID, "err", err)
 			continue
 		}
@@ -237,9 +280,9 @@ func (c *Categorizer) processBatch(ctx context.Context, cats []domain.Category, 
 // failOrTypeOnly resolves an item the LLM could not place. Resource-class items
 // (awesome/tutorial/interview/skill) are marked done with their known type and
 // an empty domain rather than accruing a failure — their type alone is useful.
-func (c *Categorizer) failOrTypeOnly(ctx context.Context, p pending) {
+func (c *Categorizer) failOrTypeOnly(ctx context.Context, p pending, idByPath map[string]string) {
 	if isResourceType(p.ftype) {
-		_ = c.markDone(ctx, p.item.ID, nil, nil, p.ftype, nil, "rule")
+		_ = c.markDone(ctx, p.item, nil, nil, p.ftype, nil, "rule", idByPath)
 		return
 	}
 	c.markFailed(ctx, p.item)
@@ -309,25 +352,59 @@ func anyToStrings(in []interface{}) []string {
 // markDone writes the multi-label domain, form type and (optionally) generated
 // tags. Tags land under sourceData.generatedTopics, kept apart from the author's
 // topicNames so the rule tier never trusts synthetic topics (change 12 guardrail).
-func (c *Categorizer) markDone(ctx context.Context, id interface{}, catIDs, paths []string, ftype string, tags []string, by string) error {
+func (c *Categorizer) markDone(ctx context.Context, item domain.TrackedItem, catIDs, paths []string, ftype string, tags []string, by string, idByPath map[string]string) error {
 	if catIDs == nil {
 		catIDs = []string{}
 	}
 	if paths == nil {
 		paths = []string{}
 	}
+	// One tree: the store verdict is a leaf too. Keep it as a label across
+	// re-classification (migrations re-run the categorizer, the storefinder
+	// does not), unless the item was excluded from the store.
+	if sh := effectiveShelf(item.Store); sh != "" {
+		sp := service.ShelfDomainPath(sh)
+		if id, ok := idByPath[sp]; ok && !hasPath(paths, sp) {
+			paths = append(paths, sp)
+			catIDs = append(catIDs, id)
+		}
+	}
 	set := bson.M{
-		"categoryId":     catIDs,
-		"categoryPath":   paths,
-		"type":           ftype,
-		"analysisStatus": domain.AnalysisDone,
-		"classifiedBy":   by,
+		"categoryId":      catIDs,
+		"categoryPath":    paths,
+		"type":            ftype,
+		"analysisStatus":  domain.AnalysisDone,
+		"classifiedBy":    by,
+		"taxonomyVersion": c.treeVersion,
 	}
 	if len(tags) > 0 {
 		set["generatedTopics"] = tags // top-level: fetcher's sourceData replace can't wipe it
 	}
-	_, err := c.store.Items().UpdateByID(ctx, id, bson.M{"$set": set})
+	_, err := c.store.Items().UpdateByID(ctx, item.ID, bson.M{"$set": set})
 	return err
+}
+
+func effectiveShelf(st *domain.StoreInfo) string {
+	if st == nil {
+		return ""
+	}
+	sh := st.CategoryOverride
+	if sh == "" {
+		sh = st.Category
+	}
+	if sh == service.StoreExcluded {
+		return ""
+	}
+	return sh
+}
+
+func hasPath(paths []string, p string) bool {
+	for _, x := range paths {
+		if x == p {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Categorizer) markFailed(ctx context.Context, item domain.TrackedItem) {

@@ -1,117 +1,238 @@
-# GHTA 领域分类树 v2 —— 唯一事实源（change 12 定稿，待人审）
+# StarRank 分类树 v3 —— 唯一事实源
 # ─────────────────────────────────────────────────────────────
-# 相对 v1 的结构改动（见 change 12 + golden 裁决）：
-#   · 删 learning 大类 → 下放为 type facet（facets.yaml）
-#   · 删 lang/stdlib-utils → 改名 lang/utils（通用工具库，含序列化/RPC/GUI 工具包 Q16/Q14）
-#   · 新增 ai/media-gen（图像/视频生成，从 cv 分离）
-#   · 新增 data/analytics；data/cache 并入 data/database
-#   · 新增 devtools/ai-coding（AI 编程助手/agent 工具/skill 宿主）
-#   · web/frontend-framework→web/frontend，web/backend-framework→web/backend，data/data-pipeline→data/pipeline
-# desc 是 LLM 分类 prompt 里的分类语境说明（embedding 层已停用，desc 不再作相似度语料）。
-# 边界裁决已写进对应 desc：Q11 web server→networking，Q12 testing 含压测+浏览器自动化，
-#   Q16 序列化/RPC→lang/utils，Q30 data-science 不含可视化。
+# 结构
+#   · version 是树的代数；条目上的 taxonomyVersion 落后于它就会被重新分类。
+#   · 除 apps 外所有分支两层：大类 / 叶子。
+#   · apps 分支三层：apps / 货架大类 / 货架。货架是领域树的一部分，不再另有一套。
+#     货架 slug = 去掉 "apps/" 前缀的路径（productivity/notes），用于 store.category 与 URL。
+#   · 拆并规则（相对值，随语料缩放）：叶子条目占语料 4% 以上或占热门条目（周增 ≥100 星）6% 以上 → 拆；
+#     不足语料 0.5% → 并。夜间 taxonomy-audit 任务按这两条打标，人来决定。
+#   · est 是 2026-10-13 按 topic 分布估算的条目数（±30%），from 记录从 v2 哪个叶子迁入，是 migrations.yaml 的依据。
+#     这两个字段加载器忽略，只给人看。
+#
+# 相对 v2 的结构改动（详见 docs/TAXONOMY-V3.md）
+#   · 新增顶层 agents：ai/agents、devtools/ai-coding、ai/llm 的应用层拆成 6 个叶子
+#   · ai/llm 拆成 ai/llm-serving、ai/llm-training
+#   · web/frontend 拆出 web/data-viz；web/css-ui 改名 web/ui-components
+#   · devtools/cli 解散：终端类归 devtools/terminal，其余按用途归位；cli 只是形态
+#   · lang/utils 拆出 lang/algorithms、lang/parsing、lang/concurrency-net
+#   · mobile 改为 client：android / apple / cross-platform / desktop
+#   · security/pentest 拆成 offensive / reverse / recon
+#   · infra/ci-cd + infra/iac → infra/automation；data/search + data/analytics → data/analytics
+#   · blockchain 两叶合一
+#   · apps 四叶 → 10 个货架大类 39 个货架（v2 的 53 个货架：devtools 大类移出、小格合并、补 browser-ext）
 
-- path: ai
-  name: 人工智能
-  nameEn: AI
-  desc: 机器学习、深度学习、大模型及其应用
-  children:
-    - { path: ai/llm, name: 大语言模型, nameEn: Large Language Models, desc: LLM 训练/推理/部署框架，提示工程，RAG，以及 LLM 网关、上下文压缩等配套基建  }
-    - { path: ai/agents, name: AI 智能体, nameEn: AI Agents, desc: 自主智能体、多智能体框架、工具调用与编排（不含以写代码为主的编程助手，那归 devtools/ai-coding） }
-    - { path: ai/ml-framework, name: 机器学习框架, nameEn: ML Frameworks, desc: 通用机器学习与深度学习训练框架和库（不含专门做视觉/语音/生成的库） }
-    - { path: ai/cv, name: 计算机视觉, nameEn: Computer Vision, desc: 图像识别、目标检测、OCR、视频理解（不含以生成为目的的模型） }
-    - { path: ai/media-gen, name: 图像视频生成, nameEn: Image & Video Generation, desc: 扩散模型、文生图/图生图、AI 视频与音乐生成及其 GUI  }
-    - { path: ai/speech-audio, name: 语音与音频, nameEn: Speech & Audio, desc: 语音识别、语音合成、音频处理  }
-    - { path: ai/data-science, name: 数据科学, nameEn: Data Science, desc: 数据分析、notebook、统计建模与商业智能工具（数据可视化图表库归 web/frontend） }
-- path: web
-  name: Web 开发
-  nameEn: Web Development
-  desc: 前端、后端与全栈 Web 开发
-  children:
-    - { path: web/frontend, name: 前端框架, nameEn: Frontend, desc: React、Vue 等构建用户界面的框架和库，含数据可视化图表库  }
-    - { path: web/backend, name: 后端框架, nameEn: Backend, desc: HTTP 服务端框架、API 框架、BaaS 与全栈框架  }
-    - { path: web/css-ui, name: CSS 与 UI 组件, nameEn: CSS & UI, desc: CSS 框架、组件库、图标与设计系统实现  }
-    - { path: web/build-tools, name: 构建工具, nameEn: Build Tools, desc: 打包器、编译器、转译器、组件工坊与前端工程化工具  }
-    - { path: web/static-site, name: 静态站点与文档, nameEn: Static Sites & Docs, desc: 静态站点生成器、文档站与博客引擎  }
-- path: devtools
-  name: 开发者工具
-  nameEn: Developer Tools
-  desc: 提升开发效率的工具链
-  children:
-    - { path: devtools/cli, name: 命令行工具, nameEn: CLI Tools, desc: 终端命令行实用工具与 shell 增强  }
-    - { path: devtools/editors, name: 编辑器与 IDE, nameEn: Editors & IDEs, desc: 代码编辑器、IDE、插件生态与 language server  }
-    - { path: devtools/ai-coding, name: AI 编程助手, nameEn: AI Coding Assistants, desc: AI 编程 agent、编码 CLU、代码知识图谱，以及给 AI 编程工具用的 skill/提示词包  }
-    - { path: devtools/vcs, name: 版本控制, nameEn: Version Control, desc: Git 工具、代码评审与仓库托管  }
-    - { path: devtools/testing, name: 测试工具, nameEn: Testing, desc: 测试框架、mock、断言、压测工具与浏览器自动化  }
-    - { path: devtools/package-manager, name: 包管理与依赖, nameEn: Package Managers, desc: 包管理器、版本与依赖管理工具  }
-- path: infra
-  name: 基础设施
-  nameEn: Infrastructure
-  desc: 部署、运维与云原生
-  children:
-    - { path: infra/containers, name: 容器与编排, nameEn: Containers & Orchestration, desc: 容器运行时、Kubernetes、编排与 PaaS 平台  }
-    - { path: infra/ci-cd, name: CI/CD, nameEn: CI/CD, desc: 持续集成、持续交付与自动化流水线  }
-    - { path: infra/iac, name: 基础设施即代码, nameEn: Infrastructure as Code, desc: Terraform 等资源编排与配置管理  }
-    - { path: infra/monitoring, name: 监控与可观测, nameEn: Monitoring & Observability, desc: 指标、日志、链路追踪、告警与可观测平台  }
-    - { path: infra/networking, name: 网络与代理, nameEn: Networking & Proxies, desc: 反向代理、Web 服务器、负载均衡、隧道、VPN 与网络工具  }
-- path: data
-  name: 数据系统
-  nameEn: Data Systems
-  desc: 数据的存储、处理与传输
-  children:
-    - { path: data/database, name: 数据库, nameEn: Databases, desc: 关系型、NoSQL、时序、图数据库、缓存与嵌入式存储  }
-    - { path: data/pipeline, name: 数据管道, nameEn: Data Pipelines, desc: ETL、流处理、消息队列与数据编排  }
-    - { path: data/search, name: 搜索引擎, nameEn: Search Engines, desc: 全文检索、向量检索与搜索基础设施  }
-    - { path: data/analytics, name: 分析引擎, nameEn: Analytics Engines, desc: OLAP、实时分析与数据分析引擎  }
-- path: lang
-  name: 语言基础设施
-  nameEn: Language Infrastructure
-  desc: 语言实现、运行时与语言核心生态
-  children:
-    - { path: lang/implementations, name: 语言实现, nameEn: Language Implementations, desc: 编译器、解释器、运行时与语言本体  }
-    - { path: lang/utils, name: 通用工具库, nameEn: General Utilities, desc: 无明确领域归属的通用工具库、算法实现、序列化/RPC 与原生 GUI 工具包  }
-- path: mobile
-  name: 移动开发
-  nameEn: Mobile
-  desc: 移动端应用与跨端开发
-  children:
-    - { path: mobile/cross-platform, name: 跨平台框架, nameEn: Cross-Platform, desc: Flutter、React Native 等跨端方案  }
-    - { path: mobile/native, name: 原生开发, nameEn: Native, desc: iOS、Android 原生开发库与工具  }
-- path: security
-  name: 安全
-  nameEn: Security
-  desc: 安全工具与实践
-  children:
-    - { path: security/pentest, name: 渗透测试, nameEn: Penetration Testing, desc: 授权安全测试、漏洞研究、逆向工程与 CTF 工具  }
-    - { path: security/crypto-auth, name: 加密与认证, nameEn: Cryptography & Auth, desc: 加密库、身份认证、密钥与访问控制  }
-- path: systems
-  name: 系统软件
-  nameEn: Systems Software
-  desc: 操作系统与底层软件
-  children:
-    - { path: systems/os, name: 操作系统, nameEn: Operating Systems, desc: 内核、发行版、启动/引导与操作系统组件  }
-    - { path: systems/emulation, name: 虚拟化与模拟, nameEn: Virtualization & Emulation, desc: 虚拟机、模拟器与兼容层  }
-    - { path: systems/embedded, name: 嵌入式与物联网, nameEn: Embedded & IoT, desc: 单片机、固件、IoT 平台与硬件编程  }
-- path: apps
-  name: 应用软件
-  nameEn: Applications
-  desc: 面向最终用户的软件
-  children:
-    - { path: apps/productivity, name: 效率工具, nameEn: Productivity, desc: 笔记、任务管理、白板、个人效率与远程桌面/文件同步等个人网络工具  }
-    - { path: apps/media, name: 多媒体, nameEn: Media, desc: 音视频播放、下载、编辑与媒体服务器  }
-    - { path: apps/selfhosted, name: 自托管服务, nameEn: Self-Hosted, desc: 可自建部署的网盘、聊天、家庭服务器等服务  }
-    - { path: apps/browser-ext, name: 浏览器扩展, nameEn: Browser Extensions, desc: 浏览器插件与用户脚本  }
-- path: gamedev
-  name: 游戏开发
-  nameEn: Game Development
-  desc: 游戏引擎、游戏与相关工具
-  children:
-    - { path: gamedev/engines, name: 游戏引擎, nameEn: Game Engines, desc: 游戏引擎、渲染引擎、游戏框架与图形工具包  }
-    - { path: gamedev/games, name: 游戏, nameEn: Games, desc: 开源游戏、游戏复刻与游戏平台  }
-- path: blockchain
-  name: 区块链
-  nameEn: Blockchain
-  desc: 区块链协议、合约与加密生态
-  children:
-    - { path: blockchain/protocols, name: 协议与节点, nameEn: Protocols & Nodes, desc: 区块链协议实现、节点、共识与交易所 API  }
-    - { path: blockchain/contracts, name: 智能合约, nameEn: Smart Contracts, desc: 合约语言、开发框架与合约安全  }
+version: 3
+
+nodes:
+  - path: agents
+    name: 智能体与 AI 编程
+    nameEn: Agents & AI Coding
+    desc: 构建在大模型之上的应用层：编码 agent、通用智能体框架、工具协议、记忆与上下文、面向用户的助手
+    children:
+      - { path: agents/coding, name: 编码 Agent, nameEn: Coding Agents, est: 1500, from: [devtools/ai-coding], desc: 以写代码为目的的 agent 与其宿主：Claude Code、Codex、OpenCode、Cursor 类工具、IDE 内 agent、编码 harness }
+      - { path: agents/skills, name: Skill 与提示词包, nameEn: Skills & Prompt Packs, est: 700, from: [devtools/ai-coding, ai/agents], desc: 给 agent 用的 skill、规则、插件、提示词与工作流模板；本身不是可运行软件 }
+      - { path: agents/mcp, name: MCP 与工具协议, nameEn: MCP & Tool Protocols, est: 800, from: [ai/agents, ai/llm, devtools/ai-coding, devtools/cli], desc: MCP 服务器与客户端、函数调用与工具协议实现、agent 与外部系统的连接器 }
+      - { path: agents/frameworks, name: 智能体框架, nameEn: Agent Frameworks, est: 1200, from: [ai/agents], desc: 通用 agent 与多智能体编排框架、运行时、评测与可观测 }
+      - { path: agents/memory, name: 记忆与 RAG, nameEn: Memory & RAG, est: 700, from: [ai/llm, ai/agents], desc: 检索增强、向量管道、长期记忆、上下文压缩与知识库接入 }
+      - { path: agents/assistants, name: AI 助手与聊天, nameEn: Assistants & Chat, est: 900, from: [ai/llm, ai/agents], desc: 面向用户的聊天界面、个人助手、角色与陪伴类应用的开源实现 }
+  - path: ai
+    name: 模型与机器学习
+    nameEn: Models & ML
+    desc: 模型本身与训练、推理、感知、生成
+    children:
+      - { path: ai/llm-serving, name: 推理与部署, nameEn: LLM Serving, est: 1200, from: [ai/llm], desc: 推理引擎、量化、本地运行、模型网关与 API 兼容层 }
+      - { path: ai/llm-training, name: 训练与微调, nameEn: LLM Training, est: 900, from: [ai/llm], desc: 预训练、微调、对齐、数据集构建与评测基准 }
+      - { path: ai/ml-framework, name: 机器学习框架, nameEn: ML Frameworks, est: 3900, from: [ai/ml-framework], desc: 通用机器学习与深度学习框架和库 }
+      - { path: ai/cv, name: 计算机视觉, nameEn: Computer Vision, est: 2600, from: [ai/cv], desc: 图像识别、目标检测、OCR、视频理解 }
+      - { path: ai/media-gen, name: 图像视频生成, nameEn: Image & Video Generation, est: 1200, from: [ai/media-gen], desc: 扩散模型、文生图、AI 视频与音乐生成及其 GUI }
+      - { path: ai/speech-audio, name: 语音与音频, nameEn: Speech & Audio, est: 800, from: [ai/speech-audio], desc: 语音识别、合成与音频处理 }
+      - { path: ai/data-science, name: 数据科学, nameEn: Data Science, est: 2000, from: [ai/data-science], desc: 数据分析、notebook、统计建模与 BI }
+  - path: web
+    name: Web 开发
+    nameEn: Web Development
+    desc: 前端、后端与全栈
+    children:
+      - { path: web/frontend, name: 前端框架, nameEn: Frontend Frameworks, est: 4200, from: [web/frontend], desc: React、Vue、Svelte 等框架与元框架、状态管理、路由 }
+      - { path: web/ui-components, name: UI 组件与样式, nameEn: UI Components & Styling, est: 4500, from: [web/css-ui, web/frontend], desc: 组件库、设计系统实现、CSS 框架、动画与图标 }
+      - { path: web/data-viz, name: 数据可视化, nameEn: Data Visualization, est: 900, from: [web/frontend], desc: 图表库、画布与 WebGL 渲染、地图与图可视化 }
+      - { path: web/backend, name: 后端框架, nameEn: Backend, est: 4500, from: [web/backend], desc: HTTP 服务端框架、API 框架、BaaS 与全栈框架 }
+      - { path: web/build-tools, name: 构建工具, nameEn: Build Tools, est: 850, from: [web/build-tools], desc: 打包器、转译器与前端工程化 }
+      - { path: web/static-site, name: 静态站点与文档, nameEn: Static Sites & Docs, est: 850, from: [web/static-site], desc: 静态站点生成器、文档站与博客引擎 }
+  - path: devtools
+    name: 开发者工具
+    nameEn: Developer Tools
+    desc: 写代码过程中用的工具链
+    children:
+      - { path: devtools/terminal, name: 终端与 Shell, nameEn: Terminal & Shell, est: 2000, from: [devtools/cli], desc: 终端模拟器、shell、提示符、TUI 框架与终端效率工具 }
+      - { path: devtools/code-quality, name: 代码质量, nameEn: Code Quality, est: 700, from: [devtools/cli, devtools/testing], desc: linter、格式化、静态分析与代码度量 }
+      - { path: devtools/editors, name: 编辑器与 IDE, nameEn: Editors & IDEs, est: 1850, from: [devtools/editors], desc: 编辑器、IDE、插件与 language server }
+      - { path: devtools/vcs, name: 版本控制, nameEn: Version Control, est: 700, from: [devtools/vcs, devtools/cli], desc: Git 工具、代码评审与仓库托管 }
+      - { path: devtools/testing, name: 测试工具, nameEn: Testing, est: 1200, from: [devtools/testing], desc: 测试框架、mock、压测与浏览器自动化 }
+      - { path: devtools/api-tools, name: API 工具, nameEn: API Tools, est: 500, from: [devtools/cli, web/backend], desc: API 客户端、调试、文档生成与 mock 服务 }
+      - { path: devtools/package-manager, name: 包管理与依赖, nameEn: Package Managers, est: 550, from: [devtools/package-manager], desc: 包管理器、版本与依赖管理 }
+  - path: infra
+    name: 基础设施
+    nameEn: Infrastructure
+    desc: 部署、运维与云原生
+    children:
+      - { path: infra/containers, name: 容器与编排, nameEn: Containers & Orchestration, est: 1700, from: [infra/containers], desc: 容器运行时、Kubernetes、编排与 PaaS }
+      - { path: infra/automation, name: CI/CD 与 IaC, nameEn: CI/CD & IaC, est: 850, from: [infra/ci-cd, infra/iac], desc: 持续集成、交付流水线、资源编排与配置管理 }
+      - { path: infra/monitoring, name: 监控与可观测, nameEn: Observability, est: 1000, from: [infra/monitoring], desc: 指标、日志、追踪、告警 }
+      - { path: infra/networking, name: 网络与代理, nameEn: Networking & Proxies, est: 2400, from: [infra/networking], desc: 反向代理、Web 服务器、负载均衡、隧道、VPN 协议实现 }
+  - path: data
+    name: 数据系统
+    nameEn: Data Systems
+    desc: 数据的存储、处理与传输
+    children:
+      - { path: data/database, name: 数据库, nameEn: Databases, est: 1800, from: [data/database], desc: 关系型、NoSQL、时序、图、缓存与嵌入式存储 }
+      - { path: data/pipeline, name: 数据管道, nameEn: Data Pipelines, est: 800, from: [data/pipeline], desc: ETL、流处理、消息队列与编排 }
+      - { path: data/analytics, name: 分析与检索, nameEn: Analytics & Search, est: 1100, from: [data/analytics, data/search], desc: OLAP、实时分析、全文与向量检索 }
+  - path: lang
+    name: 语言与通用库
+    nameEn: Languages & Libraries
+    desc: 语言实现与无特定领域的基础库
+    children:
+      - { path: lang/implementations, name: 语言实现, nameEn: Language Implementations, est: 1000, from: [lang/implementations], desc: 编译器、解释器、运行时与语言本体 }
+      - { path: lang/algorithms, name: 算法与数据结构, nameEn: Algorithms & Data Structures, est: 700, from: [lang/utils], desc: 算法与数据结构的库级实现（教学题解归 type=interview/tutorial） }
+      - { path: lang/parsing, name: 解析与序列化, nameEn: Parsing & Serialization, est: 1200, from: [lang/utils], desc: JSON/YAML/Markdown/PDF 等格式处理、解析器、序列化与 RPC 编码 }
+      - { path: lang/concurrency-net, name: 并发与网络库, nameEn: Concurrency & Networking Libs, est: 800, from: [lang/utils], desc: 异步运行时、并发原语、HTTP 客户端、RPC 框架 }
+      - { path: lang/utils, name: 语言工具库, nameEn: Language Utilities, est: 2400, from: [lang/utils], desc: 以上都不属于的某语言通用库；分类器必须先尝试其他叶子，这里是最后选择 }
+  - path: client
+    name: 客户端开发
+    nameEn: Client Development
+    desc: 移动与桌面客户端的开发库与工具
+    children:
+      - { path: client/android, name: Android, nameEn: Android, est: 2600, from: [mobile/native], desc: Android 库、UI 组件、架构与工具 }
+      - { path: client/apple, name: Apple 平台, nameEn: Apple Platforms, est: 2400, from: [mobile/native], desc: iOS、macOS、watchOS、tvOS 的 Swift / Objective-C 库与工具 }
+      - { path: client/cross-platform, name: 跨平台框架, nameEn: Cross-Platform, est: 1500, from: [mobile/cross-platform], desc: Flutter、React Native、.NET MAUI 等跨端方案 }
+      - { path: client/desktop, name: 桌面开发, nameEn: Desktop Development, est: 900, from: [lang/utils, web/frontend, mobile/native], desc: Electron、Tauri、Qt、GTK 等桌面壳与原生 GUI 工具包 }
+  - path: security
+    name: 安全
+    nameEn: Security
+    desc: 安全工具、研究与密码学
+    children:
+      - { path: security/offensive, name: 渗透与攻防, nameEn: Offensive Security, est: 1500, from: [security/pentest], desc: 授权渗透测试框架、漏洞扫描、红队工具、CTF }
+      - { path: security/reverse, name: 逆向与分析, nameEn: Reverse Engineering, est: 800, from: [security/pentest], desc: 逆向工程、二进制分析、恶意软件分析与取证 }
+      - { path: security/recon, name: 情报与侦察, nameEn: OSINT & Recon, est: 600, from: [security/pentest], desc: OSINT、资产发现、信息收集与 bug bounty 工具 }
+      - { path: security/crypto-auth, name: 加密与认证, nameEn: Cryptography & Auth, est: 1200, from: [security/crypto-auth], desc: 加密库、身份认证、密钥与访问控制 }
+  - path: systems
+    name: 系统软件
+    nameEn: Systems Software
+    desc: 操作系统与底层
+    children:
+      - { path: systems/os, name: 操作系统, nameEn: Operating Systems, est: 1450, from: [systems/os], desc: 内核、发行版、引导与系统组件 }
+      - { path: systems/emulation, name: 虚拟化与模拟, nameEn: Virtualization & Emulation, est: 700, from: [systems/emulation], desc: 虚拟机、模拟器与兼容层 }
+      - { path: systems/embedded, name: 嵌入式与物联网, nameEn: Embedded & IoT, est: 1900, from: [systems/embedded], desc: 单片机、固件、IoT 平台与硬件编程 }
+  - path: gamedev
+    name: 游戏开发
+    nameEn: Game Development
+    desc: 引擎与游戏
+    children:
+      - { path: gamedev/engines, name: 游戏引擎, nameEn: Game Engines, est: 1200, from: [gamedev/engines], desc: 引擎、渲染、游戏框架与图形工具包 }
+      - { path: gamedev/games, name: 游戏, nameEn: Games, est: 1200, from: [gamedev/games], desc: 开源游戏、复刻与游戏平台 }
+  - path: blockchain
+    name: 区块链
+    nameEn: Blockchain
+    desc: 协议、节点与合约
+    children:
+      - { path: blockchain/core, name: 协议与合约, nameEn: Protocols & Contracts, est: 1080, from: [blockchain/protocols, blockchain/contracts], desc: 区块链协议实现、节点、合约语言与开发框架 }
+
+  # ── apps 分支：三层，第三层即货架 ─────────────────────────────
+  # 规则：只有 type ∈ {app, cli} 且用户可以下载 / 运行 / 自托管的条目才进 apps 分支。
+  # 框架、库、清单进不来（原 excluded 逻辑不变，但 excluded 是标记不是货架）。
+  # 开发者工具类应用不再有自己的货架大类：它们落在 devtools/* 等领域叶子，
+  # 商店里的"开发者应用"是一个视图（type ∈ {app, cli} ∧ 领域 ∈ devtools/*），不是分类。
+  - path: apps
+    name: 应用
+    nameEn: Apps
+    desc: 面向最终用户、可下载运行或自托管的软件；跨 GitHub、App Store、Chrome 商店共用
+    children:
+      - path: apps/productivity
+        name: 效率
+        nameEn: Productivity
+        children:
+          - { path: apps/productivity/notes, name: 笔记, nameEn: Notes, est: 220, from: [productivity/notes] }
+          - { path: apps/productivity/todo, name: 任务与日程, nameEn: Tasks & Calendar, est: 175, from: [productivity/todo] }
+          - { path: apps/productivity/docs, name: 文档与办公, nameEn: Docs & Office, est: 290, from: [productivity/docs] }
+          - { path: apps/productivity/knowledge, name: 知识管理, nameEn: Knowledge, est: 290, from: [productivity/knowledge] }
+      - path: apps/creative
+        name: 创作
+        nameEn: Creative
+        children:
+          - { path: apps/creative/image, name: 图像, nameEn: Image, est: 385, from: [creative/image] }
+          - { path: apps/creative/video, name: 视频, nameEn: Video, est: 155, from: [creative/video] }
+          - { path: apps/creative/audio, name: 音频, nameEn: Audio, est: 135, from: [creative/audio] }
+          - { path: apps/creative/whiteboard, name: 白板与设计, nameEn: Whiteboard & Design, est: 90, from: [creative/whiteboard] }
+          - { path: apps/creative/cad, name: CAD 与 3D, nameEn: CAD & 3D, est: 130, from: [creative/cad] }
+          - { path: apps/creative/writing, name: 写作, nameEn: Writing, est: 125, from: [creative/writing] }
+      - path: apps/ai
+        name: AI 应用
+        nameEn: AI Apps
+        children:
+          - { path: apps/ai/assistant, name: AI 助手, nameEn: Assistants, est: 525, from: [ai/assistant] }
+          - { path: apps/ai/local-llm, name: 本地运行, nameEn: Local LLM, est: 105, from: [ai/local-llm] }
+          - { path: apps/ai/generation, name: 图像视频生成, nameEn: Generation, est: 140, from: [ai/image-gen, ai/media-gen] }
+          - { path: apps/ai/builder, name: AI 应用搭建, nameEn: AI Builders, est: 170, from: [ai/platform] }
+      - path: apps/selfhosted
+        name: 自托管
+        nameEn: Self-Hosted
+        children:
+          - { path: apps/selfhosted/cloud, name: 网盘与相册, nameEn: Cloud & Photos, est: 420, from: [selfhosted/cloud, selfhosted/photos] }
+          - { path: apps/selfhosted/media-server, name: 媒体服务器, nameEn: Media Server, est: 115, from: [selfhosted/media-server] }
+          - { path: apps/selfhosted/monitoring, name: 监控面板, nameEn: Monitoring, est: 345, from: [selfhosted/monitoring] }
+          - { path: apps/selfhosted/tunnel, name: 内网穿透, nameEn: Tunnels, est: 120, from: [selfhosted/tunnel] }
+          - { path: apps/selfhosted/automation, name: 自动化与智能家居, nameEn: Automation & Smart Home, est: 535, from: [selfhosted/automation, games/smart-home] }
+      - path: apps/network
+        name: 网络
+        nameEn: Network
+        children:
+          - { path: apps/network/browser, name: 浏览器, nameEn: Browsers, est: 320, from: [network/browser] }
+          - { path: apps/network/download, name: 下载, nameEn: Download, est: 450, from: [network/download] }
+          - { path: apps/network/proxy, name: 代理与 VPN, nameEn: Proxy & VPN, est: 390, from: [network/proxy] }
+          - { path: apps/network/remote, name: 远程桌面, nameEn: Remote Desktop, est: 195, from: [network/remote] }
+          - { path: apps/network/browser-ext, name: 浏览器扩展, nameEn: Browser Extensions, est: 630, from: [apps/browser-ext] }
+      - path: apps/media
+        name: 影音
+        nameEn: Media
+        children:
+          - { path: apps/media/player, name: 播放器, nameEn: Players, est: 340, from: [media/player] }
+          - { path: apps/media/music, name: 音乐, nameEn: Music, est: 250, from: [media/music] }
+          - { path: apps/media/reader, name: 阅读, nameEn: Readers, est: 280, from: [media/reader] }
+      - path: apps/social
+        name: 社交与通讯
+        nameEn: Social & Messaging
+        children:
+          - { path: apps/social/messaging, name: 聊天与邮件, nameEn: Chat & Mail, est: 425, from: [social/chat, social/mail] }
+          - { path: apps/social/tools, name: 社交工具, nameEn: Social Tools, est: 280, from: [social/social-tools] }
+      - path: apps/system
+        name: 系统工具
+        nameEn: System Tools
+        children:
+          - { path: apps/system/screenshot, name: 截图录屏, nameEn: Screenshot & Recording, est: 95, from: [system/screenshot] }
+          - { path: apps/system/launcher, name: 启动器与窗口, nameEn: Launchers, est: 410, from: [system/launcher] }
+          - { path: apps/system/files, name: 文件管理, nameEn: Files, est: 320, from: [system/files] }
+          - { path: apps/system/transfer, name: 传输与同步, nameEn: Transfer & Sync, est: 105, from: [system/transfer] }
+          - { path: apps/system/phone, name: 手机工具, nameEn: Phone Tools, est: 310, from: [system/phone] }
+          - { path: apps/system/backup, name: 备份, nameEn: Backup, est: 105, from: [system/backup] }
+      - path: apps/security
+        name: 安全与隐私
+        nameEn: Security & Privacy
+        children:
+          - { path: apps/security/passwords, name: 密码管理, nameEn: Passwords, est: 110, from: [security/passwords] }
+          - { path: apps/security/privacy, name: 隐私与去广告, nameEn: Privacy & Ad Blocking, est: 350, from: [security/privacy, security/adblock] }
+      - path: apps/games
+        name: 游戏
+        nameEn: Games
+        children:
+          - { path: apps/games/games, name: 游戏, nameEn: Games, est: 515, from: [games/games] }
+          - { path: apps/games/emulator, name: 模拟器, nameEn: Emulators, est: 135, from: [games/emulator] }
+
+  # 移出 apps 的货架（原 devtools 大类 8 格 + security/pentest 共 5,220 条）去向：
+  #   devtools/editor → devtools/editors        devtools/terminal → devtools/terminal
+  #   devtools/api → devtools/api-tools         devtools/database → data/database
+  #   devtools/git → devtools/vcs               devtools/pkg → devtools/package-manager
+  #   devtools/devops → infra/containers | infra/automation | infra/monitoring（LLM 二选）
+  #   devtools/gamedev → gamedev/engines        security/pentest → security/offensive
+  #   ai/coding（货架）→ agents/coding
+  # 这些条目仍然 type=app/cli，在商店的"开发者应用"视图里可见。

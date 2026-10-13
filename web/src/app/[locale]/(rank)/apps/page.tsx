@@ -15,29 +15,53 @@ export const dynamic = 'force-dynamic';
 const PER_PAGE = 30;
 const BOARD_CAP = 300;
 const OSES: OS[] = ['macos', 'windows', 'linux', 'android', 'ios', 'web'];
+// Consumer shelves = the apps/ branch of taxonomy v3 (slug = path minus "apps/").
+// "dev" is a view, not a shelf: the developer-app leaves that left the
+// consumer shelves; its subs are full domain-leaf paths.
 const SHELF_MAJORS = [
-  'productivity', 'creative', 'devtools', 'ai', 'selfhosted', 'network',
-  'media', 'social', 'system', 'security', 'games',
+  'productivity', 'creative', 'ai', 'selfhosted', 'network',
+  'media', 'social', 'system', 'security', 'games', 'dev',
 ] as const;
 const SHELF_SUBS: Record<string, string[]> = {
   productivity: ['notes', 'todo', 'docs', 'knowledge'],
   creative: ['image', 'video', 'audio', 'whiteboard', 'cad', 'writing'],
-  devtools: ['editor', 'terminal', 'api', 'database', 'git', 'pkg', 'devops', 'gamedev'],
-  ai: ['assistant', 'coding', 'image-gen', 'media-gen', 'local-llm', 'platform'],
-  selfhosted: ['cloud', 'photos', 'media-server', 'monitoring', 'tunnel', 'automation'],
-  network: ['browser', 'download', 'proxy', 'remote'],
+  ai: ['assistant', 'local-llm', 'generation', 'builder'],
+  selfhosted: ['cloud', 'media-server', 'monitoring', 'tunnel', 'automation'],
+  network: ['browser', 'download', 'proxy', 'remote', 'browser-ext'],
   media: ['player', 'music', 'reader'],
-  social: ['chat', 'mail', 'social-tools'],
+  social: ['messaging', 'tools'],
   system: ['screenshot', 'launcher', 'files', 'transfer', 'phone', 'backup'],
-  security: ['passwords', 'privacy', 'adblock', 'pentest'],
-  games: ['games', 'emulator', 'smart-home'],
+  security: ['passwords', 'privacy'],
+  games: ['games', 'emulator'],
+  dev: [
+    'devtools/terminal', 'devtools/editors', 'devtools/api-tools', 'devtools/vcs', 'devtools/package-manager', 'devtools/code-quality',
+    'data/database', 'infra/containers', 'infra/automation', 'infra/monitoring', 'gamedev/engines', 'security/offensive', 'agents/coding',
+  ],
 };
+const DEV = 'dev';
+/** Full shelf value for a (major, sub) pair: dev subs are already full paths. */
+function shelfValue(major: string, sub: string): string {
+  return major === DEV ? sub : `${major}/${sub}`;
+}
+/** Which major a shelf value belongs to ("" for none). */
+function majorOf(shelf: string): string {
+  if (!shelf) return '';
+  if (shelf === DEV || SHELF_SUBS[DEV].includes(shelf)) return DEV;
+  return shelf.split('/')[0] ?? '';
+}
 function validShelf(s: string): boolean {
   if (!s) return true;
-  const [major, sub] = s.split('/');
+  if (s === DEV || SHELF_SUBS[DEV].includes(s)) return true;
+  const [major, sub, rest] = s.split('/');
+  if (rest !== undefined || major === DEV) return false;
   const subs = SHELF_SUBS[major];
   if (!subs) return false;
   return sub === undefined || subs.includes(sub);
+}
+/** i18n key for a shelf value. */
+function shelfKey(major: string, value: string): string {
+  const slug = major === DEV ? `dev/${value}` : value;
+  return `shelf_${slug.replace(/[/-]/g, '_')}`;
 }
 const OS_LABEL: Record<OS, string> = {
   macos: 'macOS',
@@ -71,7 +95,7 @@ export default async function AppsPage({
   const os = (OSES as string[]).includes(searchParams.os ?? '') ? (searchParams.os as OS) : '';
   const kind = searchParams.kind === 'app' || searchParams.kind === 'cli' ? searchParams.kind : '';
   const shelf = validShelf(searchParams.shelf ?? '') ? (searchParams.shelf ?? '') : '';
-  const shelfMajor = shelf.split('/')[0] ?? '';
+  const shelfMajor = majorOf(shelf);
   const sort: AppSort =
     searchParams.sort === 'popular' || searchParams.sort === 'new' ? searchParams.sort : 'hot';
   const page = Math.max(1, Number(searchParams.page) || 1);
@@ -132,7 +156,7 @@ export default async function AppsPage({
         {OSES.map((o) => osTab(o, OS_LABEL[o]))}
       </div>
 
-      {/* shelf shelves: 11 major groups; picking one reveals its sub-shelves */}
+      {/* shelves: 10 consumer groups + the developer view; picking one reveals its sub-shelves */}
       <div className="scrollbar-hide -ml-[12px] mb-1 flex items-center gap-1 overflow-x-auto">
         <Link
           href={`/apps?${(() => { const p = new URLSearchParams(); if (os) p.set('os', os); if (kind) p.set('kind', kind); p.set('sort', sort); p.set('page', '1'); return p.toString(); })()}`}
@@ -157,7 +181,7 @@ export default async function AppsPage({
       {shelfMajor && SHELF_SUBS[shelfMajor] && (
         <div className="scrollbar-hide mb-2 flex items-center gap-1 overflow-x-auto pl-1">
           {SHELF_SUBS[shelfMajor].map((sub) => {
-            const full = `${shelfMajor}/${sub}`;
+            const full = shelfValue(shelfMajor, sub);
             return (
               <Link
                 key={full}
@@ -166,7 +190,7 @@ export default async function AppsPage({
                   shelf === full ? 'text-accent' : 'text-muted hover:text-fg'
                 }`}
               >
-                {t(`shelf_${full.replace(/[/-]/g, '_')}` as never) as string}
+                {t(shelfKey(shelfMajor, full) as never) as string}
               </Link>
             );
           })}

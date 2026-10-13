@@ -1,0 +1,279 @@
+<title>分类树 v2 对 v3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 布局：两列对照（现在 | v3），每个大类一块，叶子用等比条形表示条目数；手机单列上下堆叠 */
+:root{
+  --bg:#f6f7f4; --surface:#ffffff; --fg:#121a15; --fg2:#4a564e; --muted:#7c877f;
+  --line:#dfe4df; --line2:#eef1ec;
+  --ink:#0f1f14; --ink-fg:#f2f5f1;
+  --bar:#c9d6cc; --bar-v3:#1d9a56; --bar-v3-bg:#d9efe2;
+  --hot:#c9741c; --move:#4f5fc9; --move-bg:#e6e9f8; --hl:#fff1c2; --hl-line:#e0b400;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,"PingFang SC","Noto Sans SC",sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0c110e; --surface:#141a16; --fg:#e8ede8; --fg2:#aab4ac; --muted:#7f8a82;
+  --line:#26302a; --line2:#1c241f; --ink:#e8ede8; --ink-fg:#0c110e;
+  --bar:#2d3a31; --bar-v3:#3fbf79; --bar-v3-bg:#1b3526;
+  --hot:#e08a3a; --move:#8b98e8; --move-bg:#1f2440; --hl:#3a3114; --hl-line:#c9a227; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0c110e; --surface:#141a16; --fg:#e8ede8; --fg2:#aab4ac; --muted:#7f8a82;
+  --line:#26302a; --line2:#1c241f; --ink:#e8ede8; --ink-fg:#0c110e;
+  --bar:#2d3a31; --bar-v3:#3fbf79; --bar-v3-bg:#1b3526;
+  --hot:#e08a3a; --move:#8b98e8; --move-bg:#1f2440; --hl:#3a3114; --hl-line:#c9a227; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;line-height:1.5;margin:0}
+.wrap{max-width:1360px;margin:0 auto;padding-block:36px 64px;padding-inline:clamp(16px,3vw,40px)}
+h1{font-size:26px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.lede{color:var(--fg2);max-width:70ch;margin:8px 0 0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:22px 0 10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);min-width:0}
+.kpi small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .v{display:flex;align-items:baseline;gap:8px;margin-top:4px;font-family:var(--mono);font-size:15px}
+.kpi .v b{font-weight:500;color:var(--muted);text-decoration:line-through;text-decoration-color:var(--hot)}
+.kpi .v span{font-weight:600;font-size:18px}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px 20px;color:var(--fg2);font-size:12.5px;margin:12px 0 26px}
+.legend i{display:inline-block;width:14px;height:9px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.legend .hot i{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid var(--hot);border-radius:0;background:none}
+.legend .mv i{background:var(--move-bg);border:1px dashed var(--move)}
+.legend .hl i{background:var(--hl);border:1px solid var(--hl-line)}
+
+h2{font-size:17px;font-weight:700;margin:34px 0 4px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 .sub{font-weight:500;color:var(--muted);font-size:13px}
+.hint{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+.col{min-width:0}
+.colhead{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);padding:8px 0 10px;border-bottom:2px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.colhead b{font-size:15px}
+.colhead span{color:var(--muted);font-size:12.5px}
+.colhead.v3 b{color:var(--bar-v3)}
+
+.grp{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:10px;overflow:hidden}
+.grp header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 12px 7px;border-bottom:1px solid var(--line2)}
+.grp header b{font-size:13.5px}
+.grp header .path{color:var(--muted);font-family:var(--mono);font-size:11.5px;margin-left:6px}
+.grp header .tot{color:var(--fg2);font-size:12px}
+.grp.new header b::after{content:"新增";font-size:10px;font-weight:600;letter-spacing:.06em;margin-left:8px;padding:1px 6px;border-radius:999px;background:var(--bar-v3-bg);color:var(--bar-v3);vertical-align:1px}
+.grp.gone{opacity:.72}
+.grp.gone header b::after{content:"删除";font-size:10px;font-weight:600;letter-spacing:.06em;margin-left:8px;padding:1px 6px;border-radius:999px;background:var(--move-bg);color:var(--move);vertical-align:1px}
+
+.leaf{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 52px;gap:10px;align-items:center;padding:4px 12px;cursor:pointer;border-left:3px solid transparent}
+.leaf:hover{background:var(--line2)}
+.leaf.on{background:var(--hl);border-left-color:var(--hl-line)}
+.leaf .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.leaf .nm small{color:var(--muted);font-family:var(--mono);font-size:11px;margin-left:6px}
+.leaf .bar{height:10px;border-radius:2px;background:var(--line2);position:relative;overflow:visible}
+.leaf .bar i{display:block;height:100%;border-radius:2px;background:var(--bar)}
+.v3 .leaf .bar i{background:var(--bar-v3)}
+.leaf .bar em{position:absolute;top:-4px;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid var(--hot);transform:translateX(-4px)}
+.leaf .n{text-align:right;font-family:var(--mono);font-size:12px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.v3 .leaf .n::before{content:"≈";color:var(--muted)}
+.leaf.moved{background:var(--move-bg)}
+.leaf.moved .bar i{background:var(--move);opacity:.55}
+.leaf.moved .nm small{color:var(--move)}
+.leaf.moved .n{color:var(--move)}
+.leaf.tiny .n{color:var(--hot)}
+
+.shelf-note{margin-top:14px;border:1px dashed var(--line);border-radius:10px;padding:10px 14px;color:var(--fg2);font-size:12.5px;background:var(--surface)}
+.shelf-note b{color:var(--fg)}
+
+.why{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.why div{border-top:2px solid var(--ink);padding-top:10px;min-width:0}
+.why b{display:block;font-size:13.5px;margin-bottom:4px}
+.why p{margin:0;color:var(--fg2);font-size:13px}
+.foot{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
+.leaf:focus-visible,.grp:focus-visible{outline:2px solid var(--hl-line);outline-offset:-2px}
+@media (prefers-reduced-motion:no-preference){.leaf{transition:background .12s}}
+</style>
+
+<div class="wrap">
+  <h1>分类树 v2 对 v3</h1>
+  <p class="lede">左边是今天生产库里的分类和条目数，右边是 v3 草案和估算条目数。点任意叶子，另一边会亮出它对应的叶子。</p>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="legend">
+    <span><i style="background:var(--bar)"></i>现在 · 实际条目</span>
+    <span><i style="background:var(--bar-v3)"></i>v3 · 估算条目（±30%）</span>
+    <span class="hot"><i></i>热门条目数（周增 ≥100 星）在条上的位置</span>
+    <span class="mv"><i></i>从货架移出 / 已删除</span>
+    <span class="hl"><i></i>选中与对应</span>
+  </div>
+
+  <h2>领域树 <span class="sub">非应用分支 · 两层</span></h2>
+  <p class="hint">条长按条目数等比，两边同一比例尺。橙色三角标出热门条目数在同一比例尺上的位置：三角越靠右，这个叶子越"热"。</p>
+  <div class="cols">
+    <div class="col">
+      <div class="colhead"><b>现在</b><span id="dom-cur-sum"></span></div>
+      <div id="dom-cur"></div>
+    </div>
+    <div class="col v3">
+      <div class="colhead v3"><b>v3</b><span id="dom-v3-sum"></span></div>
+      <div id="dom-v3"></div>
+    </div>
+  </div>
+
+  <h2>货架 <span class="sub">现在：独立的第二棵树 · v3：apps 分支的第三层</span></h2>
+  <p class="hint">左边蓝色的是 v3 里移出货架的格子，它们回到领域树对应的叶子；橙色数字是不足 60 条的格子。</p>
+  <div class="cols">
+    <div class="col">
+      <div class="colhead"><b>现在 · 53 格</b><span id="sh-cur-sum"></span></div>
+      <div id="sh-cur"></div>
+    </div>
+    <div class="col v3">
+      <div class="colhead v3"><b>v3 · 39 格</b><span id="sh-v3-sum"></span></div>
+      <div id="sh-v3"></div>
+      <div class="shelf-note"><b>开发者应用</b>在 v3 里是商店的一个视图：形态 ∈ {app, cli} 且领域 ∈ devtools / data / infra / gamedev / agents。这些条目仍在商店可见（`?shelf=dev`），也能按单个叶子筛选。</div>
+    </div>
+  </div>
+
+  <div class="why">
+    <div><b>热度集中的地方拆开</b><p>devtools/ai-coding、ai/llm、ai/agents 三叶占 36% 的热门条目。v3 用 agents 顶层的 6 叶加 ai 的 2 叶承接，单叶热门占比估计不超过 8%。</p></div>
+    <div><b>垃圾桶变小</b><p>lang/utils 5,649 条拆出算法、解析与序列化、并发与网络库，残余约 2,400。devtools/cli 整叶解散，cli 只作为形态保留。</p></div>
+    <div><b>应用只分一次</b><p>领域树 apps 四叶与货架 53 格是同一批仓库的两种切法。v3 删掉四叶，货架成为 apps 分支的第三层，一个条目一个位置。</p></div>
+    <div><b>商店回到消费者视角</b><p>devtools 八格和渗透测试共 5,220 条移出货架。10 个消费者大类 39 格（含承接领域树 apps/browser-ext 的浏览器扩展格），最小的格子 90 条，没有不足 60 条的。</p></div>
+  </div>
+
+  <p class="foot">数据：2026-10-13 生产库 tracked_items，GitHub 来源，领域按多标签展开计数。v3 估算来自各叶 topic 分布，定稿前须用真实分类复核。树文件 taxonomy/taxonomy.yaml，迁移映射 taxonomy/migrations.yaml，说明 docs/TAXONOMY-V3.md。</p>
+</div>
+
+<script>
+// ───────────── 数据 ─────────────
+// 现在的领域树：path, n(条目), hot(周增≥100 的条目数)
+const CUR_DOM = {
+  "ai":{name:"人工智能",leaves:[["ai/llm",4341,287],["ai/ml-framework",3994,47],["ai/cv",2596,35],["ai/data-science",2056,24],["ai/agents",2017,212],["ai/media-gen",1231,43],["ai/speech-audio",775,33]]},
+  "web":{name:"Web 开发",leaves:[["web/frontend",7610,89],["web/backend",4539,26],["web/css-ui",3245,32],["web/static-site",863,3],["web/build-tools",842,9]]},
+  "devtools":{name:"开发者工具",leaves:[["devtools/cli",4038,98],["devtools/editors",1848,22],["devtools/ai-coding",1786,304],["devtools/testing",1364,23],["devtools/vcs",603,14],["devtools/package-manager",546,3]]},
+  "infra":{name:"基础设施",leaves:[["infra/networking",2423,50],["infra/containers",1714,17],["infra/monitoring",966,16],["infra/ci-cd",421,5],["infra/iac",420,6]]},
+  "data":{name:"数据系统",leaves:[["data/database",1799,15],["data/pipeline",765,10],["data/analytics",664,12],["data/search",412,13]]},
+  "lang":{name:"语言基础设施",leaves:[["lang/utils",5649,8],["lang/implementations",1020,10]]},
+  "mobile":{name:"移动开发",leaves:[["mobile/native",5498,53],["mobile/cross-platform",1510,27]]},
+  "security":{name:"安全",leaves:[["security/pentest",3185,54],["security/crypto-auth",1226,10]]},
+  "systems":{name:"系统软件",leaves:[["systems/embedded",1895,19],["systems/os",1467,22],["systems/emulation",723,17]]},
+  "apps":{name:"应用软件",gone:true,leaves:[["apps/productivity",3596,126],["apps/media",2925,97],["apps/selfhosted",2912,99],["apps/browser-ext",630,15]]},
+  "gamedev":{name:"游戏开发",leaves:[["gamedev/engines",1197,15],["gamedev/games",1184,20]]},
+  "blockchain":{name:"区块链",leaves:[["blockchain/protocols",795,1],["blockchain/contracts",283,3]]},
+};
+// v3 领域树：path, est, from[]
+const V3_DOM = {
+  "agents":{name:"智能体与 AI 编程",isNew:true,leaves:[["agents/coding",1500,["devtools/ai-coding"]],["agents/frameworks",1200,["ai/agents"]],["agents/assistants",900,["ai/llm","ai/agents"]],["agents/mcp",800,["ai/agents","ai/llm","devtools/ai-coding","devtools/cli"]],["agents/skills",700,["devtools/ai-coding","ai/agents"]],["agents/memory",700,["ai/llm","ai/agents"]]]},
+  "ai":{name:"模型与机器学习",leaves:[["ai/ml-framework",3900,["ai/ml-framework"]],["ai/cv",2600,["ai/cv"]],["ai/data-science",2000,["ai/data-science"]],["ai/llm-serving",1200,["ai/llm"]],["ai/media-gen",1200,["ai/media-gen"]],["ai/llm-training",900,["ai/llm"]],["ai/speech-audio",800,["ai/speech-audio"]]]},
+  "web":{name:"Web 开发",leaves:[["web/ui-components",4500,["web/css-ui","web/frontend"]],["web/backend",4500,["web/backend"]],["web/frontend",4200,["web/frontend"]],["web/data-viz",900,["web/frontend"]],["web/build-tools",850,["web/build-tools"]],["web/static-site",850,["web/static-site"]]]},
+  "devtools":{name:"开发者工具",leaves:[["devtools/terminal",2000,["devtools/cli"]],["devtools/editors",1850,["devtools/editors"]],["devtools/testing",1200,["devtools/testing"]],["devtools/code-quality",700,["devtools/cli","devtools/testing"]],["devtools/vcs",700,["devtools/vcs","devtools/cli"]],["devtools/package-manager",550,["devtools/package-manager"]],["devtools/api-tools",500,["devtools/cli","web/backend"]]]},
+  "infra":{name:"基础设施",leaves:[["infra/networking",2400,["infra/networking"]],["infra/containers",1700,["infra/containers"]],["infra/monitoring",1000,["infra/monitoring"]],["infra/automation",850,["infra/ci-cd","infra/iac"]]]},
+  "data":{name:"数据系统",leaves:[["data/database",1800,["data/database"]],["data/analytics",1100,["data/analytics","data/search"]],["data/pipeline",800,["data/pipeline"]]]},
+  "lang":{name:"语言与通用库",leaves:[["lang/utils",2400,["lang/utils"]],["lang/parsing",1200,["lang/utils"]],["lang/implementations",1000,["lang/implementations"]],["lang/concurrency-net",800,["lang/utils"]],["lang/algorithms",700,["lang/utils"]]]},
+  "client":{name:"客户端开发",leaves:[["client/android",2600,["mobile/native"]],["client/apple",2400,["mobile/native"]],["client/cross-platform",1500,["mobile/cross-platform"]],["client/desktop",900,["lang/utils","web/frontend","mobile/native"]]]},
+  "security":{name:"安全",leaves:[["security/offensive",1500,["security/pentest"]],["security/crypto-auth",1200,["security/crypto-auth"]],["security/reverse",800,["security/pentest"]],["security/recon",600,["security/pentest"]]]},
+  "systems":{name:"系统软件",leaves:[["systems/embedded",1900,["systems/embedded"]],["systems/os",1450,["systems/os"]],["systems/emulation",700,["systems/emulation"]]]},
+  "gamedev":{name:"游戏开发",leaves:[["gamedev/engines",1200,["gamedev/engines"]],["gamedev/games",1200,["gamedev/games"]]]},
+  "blockchain":{name:"区块链",leaves:[["blockchain/core",1080,["blockchain/protocols","blockchain/contracts"]]]},
+};
+// 现在的货架：slug, n, movedTo(可选)
+const CUR_SH = {
+  "devtools":{name:"开发者工具",leaves:[["devtools/devops",1081,"infra/*"],["devtools/terminal",791,"devtools/terminal"],["devtools/pkg",693,"devtools/package-manager"],["devtools/editor",622,"devtools/editors"],["devtools/database",317,"data/database"],["devtools/api",245,"devtools/api-tools"],["devtools/git",227,"devtools/vcs"],["devtools/gamedev",202,"gamedev/engines"]]},
+  "security":{name:"安全",leaves:[["security/pentest",1042,"security/offensive"],["security/privacy",294],["security/passwords",111],["security/adblock",57]]},
+  "ai":{name:"AI",leaves:[["ai/assistant",526],["ai/coding",442,"agents/coding"],["ai/platform",168],["ai/local-llm",104],["ai/image-gen",73],["ai/media-gen",69]]},
+  "selfhosted":{name:"自托管",leaves:[["selfhosted/automation",509],["selfhosted/cloud",385],["selfhosted/monitoring",343],["selfhosted/tunnel",118],["selfhosted/media-server",113],["selfhosted/photos",35]]},
+  "network":{name:"网络",leaves:[["network/download",449],["network/proxy",392],["network/browser",320],["network/remote",195]]},
+  "system":{name:"系统",leaves:[["system/launcher",409],["system/files",318],["system/phone",308],["system/backup",107],["system/transfer",105],["system/screenshot",93]]},
+  "productivity":{name:"效率",leaves:[["productivity/docs",292],["productivity/knowledge",289],["productivity/notes",219],["productivity/todo",174]]},
+  "creative":{name:"创作",leaves:[["creative/image",384],["creative/video",156],["creative/audio",136],["creative/cad",128],["creative/writing",125],["creative/whiteboard",88]]},
+  "media":{name:"影音",leaves:[["media/player",337],["media/reader",281],["media/music",251]]},
+  "social":{name:"社交",leaves:[["social/chat",373],["social/social-tools",280],["social/mail",52]]},
+  "games":{name:"游戏",leaves:[["games/games",515],["games/emulator",135],["games/smart-home",26]]},
+};
+const V3_SH = {
+  "apps/productivity":{name:"效率",leaves:[["apps/productivity/docs",290,["productivity/docs"]],["apps/productivity/knowledge",290,["productivity/knowledge"]],["apps/productivity/notes",220,["productivity/notes"]],["apps/productivity/todo",175,["productivity/todo"]]]},
+  "apps/creative":{name:"创作",leaves:[["apps/creative/image",385,["creative/image"]],["apps/creative/video",155,["creative/video"]],["apps/creative/audio",135,["creative/audio"]],["apps/creative/cad",130,["creative/cad"]],["apps/creative/writing",125,["creative/writing"]],["apps/creative/whiteboard",90,["creative/whiteboard"]]]},
+  "apps/ai":{name:"AI 应用",leaves:[["apps/ai/assistant",525,["ai/assistant"]],["apps/ai/builder",170,["ai/platform"]],["apps/ai/generation",140,["ai/image-gen","ai/media-gen"]],["apps/ai/local-llm",105,["ai/local-llm"]]]},
+  "apps/selfhosted":{name:"自托管",leaves:[["apps/selfhosted/automation",535,["selfhosted/automation","games/smart-home"]],["apps/selfhosted/cloud",420,["selfhosted/cloud","selfhosted/photos"]],["apps/selfhosted/monitoring",345,["selfhosted/monitoring"]],["apps/selfhosted/tunnel",120,["selfhosted/tunnel"]],["apps/selfhosted/media-server",115,["selfhosted/media-server"]]]},
+  "apps/network":{name:"网络",leaves:[["apps/network/download",450,["network/download"]],["apps/network/proxy",390,["network/proxy"]],["apps/network/browser",320,["network/browser"]],["apps/network/remote",195,["network/remote"]],["apps/network/browser-ext",630,["apps/browser-ext"]]]},
+  "apps/media":{name:"影音",leaves:[["apps/media/player",340,["media/player"]],["apps/media/reader",280,["media/reader"]],["apps/media/music",250,["media/music"]]]},
+  "apps/social":{name:"社交与通讯",leaves:[["apps/social/messaging",425,["social/chat","social/mail"]],["apps/social/tools",280,["social/social-tools"]]]},
+  "apps/system":{name:"系统工具",leaves:[["apps/system/launcher",410,["system/launcher"]],["apps/system/files",320,["system/files"]],["apps/system/phone",310,["system/phone"]],["apps/system/backup",105,["system/backup"]],["apps/system/transfer",105,["system/transfer"]],["apps/system/screenshot",95,["system/screenshot"]]]},
+  "apps/security":{name:"安全与隐私",leaves:[["apps/security/privacy",350,["security/privacy","security/adblock"]],["apps/security/passwords",110,["security/passwords"]]]},
+  "apps/games":{name:"游戏",leaves:[["apps/games/games",515,["games/games"]],["apps/games/emulator",135,["games/emulator"]]]},
+};
+
+// ───────────── 渲染 ─────────────
+const fmt = n => n.toLocaleString('en-US');
+function render(id, groups, max, side, kind){
+  const root = document.getElementById(id); let total=0, leafN=0;
+  for (const [gpath, g] of Object.entries(groups)){
+    const sum = g.leaves.reduce((a,l)=>a+l[1],0); total+=sum;
+    const grp = document.createElement('section'); grp.className='grp'+(g.isNew?' new':'')+(g.gone?' gone':'');
+    grp.innerHTML = `<header><div><b>${g.name}</b><span class="path">${gpath}</span></div><span class="tot"><span class="num">${side==='v3'?'≈':''}${fmt(sum)}</span> · ${g.leaves.length} 叶</span></header>`;
+    for (const l of g.leaves){
+      leafN++;
+      const [path,n] = l; const row=document.createElement('div');
+      const moved = side==='cur' && kind==='sh' && l[2];
+      row.className='leaf'+(moved?' moved':'')+(side==='cur'&&kind==='sh'&&n<60?' tiny':'');
+      row.dataset.side=side; row.dataset.kind=kind; row.dataset.path=path;
+      if (side==='v3') row.dataset.from=l[2].join('|');
+      row.tabIndex=0;
+      const short = path.split('/').slice(kind==='sh'&&side==='v3'?2:1).join('/');
+      const hot = (side==='cur'&&kind==='dom') ? `<em style="left:${(l[2]/max*100).toFixed(2)}%" title="热门 ${l[2]}"></em>` : '';
+      const tag = moved ? `<small>→ ${l[2]}</small>` : '';
+      row.innerHTML = `<span class="nm" title="${path}">${short}${tag}</span><span class="bar"><i style="width:${(n/max*100).toFixed(2)}%"></i>${hot}</span><span class="n">${fmt(n)}</span>`;
+      grp.appendChild(row);
+    }
+    root.appendChild(grp);
+  }
+  return {total, leafN};
+}
+const DMAX = 7610, SMAX = 1081;
+const a = render('dom-cur', CUR_DOM, DMAX, 'cur', 'dom');
+const b = render('dom-v3',  V3_DOM,  DMAX, 'v3',  'dom');
+const c = render('sh-cur',  CUR_SH,  SMAX, 'cur', 'sh');
+const d = render('sh-v3',   V3_SH,   SMAX, 'v3',  'sh');
+document.getElementById('dom-cur-sum').textContent = `${a.leafN} 叶 · ${fmt(a.total)} 条（多标签展开）`;
+document.getElementById('dom-v3-sum').textContent  = `${b.leafN} 叶 · ≈${fmt(b.total)} 条`;
+document.getElementById('sh-cur-sum').textContent  = `${fmt(c.total)} 条 · 另 excluded 3,135`;
+document.getElementById('sh-v3-sum').textContent   = `≈${fmt(d.total)} 条 · excluded 变为标记`;
+
+// KPI
+const curLeaves = Object.values(CUR_DOM).flatMap(g=>g.leaves);
+const hotTot = curLeaves.reduce((s,l)=>s+l[2],0);
+const top3 = curLeaves.map(l=>l[2]).sort((x,y)=>y-x).slice(0,3).reduce((s,x)=>s+x,0);
+const kp = [
+  ['分类体系','3 套','1 棵树'],
+  ['领域叶子',String(a.leafN),String(b.leafN)],
+  ['最大 / 最小叶子','7,610 / 283 = 27×','4,500 / 500 = 9×'],
+  ['前三叶热门占比',`${Math.round(top3/hotTot*100)}%`,'≈18%'],
+  ['无法命名的桶','lang/utils 5,649','≈2,400'],
+  ['货架',`53 格`,`39 格`],
+  ['不足 60 条的货架','4','0'],
+  ['商店里的开发者工具','5,220 条','0（移出为视图）'],
+];
+document.getElementById('kpis').innerHTML = kp.map(([k,x,y])=>`<div class="kpi"><small>${k}</small><div class="v"><b>${x}</b><span>${y}</span></div></div>`).join('');
+
+// ───────────── 对应高亮 ─────────────
+let current = null;
+function clear(){ document.querySelectorAll('.leaf.on').forEach(e=>e.classList.remove('on')); current=null; }
+function pick(row){
+  const path=row.dataset.path, side=row.dataset.side, kind=row.dataset.kind;
+  if (current===path){ clear(); return; }
+  clear(); current=path; row.classList.add('on');
+  const rows=[...document.querySelectorAll(`.leaf[data-kind="${kind}"]`)];
+  if (side==='v3'){
+    const from=row.dataset.from.split('|');
+    rows.filter(r=>r.dataset.side==='cur'&&from.includes(r.dataset.path)).forEach(r=>r.classList.add('on'));
+  } else {
+    rows.filter(r=>r.dataset.side==='v3'&&r.dataset.from.split('|').includes(path)).forEach(r=>r.classList.add('on'));
+    // 领域树里被删的 apps/* 四叶对应到货架 v3 整个 apps 分支，这里不逐一高亮
+  }
+  const first=document.querySelector(`.leaf.on[data-side="${side==='v3'?'cur':'v3'}"]`);
+  if (first && window.innerWidth<860) first.scrollIntoView({block:'center',behavior:'smooth'});
+}
+document.querySelectorAll('.leaf').forEach(r=>{
+  r.addEventListener('click',()=>pick(r));
+  r.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(r);} });
+});
+</script>
