@@ -136,7 +136,8 @@ type Assets struct {
 	ShotSource    string `bson:"shotSource,omitempty"` // readme | og
 }
 
-// Ranks are the item's positions, written nightly by the rank job.
+// Ranks are the item's positions within its source, by primary metric, written
+// nightly by the rank job. At is when the positions last changed.
 type Ranks struct {
 	Overall  int            `bson:"overall"`
 	Language int            `bson:"language,omitempty"`

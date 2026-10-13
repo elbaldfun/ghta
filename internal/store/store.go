@@ -5,6 +5,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,8 +43,25 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 	if _, err := s.Blobs().Indexes().CreateOne(ctx, mongo.IndexModel{Keys: key, Options: options.Index().SetUnique(true)}); err != nil {
 		return fmt.Errorf("item_blobs indexes: %w", err)
 	}
-	return nil
+	return s.ensureJobRunIndexes(ctx)
 }
+
+// Connect opens the database the rebuilt store lives in.
+func Connect(ctx context.Context, uri, db string) (*Store, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, fmt.Errorf("mongo connect: %w", err)
+	}
+	if err := client.Ping(ctx, nil); err != nil {
+		return nil, fmt.Errorf("mongo ping: %w", err)
+	}
+	return New(client.Database(db)), nil
+}
+
+// Close disconnects the underlying client.
+func (s *Store) Close(ctx context.Context) error { return s.DB.Client().Disconnect(ctx) }
 
 // Reset drops the rebuilt collections. The importer calls it so that every
 // import starts from nothing and is repeatable.
