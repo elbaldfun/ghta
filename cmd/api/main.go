@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -206,6 +207,53 @@ func main() {
 }
 
 // taxDeps bundles the taxonomy-versioning pieces the router exposes.
+// migrateRun is the state of the one taxonomy migration this process may be
+// running: a guard against a second start, and the result of the last one.
+type migrateRun struct {
+	mu       sync.Mutex
+	running  bool
+	from, to int
+	started  time.Time
+	finished time.Time
+	stats    taxonomy.Stats
+	err      string
+}
+
+func (r *migrateRun) start(from, to int) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.running {
+		return false
+	}
+	*r = migrateRun{running: true, from: from, to: to, started: time.Now().UTC()}
+	return true
+}
+
+func (r *migrateRun) finish(stats taxonomy.Stats, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.running, r.finished, r.stats = false, time.Now().UTC(), stats
+	if err != nil {
+		r.err = err.Error()
+	}
+}
+
+func (r *migrateRun) snapshot() gin.H {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.started.IsZero() {
+		return gin.H{"status": "idle"}
+	}
+	h := gin.H{"status": "running", "from": r.from, "to": r.to, "started": r.started}
+	if !r.running {
+		h["status"], h["finished"], h["stats"] = "done", r.finished, r.stats
+		if r.err != "" {
+			h["status"], h["error"] = "failed", r.err
+		}
+	}
+	return h
+}
+
 type taxDeps struct {
 	tree       taxonomy.Tree
 	migrations []taxonomy.Migration
@@ -378,6 +426,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	// return their counts; anything re-queued drains through the nightly
 	// categorizer / storefinder runs (or the /internal/categorize and
 	// /internal/store-find triggers). Idempotent: safe to call again.
+	migrate := &migrateRun{}
 	admin.POST("/internal/taxonomy-migrate", func(c *gin.Context) {
 		var step *taxonomy.Migration
 		for i := range tax.migrations {
@@ -389,13 +438,29 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 			c.JSON(http.StatusNotFound, gin.H{"error": "no migration step targets tree version " + strconv.Itoa(tax.tree.Version)})
 			return
 		}
-		stats, err := tax.migrator.Run(c.Request.Context(), *step, service.CurrentStoreVersion)
-		if err != nil {
-			slog.Error("taxonomy migrate failed", "err", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "partial": stats})
+		// A migration scans the collection once per op and outlives the
+		// server's write timeout, so it runs on the job context and reports
+		// through GET /internal/taxonomy-migrate and the log.
+		if !migrate.start(step.From, step.To) {
+			c.JSON(http.StatusConflict, gin.H{"error": "a migration is already running"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "migrated", "from": step.From, "to": step.To, "stats": stats})
+		m := *step
+		go func() {
+			stats, err := tax.migrator.Run(jobCtx, m, service.CurrentStoreVersion)
+			migrate.finish(stats, err)
+			if err != nil {
+				slog.Error("taxonomy migrate failed", "err", err, "partial", stats)
+				return
+			}
+			slog.Info("taxonomy migrate done", "from", m.From, "to", m.To, "stats", stats)
+		}()
+		c.JSON(http.StatusAccepted, gin.H{"status": "started", "from": step.From, "to": step.To})
+	})
+
+	// Internal: state and counts of the last migration started on this process.
+	admin.GET("/internal/taxonomy-migrate", func(c *gin.Context) {
+		c.JSON(http.StatusOK, migrate.snapshot())
 	})
 
 	// Internal: undo the last migration for every item that still has its

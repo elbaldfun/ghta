@@ -288,6 +288,20 @@ func LeafIDs(ctx context.Context, store *repository.Store) (map[string]string, e
 	return out, nil
 }
 
+// pathArr reads categoryPath as an array whatever shape it was stored in.
+// Items classified before multi-label (change 12) still hold a bare string —
+// "" for uncategorized, or one path — which domain.PathList tolerates on read
+// but array operators ($map, $setUnion) reject outright.
+func pathArr() bson.M {
+	return bson.M{"$switch": bson.M{
+		"branches": bson.A{
+			bson.M{"case": bson.M{"$isArray": bson.A{"$categoryPath"}}, "then": "$categoryPath"},
+			bson.M{"case": bson.M{"$in": bson.A{bson.M{"$ifNull": bson.A{"$categoryPath", ""}}, bson.A{""}}}, "then": bson.A{}},
+		},
+		"default": bson.A{"$categoryPath"},
+	}}
+}
+
 // snapshotPrev is the $set fragment that records categoryPathPrev once.
 func snapshotPrev() bson.M {
 	return bson.M{"$ifNull": bson.A{"$categoryPathPrev", "$categoryPath"}}
@@ -298,7 +312,7 @@ func snapshotPrev() bson.M {
 func pathRewrite(old, new string) bson.M {
 	return bson.M{"$setUnion": bson.A{
 		bson.M{"$map": bson.M{
-			"input": bson.M{"$ifNull": bson.A{"$categoryPath", bson.A{}}},
+			"input": pathArr(),
 			"in":    bson.M{"$cond": bson.A{bson.M{"$eq": bson.A{"$$this", old}}, new, "$$this"}},
 		}},
 		bson.A{},
@@ -314,7 +328,7 @@ func idsFromPaths(idByPath map[string]string) bson.M {
 	}
 	return bson.M{"$filter": bson.M{
 		"input": bson.M{"$map": bson.M{
-			"input": bson.M{"$ifNull": bson.A{"$categoryPath", bson.A{}}},
+			"input": pathArr(),
 			"in":    bson.M{"$switch": bson.M{"branches": branches, "default": nil}},
 		}},
 		"cond": bson.M{"$ne": bson.A{"$$this", nil}},
@@ -447,7 +461,7 @@ func (mg *Migrator) rewriteShelf(ctx context.Context, old, newSlug, newPath stri
 			bson.D{{Key: "$set", Value: bson.M{"categoryPathPrev": snapshotPrev()}}},
 			bson.D{{Key: "$set", Value: bson.M{
 				field:          newSlug,
-				"categoryPath": bson.M{"$setUnion": bson.A{bson.M{"$ifNull": bson.A{"$categoryPath", bson.A{}}}, bson.A{newPath}}},
+				"categoryPath": bson.M{"$setUnion": bson.A{pathArr(), bson.A{newPath}}},
 			}}},
 			bson.D{{Key: "$set", Value: bson.M{"categoryId": idsFromPaths(idByPath)}}},
 		}

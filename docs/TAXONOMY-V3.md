@@ -185,7 +185,7 @@ App Store 和 Chrome 商店接进来之后，它们的条目直接落在 apps �
 ### 上线顺序
 
 1. 发布后端。启动时 `Sync` 写入新叶子，旧叶子因仍被引用而保留；分类任务开始按版本重排队，但此时还没有条目落后（`taxonomyVersion` 缺失视为落后，所以其实当晚就会开始按星数倒序重分类，每晚 1,000 条）。想控制节奏就先执行第 2 步。
-2. `POST /internal/taxonomy-migrate`：改名、合并、apps 四叶换标签、货架改写同步完成并返回计数；拆分叶子约 29k 条标回待分类，devtools/devops 的 1,081 条标回待判定。
+2. `POST /internal/taxonomy-migrate`：后台执行（返回 202；每个货架操作要扫一遍集合，全程约 25 分钟），用 `GET /internal/taxonomy-migrate` 或日志里的 `taxonomy migrate done` 取计数。改名、合并、apps 四叶换标签、货架改写在这一步完成；拆分叶子约 29k 条标回待分类，devtools/devops 的 1,081 条标回待判定。
 3. `POST /internal/categorize?concurrency=2` 反复触发，或等每晚 05:00，直到 `GET /category` 的旧叶子计数归零。规则层能免费吃掉一半以上。
 4. `POST /internal/store-find?drain=1` 把 devops 货架重判完。
 5. 重启一次后端，`Sync` 自动删掉已无引用的旧节点。
