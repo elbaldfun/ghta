@@ -17,6 +17,10 @@ import (
 // Store gives access to the rebuilt collections of one database.
 type Store struct {
 	DB *mongo.Database
+	// Worker names the worker process writing through this store. Job runs
+	// carry it, so that two workers on one database (the nightly pipeline on
+	// the server, the judge next to its model) do not close each other's runs.
+	Worker string
 }
 
 func New(db *mongo.Database) *Store { return &Store{DB: db} }

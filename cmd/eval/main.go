@@ -15,6 +15,11 @@
 // Usage:
 //
 //	go run ./cmd/eval [-skip-embed] [-skip-llm] [-o report.json]
+//	go run ./cmd/eval -judge [-meta cache.json] [-o report.json]
+//
+// -judge scores the merged judge of the rebuilt system instead: one call for
+// domain, form and shelf, two answers per item and a third on disagreement.
+// It reads JUDGE_BASE_URL and JUDGE_MODEL.
 //
 // Provider env (same names as the server): AI_PROVIDER, LMSTUDIO_BASE_URL,
 // LMSTUDIO_LOCAL_MODULE_NAME, OPENAI_API_KEY, OPENAI_MODEL, EMBED_MODEL,
@@ -111,6 +116,9 @@ func main() {
 	sweep := flag.Bool("sweep", false, "sweep embedding thresholds over the rule-unresolved set and exit")
 	batchSize := flag.Int("batch", 10, "LLM batch size")
 	outPath := flag.String("o", "", "write per-item results as JSON")
+	judgeMode := flag.Bool("judge", false, "score the merged judge (internal/judge) instead of the three tiers")
+	judgeQuick := flag.Bool("judge-quick", false, "with -judge: one short answer per item, no voting; for comparing prompts")
+	metaPath := flag.String("meta", "", "item metadata cache: read when it exists, written after fetching otherwise")
 	flag.Parse()
 
 	_ = godotenv.Load()
@@ -129,7 +137,14 @@ func main() {
 	// ── fetch item metadata from the prod API ──────────────────────────
 	metas := map[string]itemMeta{}
 	missing := 0
+	cached := *metaPath != "" && loadMetaCache(*metaPath) != nil
+	if cached {
+		metas = loadMetaCache(*metaPath)
+	}
 	for i, g := range golden {
+		if cached {
+			break
+		}
 		m, err := fetchItem(*apiBase, g.ID)
 		if err != nil {
 			log.Warn("fetch failed, skipping", "id", g.ID, "err", err)
@@ -142,6 +157,16 @@ func main() {
 		}
 	}
 	fmt.Fprintf(os.Stderr, "metadata: %d ok, %d missing\n", len(metas), missing)
+	if *metaPath != "" && !cached {
+		raw, _ := json.Marshal(metas)
+		must(os.WriteFile(*metaPath, raw, 0o644), "write metadata cache")
+	}
+	if *judgeMode {
+		tree, err := taxonomy.LoadTree(*taxPath)
+		must(err, "load tree")
+		runJudge(ctx, tree, golden, metas, *batchSize, *outPath, *judgeQuick)
+		return
+	}
 
 	// ── tier 1: rule ────────────────────────────────────────────────────
 	results := map[string]*result{}
