@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -46,24 +45,27 @@ type TypeFacet struct {
 	Count int    `json:"count"`
 }
 
-// categoryCacheTTL bounds how stale the tree/facet counts may be. The count
-// aggregations scan the whole tracked_items collection (~20s on the prod box),
-// so they must not run per-request; counts only shift once a day (categorize
-// job), making a few minutes of staleness invisible.
+// categoryCacheTTL bounds how stale the tree/facet counts may be. Counts only
+// shift once a day (categorize job), so a few minutes of staleness is invisible
+// and saves ~70 index counts per request.
 const categoryCacheTTL = 5 * time.Minute
 
 type CategoryService struct {
 	store *repository.Store
 
-	mu         sync.Mutex
-	treeCache  []CategoryTree
-	treeAt     time.Time
-	facetCache []TypeFacet
-	facetAt    time.Time
+	// ttlCache collapses concurrent misses into one compute: these used to be
+	// hand-rolled caches where every request arriving during a rebuild started
+	// its own, which under crawler traffic meant dozens of them at once.
+	tree   *ttlCache[[]CategoryTree]
+	facets *ttlCache[[]TypeFacet]
 }
 
 func NewCategoryService(store *repository.Store) *CategoryService {
-	return &CategoryService{store: store}
+	return &CategoryService{
+		store:  store,
+		tree:   newTTLCache[[]CategoryTree](categoryCacheTTL),
+		facets: newTTLCache[[]TypeFacet](categoryCacheTTL),
+	}
 }
 
 func (s *CategoryService) Create(ctx context.Context, in CategoryInput) (*domain.Category, error) {
@@ -99,25 +101,9 @@ func (s *CategoryService) Create(ctx context.Context, in CategoryInput) (*domain
 
 // FindAll returns the controlled domain tree (createdBy=taxonomy only — legacy
 // AI-created categories are excluded) as a nested tree with per-node item counts.
-// Result is cached for categoryCacheTTL: the count aggregation is expensive and
-// counts move slowly.
+// Result is cached for categoryCacheTTL: counts move slowly.
 func (s *CategoryService) FindAll(ctx context.Context) ([]CategoryTree, error) {
-	s.mu.Lock()
-	if s.treeCache != nil && time.Since(s.treeAt) < categoryCacheTTL {
-		cached := s.treeCache
-		s.mu.Unlock()
-		return cached, nil
-	}
-	s.mu.Unlock()
-
-	tree, err := s.buildTreeWithCounts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	s.mu.Lock()
-	s.treeCache, s.treeAt = tree, time.Now()
-	s.mu.Unlock()
-	return tree, nil
+	return s.tree.get(ctx, "tree", s.buildTreeWithCounts)
 }
 
 func (s *CategoryService) buildTreeWithCounts(ctx context.Context) ([]CategoryTree, error) {
@@ -129,7 +115,7 @@ func (s *CategoryService) buildTreeWithCounts(ctx context.Context) ([]CategoryTr
 	if err := cur.All(ctx, &cats); err != nil {
 		return nil, err
 	}
-	counts, err := s.categoryCounts(ctx)
+	counts, err := s.categoryCounts(ctx, cats)
 	if err != nil {
 		return nil, err
 	}
@@ -138,60 +124,44 @@ func (s *CategoryService) buildTreeWithCounts(ctx context.Context) ([]CategoryTr
 	return tree, nil
 }
 
-// categoryCounts returns item counts keyed by category path. Leaf counts come
-// from unwinding categoryPath (an item genuinely in two leaves counts in each).
-// Parent counts are distinct items across the subtree — computed from the
-// top-level path segment so an item in two leaves of one parent counts once.
-func (s *CategoryService) categoryCounts(ctx context.Context) (map[string]int, error) {
+// categoryCounts returns item counts keyed by category path. A leaf counts
+// every item carrying that path (an item genuinely in two leaves counts in
+// each). A top-level node counts distinct items across its subtree, so an item
+// in two leaves of one parent counts once.
+//
+// Each count is answered from the {stale, categoryPath} index alone. This used
+// to be two $unwind/$group aggregations, which can't be covered by a multikey
+// index and so read every document in the collection — ~1 GB through a 512 MB
+// cache, 30–160s per run on the prod box and a main driver of mongod's OOM
+// kills.
+func (s *CategoryService) categoryCounts(ctx context.Context, cats []domain.Category) (map[string]int, error) {
 	counts := map[string]int{}
-
-	// Leaf counts: one row per (item, leaf path).
-	leafCur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
-		liveMatch,
-		{{Key: "$unwind", Value: "$categoryPath"}},
-		{{Key: "$group", Value: bson.M{"_id": "$categoryPath", "n": bson.M{"$sum": 1}}}},
-	})
-	if err != nil {
-		return nil, err
+	subtree := map[string][]string{} // top-level segment -> itself + every path under it
+	for _, c := range cats {
+		top, _, nested := strings.Cut(c.Path, "/")
+		if _, ok := subtree[top]; !ok {
+			subtree[top] = []string{top}
+		}
+		if !nested {
+			continue
+		}
+		subtree[top] = append(subtree[top], c.Path)
+		n, err := s.store.Items().CountDocuments(ctx, liveFilter(bson.M{"categoryPath": c.Path}))
+		if err != nil {
+			return nil, err
+		}
+		counts[c.Path] = int(n)
 	}
-	if err := accumulate(ctx, leafCur, counts); err != nil {
-		return nil, err
-	}
-
-	// Parent counts: distinct items per top-level segment.
-	parentCur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
-		liveMatch,
-		{{Key: "$unwind", Value: "$categoryPath"}},
-		{{Key: "$group", Value: bson.M{"_id": bson.M{
-			"item":   "$_id",
-			"parent": bson.M{"$arrayElemAt": []interface{}{bson.M{"$split": []interface{}{"$categoryPath", "/"}}, 0}},
-		}}}},
-		{{Key: "$group", Value: bson.M{"_id": "$_id.parent", "n": bson.M{"$sum": 1}}}},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if err := accumulate(ctx, parentCur, counts); err != nil {
-		return nil, err
+	for top, paths := range subtree {
+		// $in over a multikey index dedups by document, which is exactly the
+		// distinct-items-in-subtree semantics.
+		n, err := s.store.Items().CountDocuments(ctx, liveFilter(bson.M{"categoryPath": bson.M{"$in": paths}}))
+		if err != nil {
+			return nil, err
+		}
+		counts[top] = int(n)
 	}
 	return counts, nil
-}
-
-func accumulate(ctx context.Context, cur *mongo.Cursor, into map[string]int) error {
-	defer cur.Close(ctx)
-	for cur.Next(ctx) {
-		var row struct {
-			ID string `bson:"_id"`
-			N  int    `bson:"n"`
-		}
-		if err := cur.Decode(&row); err != nil {
-			return err
-		}
-		if row.ID != "" {
-			into[row.ID] = row.N // leaf and parent keys never collide (leaves have "/")
-		}
-	}
-	return cur.Err()
 }
 
 func applyCounts(tree []CategoryTree, counts map[string]int) {
@@ -245,33 +215,19 @@ func ResetAnalysis(ctx context.Context, store *repository.Store, limit int) (int
 // TypeFacets returns each facet type value (in facets.yaml priority order) with
 // its item count, for the filter chips. Values with no items are still listed.
 func (s *CategoryService) TypeFacets(ctx context.Context, order []TypeFacet) ([]TypeFacet, error) {
-	s.mu.Lock()
-	if s.facetCache != nil && time.Since(s.facetAt) < categoryCacheTTL {
-		cached := s.facetCache
-		s.mu.Unlock()
-		return cached, nil
-	}
-	s.mu.Unlock()
-
-	cur, err := s.store.Items().Aggregate(ctx, mongo.Pipeline{
-		liveMatch,
-		{{Key: "$group", Value: bson.M{"_id": "$type", "n": bson.M{"$sum": 1}}}},
+	return s.facets.get(ctx, "facets", func(ctx context.Context) ([]TypeFacet, error) {
+		out := make([]TypeFacet, len(order))
+		for i, f := range order {
+			// One {stale, type} index count per value, instead of a $group over
+			// the whole collection.
+			n, err := s.store.Items().CountDocuments(ctx, liveFilter(bson.M{"type": f.Key}))
+			if err != nil {
+				return nil, err
+			}
+			out[i] = TypeFacet{Key: f.Key, Name: f.Name, Count: int(n)}
+		}
+		return out, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	counts := map[string]int{}
-	if err := accumulate(ctx, cur, counts); err != nil {
-		return nil, err
-	}
-	out := make([]TypeFacet, len(order))
-	for i, f := range order {
-		out[i] = TypeFacet{Key: f.Key, Name: f.Name, Count: counts[f.Key]}
-	}
-	s.mu.Lock()
-	s.facetCache, s.facetAt = out, time.Now()
-	s.mu.Unlock()
-	return out, nil
 }
 
 func (s *CategoryService) FindOne(ctx context.Context, id string) (*domain.Category, error) {
