@@ -43,6 +43,9 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 	if _, err := s.Blobs().Indexes().CreateOne(ctx, mongo.IndexModel{Keys: key, Options: options.Index().SetUnique(true)}); err != nil {
 		return fmt.Errorf("item_blobs indexes: %w", err)
 	}
+	if err := s.ensureFetchIndexes(ctx); err != nil {
+		return err
+	}
 	return s.ensureJobRunIndexes(ctx)
 }
 

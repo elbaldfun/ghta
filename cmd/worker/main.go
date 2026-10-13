@@ -3,7 +3,7 @@
 // worker can be restarted at any time without affecting the site.
 //
 //	worker                  run the nightly pipeline on PIPELINE_CRON
-//	worker -run rank        run the named jobs once, in pipeline order, and exit
+//	worker -run fetch,rank  run the named jobs once, in pipeline order, and exit
 //	worker -list            print the pipeline and exit
 //
 // With -run the exit status is 1 when a job fails. See docs/REDESIGN.md §5.3.
@@ -16,6 +16,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -24,6 +25,8 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/elbaldfun/ghta/internal/pipeline"
+	"github.com/elbaldfun/ghta/internal/source/github"
+	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/store"
 	"github.com/elbaldfun/ghta/internal/worker"
 )
@@ -52,12 +55,16 @@ func run(log *slog.Logger, runList string, list bool) error {
 	defer stop()
 
 	if list {
-		fmt.Println(strings.Join(names(nightly(nil)), "\n"))
+		fmt.Println(strings.Join(names(nightly(nil, log)), "\n"))
 		return nil
 	}
 	uri, db := os.Getenv("MONGODB_URI"), os.Getenv("MONGODB_DB")
 	if uri == "" || db == "" {
 		return fmt.Errorf("MONGODB_URI and MONGODB_DB are required")
+	}
+	// Only fetch needs the token; a one-off run of other jobs does not.
+	if os.Getenv("GITHUB_API_TOKEN") == "" && (runList == "" || wants(runList, "fetch")) {
+		return fmt.Errorf("GITHUB_API_TOKEN is required to fetch")
 	}
 	st, err := store.Connect(ctx, uri, db)
 	if err != nil {
@@ -65,7 +72,7 @@ func run(log *slog.Logger, runList string, list bool) error {
 	}
 	defer st.Close(context.Background())
 
-	jobs := nightly(st)
+	jobs := nightly(st, log)
 	if err := st.EnsureIndexes(ctx); err != nil {
 		return err
 	}
@@ -107,8 +114,15 @@ func run(log *slog.Logger, runList string, list bool) error {
 
 // nightly is the pipeline, in the order the jobs run. Later jobs read what
 // earlier ones wrote, so the order is part of the design.
-func nightly(st *store.Store) []worker.Job {
+func nightly(st *store.Store, log *slog.Logger) []worker.Job {
+	buffer, err := strconv.Atoi(getEnv("RATE_LIMIT_BUFFER", "200"))
+	if err != nil {
+		buffer = 200
+	}
 	return []worker.Job{
+		pipeline.NewFetch(st, log,
+			github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log),
+			huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
 		pipeline.NewRank(st),
 	}
 }
@@ -136,6 +150,16 @@ func pick(jobs []worker.Job, csv string) ([]worker.Job, error) {
 		return nil, fmt.Errorf("-run names no job")
 	}
 	return out, nil
+}
+
+// wants reports whether a -run list names job.
+func wants(csv, job string) bool {
+	for _, n := range strings.Split(csv, ",") {
+		if strings.TrimSpace(n) == job {
+			return true
+		}
+	}
+	return false
 }
 
 func names(jobs []worker.Job) []string {

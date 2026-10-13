@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/elbaldfun/ghta/internal/domain"
+	"github.com/elbaldfun/ghta/internal/item"
 )
 
 // Fetcher is the contract for a single data source (github, appstore, ...).
@@ -22,6 +23,17 @@ type Fetcher interface {
 
 	// Fetch pulls and normalizes all items for one shard.
 	Fetch(ctx context.Context, shard string) ([]domain.TrackedItem, error)
+}
+
+// ItemFetcher is the adapter contract of the rebuilt pipeline: the same shards
+// as Fetcher, with typed output for the items collection. Adapters implement
+// both until the old fetch job is removed.
+type ItemFetcher interface {
+	Source() domain.Source
+	Shards() []string
+	// FetchItems pulls one shard. Every returned item carries the fields the
+	// fetcher owns; see item.Fetched.
+	FetchItems(ctx context.Context, shard string) ([]item.Fetched, error)
 }
 
 // Registry holds the registered source adapters.

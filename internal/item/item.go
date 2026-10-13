@@ -10,6 +10,9 @@
 package item
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -214,7 +217,43 @@ type Blob struct {
 	ExternalID string    `bson:"externalId"`
 	Readme     string    `bson:"readme,omitempty"`
 	Releases   []Release `bson:"releases,omitempty"`
-	UpdatedAt  time.Time `bson:"updatedAt"`
+	// Hash is BlobHash of the content. The fetcher compares it to skip
+	// rewriting a README that has not changed, which is nearly all of them.
+	Hash      string    `bson:"hash"`
+	UpdatedAt time.Time `bson:"updatedAt"`
+}
+
+// NewBlob returns the blob for an item's cold text, or nil when there is none.
+func NewBlob(source, externalID, readme string, releases []Release, at time.Time) *Blob {
+	if readme == "" && len(releases) == 0 {
+		return nil
+	}
+	return &Blob{
+		Source: source, ExternalID: externalID, Readme: readme, Releases: releases,
+		Hash: BlobHash(readme, releases), UpdatedAt: at,
+	}
+}
+
+// BlobHash identifies a blob's content.
+func BlobHash(readme string, releases []Release) string {
+	h := sha256.New()
+	h.Write([]byte(readme))
+	for _, r := range releases {
+		fmt.Fprintf(h, "\x00%s\x00%s\x00%t%t%t\x00%d", r.Name, r.TagName, r.IsPrerelease, r.IsLatest, r.IsDraft, r.PublishedAt.UnixMilli())
+	}
+	return hex.EncodeToString(h.Sum(nil)[:16])
+}
+
+// Fetched is what a source adapter returns for one item: the fields the
+// fetcher owns, filled in, and the item's cold text. Everything owned by
+// another job (most of Labels, Assets, Ranks, Jobs) is left zero and is never
+// written from here.
+//
+// One exception: a source that carries its own taxonomy (HuggingFace's task)
+// sets Labels.Domain and Labels.By, and the fetcher stores them.
+type Fetched struct {
+	Item Item
+	Blob *Blob
 }
 
 // Release is one entry of a repository's release list.

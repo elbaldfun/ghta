@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/elbaldfun/ghta/internal/domain"
+	"github.com/elbaldfun/ghta/internal/item"
 )
 
 // Corpus bounds (design §2): the union of three boards, refreshed daily. Items
@@ -38,6 +39,32 @@ func (a *Adapter) Shards() []string { return []string{"downloads", "likes", "tre
 // Fetch pulls one board and normalizes it. Private/disabled models are dropped;
 // gated ones kept and flagged (design §2).
 func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem, error) {
+	models, err := a.fetchModels(ctx, shard)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]domain.TrackedItem, 0, len(models))
+	for _, m := range models {
+		items = append(items, mapModel(m))
+	}
+	return items, nil
+}
+
+// FetchItems is Fetch with typed output, for the rebuilt pipeline.
+func (a *Adapter) FetchItems(ctx context.Context, shard string) ([]item.Fetched, error) {
+	models, err := a.fetchModels(ctx, shard)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]item.Fetched, 0, len(models))
+	for _, m := range models {
+		out = append(out, mapModelItem(m))
+	}
+	return out, nil
+}
+
+// fetchModels pulls one board, without private or nameless models.
+func (a *Adapter) fetchModels(ctx context.Context, shard string) ([]Model, error) {
 	var (
 		sortKey string
 		max     int
@@ -57,14 +84,14 @@ func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem
 	if err != nil {
 		return nil, err
 	}
-	items := make([]domain.TrackedItem, 0, len(models))
+	kept := models[:0]
 	for _, m := range models {
 		if m.Private || m.ID == "" {
 			continue
 		}
-		items = append(items, mapModel(m))
+		kept = append(kept, m)
 	}
-	return items, nil
+	return kept, nil
 }
 
 // mapModel normalizes one Hub model into the source-agnostic TrackedItem.
@@ -136,6 +163,57 @@ func mapModel(m Model) domain.TrackedItem {
 			"lastModified":  parseTime(m.LastModified),
 		},
 	}
+}
+
+// mapModelItem is mapModel for the rebuilt model. The Hub's own task is the
+// model's classification, so Labels.Domain is set here and no judge runs.
+func mapModelItem(m Model) item.Fetched {
+	old := mapModel(m)
+	sd := old.SourceData
+	hf := &item.HuggingFace{
+		Author:        sd["author"].(string),
+		Task:          sd["task"].(string),
+		PipelineTag:   m.PipelineTag,
+		Library:       m.LibraryName,
+		Gated:         sd["gated"].(bool),
+		QuantFormats:  nonEmpty(QuantFormats(m.Tags)),
+		Params:        sd["params"].(int64),
+		Tags:          nonEmpty(m.Tags),
+		TrendingScore: m.TrendingScore,
+	}
+	refs := ParseTagRefs(m.Tags)
+	hf.BaseModels, hf.Datasets = nonEmpty(refs.BaseModels), nonEmpty(refs.Datasets)
+	hf.Arxiv, hf.Languages = nonEmpty(refs.Arxiv), nonEmpty(refs.Languages)
+	if t := parseTime(m.CreatedAt); t != nil {
+		hf.CreatedAt = t.UTC()
+	}
+	if t := parseTime(m.LastModified); t != nil {
+		hf.LastModified = t.UTC()
+	}
+	return item.Fetched{Item: item.Item{
+		Source:          item.SourceHuggingFace,
+		ExternalID:      old.ExternalID,
+		Name:            old.Name,
+		License:         sd["license"].(string),
+		Topics:          []string{},
+		PrimaryMetric:   old.PrimaryMetric,
+		MetricDirection: string(old.MetricDirection),
+		Metrics:         old.Metrics,
+		Labels:          item.Labels{Domain: []string(old.CategoryPath), By: item.BySource},
+		Hf:              hf,
+	}}
+}
+
+// nonEmpty drops empty strings and returns nil for an empty result, so the
+// field is omitted rather than stored as [].
+func nonEmpty(in []string) []string {
+	var out []string
+	for _, s := range in {
+		if s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func parseTime(s string) *time.Time {
