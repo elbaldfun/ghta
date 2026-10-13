@@ -93,9 +93,11 @@ scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
 
 | 分支 | 用途 | 怎么进去 |
 |---|---|---|
-| `develop` | 集成分支，所有 PR 的目标 | PR，CI 通过后人工合并 |
+| `develop` | 集成分支，所有 PR 的目标 | PR，CI 通过后自动合并 |
 | `main` | 生产分支，`release.sh` 只发它包含的提交 | `sync-main.yml` 从 `develop` 同步；热修 PR |
 
+- 自动合并：CI 的 `build-test` 与 `web` 都通过后，工作流用合并提交合入 PR。草稿、带 `hold` 标签、来自 fork、
+  或改动了 `.github/workflows` 的 PR 不会被自动合并。
 - 同步：GitHub → Actions → "Sync develop to main" → Run workflow。仓库变量 `AUTO_SYNC_MAIN` 设为 `true` 后，
   每次 `develop` 有推送都会自动同步。
 - 重构期间（`docs/REBUILD.md`）不设这个变量：`develop` 带着切换前不能上生产的代码。切换当天手动同步一次，
