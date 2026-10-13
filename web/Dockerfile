@@ -7,7 +7,7 @@
 #
 # NEXT_PUBLIC_* values are inlined into the client bundle at build time, and
 # the SSG pages fetch real data during `next build`, so API_URL must point at
-# the public API here (the compose-internal http://api:3000 only exists at
+# the public API here (the container-internal http://ghta-api:3000 only exists at
 # runtime, where it takes over via the environment).
 
 # ---- deps ----

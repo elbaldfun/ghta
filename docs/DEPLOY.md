@@ -1,6 +1,12 @@
 # 部署手册：starrank.dev
 
-架构：单台 **DigitalOcean droplet** 上的 Docker Compose（Next.js 前端 + Go API + MongoDB + Caddy）。
+架构：单台 **DigitalOcean droplet** 上的 Docker Compose（Next.js 前端 + Go API + MongoDB），
+公网流量经同机的**共享 Caddy 入口**进来。
+
+> ⚠️ **这台机器不止跑 ghta。** opticdrop.app 也在上面，两个站共用一个 Caddy。
+> Caddy 因此是独立的 compose 项目（仓库 [`droplet-edge`](https://github.com/elbaldfun/droplet-edge)，
+> 服务器 `/opt/edge`），**不在本仓库的 compose 里**。ghta 在入口上只拥有一个文件：
+> `deploy/starrank.caddy`。详见下文「入口（Caddy）」。
 
 > 2026-08 前端从 Vercel 迁回 droplet：Hobby 免费额度被爬虫流量打爆，
 > 团队被 fair-use 封锁（部署被拒、整站 402）。
@@ -10,9 +16,9 @@
 
 ```
 用户 ──HTTPS──> starrank.dev / api.starrank.dev ──> Caddy（自动 TLS）
-                              ├─> web:3000（Next.js standalone）
-                              │        │ 服务端 fetch（API_URL=http://api:3000）
-                              └────────┴─> api:3000 ──> mongo:27017
+                              ├─> ghta-web:3000（Next.js standalone）
+                              │        │ 服务端 fetch（API_URL=http://ghta-api:3000）
+                              └────────┴─> ghta-api:3000 ──> mongo:27017
                                             （均不对公网发布端口）
 ```
 
@@ -22,7 +28,8 @@
 |---|---|
 | 服务器 | `24.199.88.38`（主机名 `starrank`，Debian 13） |
 | 配置 | 1 vCPU / 1.9 GB 内存 / 50 GB 磁盘 + 2 GB swap |
-| 部署目录 | `/opt/ghta`（compose 文件源在仓库 `deploy/`） |
+| 部署目录 | `/opt/ghta`（compose 文件源在仓库 `deploy/docker-compose.yml`） |
+| 入口 | `/opt/edge`（共享 Caddy，源在 `droplet-edge` 仓库） |
 | 防火墙 | ufw 仅放行 22 / 80 / 443 |
 
 ---
@@ -106,12 +113,32 @@ ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d web'
 要点：
 
 - **build-arg 的 `API_URL` 用公网地址**：`next build` 期间 SSG 页面会真的拉数据，
-  此时 compose 内网的 `http://api:3000` 还不存在；运行时环境变量会覆盖为内网地址。
+  此时容器内网的 `http://ghta-api:3000` 还不存在；运行时环境变量会覆盖为内网地址。
 - `NEXT_PUBLIC_*` 在构建时内联进浏览器 bundle，改值必须重新构建镜像。
 - 博客 Markdown（`web/content/blog/`）是运行时从磁盘读的，Dockerfile 已显式
   COPY 进镜像；新增文章要重新构建镜像。
-- compose / Caddyfile 有改动时：`scp deploy/docker-compose.yml deploy/Caddyfile 24.199.88.38:/opt/ghta/`
-  再 `docker compose up -d`。
+- compose 有改动时：`scp deploy/docker-compose.yml 24.199.88.38:/opt/ghta/`
+  再 `ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d'`。
+
+## 入口（Caddy）
+
+Caddy 是这台机器上所有站点共用的入口，由 `droplet-edge` 仓库管理。ghta 与它的
+接口只有两处：
+
+1. **站点文件** `deploy/starrank.caddy`（starrank.dev / www / api 三个域名）。改动后发布：
+
+   ```bash
+   ssh 24.199.88.38 /opt/edge/bin/apply-site starrank < deploy/starrank.caddy
+   ```
+
+   脚本会连同其他站点一起校验，通过才热重载；失败自动回滚，不影响别的站。
+
+2. **`edge` 网络**：`web`、`api` 在 compose 里接入外部网络 `edge`，别名
+   `ghta-web`、`ghta-api`，Caddy 按这两个名字反代。
+
+> ⛔ **不要往 `/opt/ghta/` 放 `Caddyfile`，也不要在本仓库的 compose 里加回 caddy 服务。**
+> 2026-08 两个项目各自整份覆盖对方的 Caddyfile / compose，互相打挂过多次
+> （opticdrop.app 525）。拆成独立入口就是为了让这件事不可能再发生。
 
 ## DNS（Cloudflare）
 

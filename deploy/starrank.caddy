@@ -1,6 +1,15 @@
+# starrank.dev's site block for the droplet's shared Caddy (droplet-edge repo,
+# /opt/edge on the server). This file is the only piece of the entrypoint that
+# ghta owns; publish it with:
+#
+#   ssh 24.199.88.38 /opt/edge/bin/apply-site starrank < deploy/starrank.caddy
+#
 # Caddy fetches and renews the Let's Encrypt certificates automatically.
 # Requires every hostname below to resolve to this droplet with Cloudflare
 # proxying OFF (grey cloud), otherwise the ACME challenge cannot reach us.
+#
+# ghta-web / ghta-api are the aliases the services take on the shared `edge`
+# network (see docker-compose.yml).
 
 starrank.dev {
 	encode gzip zstd
@@ -11,7 +20,7 @@ starrank.dev {
 		X-Content-Type-Options "nosniff"
 	}
 
-	reverse_proxy web:3000
+	reverse_proxy ghta-web:3000
 
 	log {
 		output stdout
@@ -27,7 +36,8 @@ api.starrank.dev {
 	encode gzip zstd
 
 	# The public site is the only intended browser-facing origin; everything
-	# here is consumed server-side by Vercel, so no CORS headers are needed.
+	# here is consumed server-side by the web container, so no CORS headers
+	# are needed.
 	header {
 		# Don't advertise the backend stack.
 		-Server
@@ -35,7 +45,7 @@ api.starrank.dev {
 		X-Content-Type-Options "nosniff"
 	}
 
-	reverse_proxy api:3000
+	reverse_proxy ghta-api:3000
 
 	log {
 		output stdout
