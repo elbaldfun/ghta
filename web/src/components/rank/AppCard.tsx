@@ -1,3 +1,4 @@
+import { shelfLabelKey } from '@/lib/shelves';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { AppItem, OS } from '@/lib/data';
@@ -40,7 +41,7 @@ export function AppCard({ app }: { app: AppItem }) {
   // Plain-language tagline (store layer, change 15): zh for the Chinese locale,
   // English elsewhere; the raw dev description remains the fallback.
   const tagline = (locale === 'zh' ? app.taglineZh : app.taglineEn) || app.taglineEn || '';
-  const shelfKey = app.shelf ? `shelf_${app.shelf.replace(/[/-]/g, '_')}` : '';
+  const shelfKey = app.shelf ? shelfLabelKey(app.shelf) : '';
   const title = appName(name);
   const downloads = app.downloads ?? [];
   const hasWeb = app.platforms.includes('web');
