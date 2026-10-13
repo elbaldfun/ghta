@@ -4,7 +4,7 @@
 
 ## 工作规则
 
-- 分支模型（与 OpticDrop 一致）：`develop` 是集成分支，`main` 是生产分支。改动走工作分支，开 PR 到 `develop`（`gh pr create --base develop`）；不直接改 `develop` 或 `main`。PR 的合并由负责人点（权限分类器会拦下 `gh pr merge`）。
+- 分支模型（与 OpticDrop 一致）：`develop` 是集成分支，`main` 是生产分支。改动走工作分支，开 PR 到 `develop`（`gh pr create --base develop`）；不直接改 `develop` 或 `main`。CI 的两个任务（`build-test`、`web`）通过后 PR 自动合并；想让 PR 先停着，开成草稿或加 `hold` 标签。改动 `.github/workflows` 的 PR 工作流合不了：负责人已授权 Claude 在 CI 通过后用 `gh pr merge --merge` 合并。
 - `develop` 到 `main` 由 `.github/workflows/sync-main.yml` 同步：手动触发，或仓库变量 `AUTO_SYNC_MAIN=true` 时每次推送自动同步。重构切换之前这个变量不设，`develop` 上的重构代码不进 `main`。
 - 生产热修是唯一直接开 PR 到 `main` 的情况；合并后要把 `main` 合回 `develop`（开一个 `main` → `develop` 的 PR）。
 - 发版只用 `scripts/release.sh`（`api` / `web` / `all` / `rollback`），只发已并入 `origin/main` 的 HEAD，后端先于前端。负责人说"发布版本"就是让你自己发。
