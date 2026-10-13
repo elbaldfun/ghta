@@ -4,7 +4,9 @@
 
 ## 工作规则
 
-- 改动走工作分支，开 PR 到 `main`；不直接改 `main`。PR 的合并由负责人点（权限分类器会拦下 `gh pr merge`）。
+- 分支模型（与 OpticDrop 一致）：`develop` 是集成分支，`main` 是生产分支。改动走工作分支，开 PR 到 `develop`（`gh pr create --base develop`）；不直接改 `develop` 或 `main`。PR 的合并由负责人点（权限分类器会拦下 `gh pr merge`）。
+- `develop` 到 `main` 由 `.github/workflows/sync-main.yml` 同步：手动触发，或仓库变量 `AUTO_SYNC_MAIN=true` 时每次推送自动同步。重构切换之前这个变量不设，`develop` 上的重构代码不进 `main`。
+- 生产热修是唯一直接开 PR 到 `main` 的情况；合并后要把 `main` 合回 `develop`（开一个 `main` → `develop` 的 PR）。
 - 发版只用 `scripts/release.sh`（`api` / `web` / `all` / `rollback`），只发已并入 `origin/main` 的 HEAD，后端先于前端。负责人说"发布版本"就是让你自己发。
 - 生产机只看 `docker logs --tail N`，绝不用 `--since`；查库用 `docker run --rm --network ghta_default -m 220m --env-file /opt/ghta/.env mongo:7 sh -c 'mongosh --host mongo …'` 从容器外连，不要 `docker exec` 进 mongo 容器。不要碰 `/opt/edge`（与 opticdrop.app 共用的 Caddy）以外的其他项目。
 - LLM 分类任务同一时刻只能有一个 Run（中继并发上限很低），触发前先确认上一轮的 `categorizer done` 日志。
