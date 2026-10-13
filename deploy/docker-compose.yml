@@ -15,7 +15,16 @@ services:
     # WiredTiger would otherwise size its cache from total RAM and leave nothing
     # for the API on a 2 GB box. 0.5 GB keeps the working set cached with room
     # to spare; the rest of the 1.6 GB dataset is served from disk.
-    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
+    #
+    # The tcmalloc flags matter just as much as the cache size: after a burst
+    # the allocator kept ~850 MB of freed pages (and may keep up to 1 GB of
+    # per-thread caches by default) instead of returning them, which is what
+    # pushed the container into its limit and got mongod OOM-killed.
+    command:
+      - mongod
+      - --wiredTigerCacheSizeGB=0.5
+      - --setParameter=tcmallocAggressiveMemoryDecommit=1
+      - --setParameter=tcmallocMaxTotalThreadCacheBytes=134217728
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
@@ -24,7 +33,10 @@ services:
     # No `ports:` on purpose — internal network access only.
     mem_limit: 1g
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      # A TCP connect, not `mongosh ping`: mongosh is a ~100 MB Node process
+      # charged to this container's memory limit every 30s, and was itself
+      # OOM-killed here. mongod only accepts connections once recovery is done.
+      test: ["CMD-SHELL", "timeout 3 bash -c ':> /dev/tcp/127.0.0.1/27017'"]
       interval: 30s
       timeout: 5s
       retries: 5

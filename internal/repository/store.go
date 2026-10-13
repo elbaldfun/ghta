@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -138,9 +139,18 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 		// in the index or it re-reads documents to tally. These make the total
 		// index-only (Find still rides the stars index + a cheap residual to
 		// fill one page).
+		//
+		// language and categoryPath carry a stars suffix for the detail page's
+		// Ranks: "live repos in this language/category with more stars" has a
+		// stars range in the filter, and without it in the index every such
+		// count fetched thousands of full documents — the bulk of the 41 GB
+		// mongod read in 27 minutes before it was OOM-killed.
 		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "type", Value: 1}}},
-		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "language", Value: 1}}},
-		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "categoryPath", Value: 1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "language", Value: 1}, {Key: "metrics.stars", Value: -1}}},
+		{Keys: bson.D{{Key: "source", Value: 1}, {Key: "stale", Value: 1}, {Key: "categoryPath", Value: 1}, {Key: "metrics.stars", Value: -1}}},
+		// Source-agnostic counts for the category tree and the type facet chips.
+		{Keys: bson.D{{Key: "stale", Value: 1}, {Key: "categoryPath", Value: 1}}},
+		{Keys: bson.D{{Key: "stale", Value: 1}, {Key: "type", Value: 1}}},
 		{Keys: bson.D{{Key: "metrics.forks", Value: -1}}},
 		{Keys: bson.D{{Key: "metrics.openIssues", Value: -1}}},
 		{Keys: bson.D{{Key: "sourceData.topicNames", Value: 1}}},
@@ -183,6 +193,14 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 	}
 	if _, err := s.Items().Indexes().CreateMany(ctx, itemIndexes); err != nil {
 		return fmt.Errorf("item indexes: %w", err)
+	}
+	// Superseded by the stars-suffixed versions above, which serve every query
+	// these did. On a box where mongod is short of memory an unused index is not
+	// free, so drop them once the replacements exist.
+	for _, name := range []string{"source_1_stale_1_language_1", "source_1_stale_1_categoryPath_1"} {
+		if _, err := s.Items().Indexes().DropOne(ctx, name); err != nil && !isIndexNotFound(err) {
+			return fmt.Errorf("drop superseded index %s: %w", name, err)
+		}
 	}
 
 	if _, err := s.Categories().Indexes().CreateOne(ctx, mongo.IndexModel{
@@ -247,4 +265,11 @@ func (s *Store) ensureIndexes(ctx context.Context) error {
 // Close disconnects the client.
 func (s *Store) Close(ctx context.Context) error {
 	return s.Client.Disconnect(ctx)
+}
+
+// isIndexNotFound reports whether a dropIndex failed only because the index is
+// already gone (code 27), which makes the drop idempotent across restarts.
+func isIndexNotFound(err error) bool {
+	var ce mongo.CommandError
+	return errors.As(err, &ce) && ce.Code == 27
 }
