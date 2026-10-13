@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/elbaldfun/ghta/internal/domain"
+	"github.com/elbaldfun/ghta/internal/item"
 )
 
 // Adapter implements source.Fetcher for GitHub repositories.
@@ -60,8 +61,35 @@ func (a *Adapter) Shards() []string {
 
 // Fetch pages through one star range and normalizes every repository.
 func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem, error) {
+	nodes, err := a.fetchNodes(ctx, shard)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]domain.TrackedItem, 0, len(nodes))
+	for _, n := range nodes {
+		items = append(items, mapRepo(n))
+	}
+	return items, nil
+}
+
+// FetchItems is Fetch with typed output, for the rebuilt pipeline.
+func (a *Adapter) FetchItems(ctx context.Context, shard string) ([]item.Fetched, error) {
+	nodes, err := a.fetchNodes(ctx, shard)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	out := make([]item.Fetched, 0, len(nodes))
+	for _, n := range nodes {
+		out = append(out, mapRepoItem(n, now))
+	}
+	return out, nil
+}
+
+// fetchNodes pages through one star range.
+func (a *Adapter) fetchNodes(ctx context.Context, shard string) ([]repoNode, error) {
 	query := "stars:" + shard
-	var items []domain.TrackedItem
+	var nodes []repoNode
 	after := ""
 
 	for {
@@ -74,7 +102,7 @@ func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem
 			break // no data for this range
 		}
 		for _, edge := range search.Edges {
-			items = append(items, mapRepo(edge.Node))
+			nodes = append(nodes, edge.Node)
 		}
 		if !search.PageInfo.HasNextPage || search.PageInfo.EndCursor == nil {
 			break
@@ -85,7 +113,7 @@ func (a *Adapter) Fetch(ctx context.Context, shard string) ([]domain.TrackedItem
 			return nil, err
 		}
 	}
-	return items, nil
+	return nodes, nil
 }
 
 // Search runs one search page for an arbitrary query (e.g. "created:>2026-07-17
@@ -195,20 +223,7 @@ func mapRepo(n repoNode) domain.TrackedItem {
 	// CREATED_AT desc). The type-dependent web heuristic is intentionally off here
 	// (type isn't known until categorization); the asset + topic layers, which
 	// include explicit web topics, are type-independent and refresh every fetch.
-	chosen := -1
-	for i := range n.Releases.Edges {
-		nd := n.Releases.Edges[i].Node
-		if nd.IsDraft {
-			continue
-		}
-		if nd.IsLatest {
-			chosen = i
-			break
-		}
-		if chosen == -1 {
-			chosen = i
-		}
-	}
+	chosen := n.latestRelease()
 	var assets []ReleaseAsset
 	var latestRelease map[string]any
 	if chosen >= 0 {
@@ -249,6 +264,109 @@ func mapRepo(n repoNode) domain.TrackedItem {
 			"latestRelease":  latestRelease,
 		},
 	}
+}
+
+// latestRelease is the index of the release a user would be pointed at — the
+// one flagged latest, else the most recent non-draft (edges are CREATED_AT
+// desc) — or -1 when there is none.
+func (n repoNode) latestRelease() int {
+	chosen := -1
+	for i := range n.Releases.Edges {
+		nd := n.Releases.Edges[i].Node
+		if nd.IsDraft {
+			continue
+		}
+		if nd.IsLatest {
+			return i
+		}
+		if chosen == -1 {
+			chosen = i
+		}
+	}
+	return chosen
+}
+
+// mapRepoItem is mapRepo for the rebuilt model: the same facts, typed, with
+// the README and the release list split off into the blob. Platform detection
+// is identical (asset and topic layers; the type-dependent heuristic stays off).
+func mapRepoItem(n repoNode, now time.Time) item.Fetched {
+	externalID := n.Owner.Login + "/" + n.Name
+	it := item.Item{
+		Source:          item.SourceGitHub,
+		ExternalID:      externalID,
+		Name:            n.Name,
+		Description:     n.Description,
+		Homepage:        n.HomepageURL,
+		Topics:          []string{},
+		PrimaryMetric:   "stars",
+		MetricDirection: string(domain.DirectionDescBetter),
+		Metrics: map[string]float64{
+			"stars":      float64(n.StargazerCount),
+			"forks":      float64(n.ForkCount),
+			"openIssues": float64(n.Issues.TotalCount),
+		},
+		Gh: &item.GitHub{Owner: n.Owner.Login},
+	}
+	if n.PrimaryLanguage != nil {
+		it.Language = n.PrimaryLanguage.Name
+	}
+	if n.LicenseInfo != nil {
+		it.License = n.LicenseInfo.Name
+	}
+	if n.PushedAt != nil {
+		it.Gh.PushedAt = n.PushedAt.UTC()
+	}
+	for _, e := range n.RepositoryTopics.Edges {
+		if name := e.Node.Topic.Name; name != "" {
+			it.Topics = append(it.Topics, name)
+		}
+	}
+
+	var releases []item.Release
+	for _, e := range n.Releases.Edges {
+		r := item.Release{
+			Name: e.Node.Name, TagName: e.Node.TagName,
+			IsPrerelease: e.Node.IsPrerelease, IsLatest: e.Node.IsLatest, IsDraft: e.Node.IsDraft,
+		}
+		if e.Node.PublishedAt != nil {
+			r.PublishedAt = e.Node.PublishedAt.UTC()
+		}
+		releases = append(releases, r)
+	}
+
+	var assets []ReleaseAsset
+	if chosen := n.latestRelease(); chosen >= 0 {
+		nd := n.Releases.Edges[chosen].Node
+		for _, a := range nd.ReleaseAssets.Nodes {
+			assets = append(assets, ReleaseAsset{Name: a.Name, DownloadURL: a.DownloadURL, Size: a.Size})
+		}
+		if nd.TagName != "" {
+			it.Gh.LatestRelease = &item.ReleaseRef{Tag: nd.TagName}
+			if nd.PublishedAt != nil {
+				it.Gh.LatestRelease.PublishedAt = nd.PublishedAt.UTC()
+			}
+		}
+	}
+	plat := DetectPlatforms(assets, it.Topics, "", externalID, n.HomepageURL, it.Language)
+	for _, p := range plat.Platforms {
+		it.Gh.Platforms = append(it.Gh.Platforms, string(p))
+	}
+	it.Gh.PlatformSource = plat.Source
+	for _, a := range plat.Assets {
+		if a.Name != "" {
+			it.Gh.ReleaseAssets = append(it.Gh.ReleaseAssets, item.ReleaseAsset{
+				Name: a.Name, Platform: string(a.Platform), URL: a.URL, Size: a.Size,
+			})
+		}
+	}
+	return item.Fetched{Item: it, Blob: item.NewBlob(it.Source, externalID, readmeOf(n), releases, now)}
+}
+
+func readmeOf(n repoNode) string {
+	if n.Readme == nil {
+		return ""
+	}
+	return n.Readme.Text
 }
 
 // platformStrings converts the detected platform set to plain strings for

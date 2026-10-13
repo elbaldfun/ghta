@@ -86,10 +86,7 @@ func Convert(old domain.TrackedItem, r Rules) (item.Item, *item.Blob, Notes) {
 			ReleaseAssets:  releaseAssets(take("releaseAssets")),
 			LatestRelease:  latestRelease(take("latestRelease")),
 		}
-		readme, rels := str(take("readme")), releases(take("releases"))
-		if readme != "" || len(rels) > 0 {
-			blob = &item.Blob{Source: it.Source, ExternalID: it.ExternalID, Readme: readme, Releases: rels, UpdatedAt: old.FetchedAt}
-		}
+		blob = item.NewBlob(it.Source, it.ExternalID, str(take("readme")), releases(take("releases")), old.FetchedAt)
 	case domain.SourceHuggingFace:
 		it.Hf = &item.HuggingFace{
 			Author:        str(take("author")),

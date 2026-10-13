@@ -8,7 +8,7 @@ import (
 )
 
 func TestPickKeepsPipelineOrder(t *testing.T) {
-	jobs := nightly(nil)
+	jobs := nightly(nil, nil)
 	all := strings.Join(names(jobs), ",")
 
 	// Asked for in reverse, still returned in pipeline order.
@@ -30,11 +30,11 @@ func TestPickKeepsPipelineOrder(t *testing.T) {
 
 func TestNightlyNamesAreUnique(t *testing.T) {
 	seen := map[string]bool{}
-	for _, j := range nightly(nil) {
+	for _, j := range nightly(nil, nil) {
 		if j.Name() == "" || seen[j.Name()] {
 			t.Fatalf("job name %q is empty or repeated", j.Name())
 		}
 		seen[j.Name()] = true
 	}
-	var _ []worker.Job = nightly(nil)
+	var _ []worker.Job = nightly(nil, nil)
 }
