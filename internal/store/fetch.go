@@ -106,6 +106,21 @@ type snapshot struct {
 	CapturedAt time.Time          `bson:"capturedAt"`
 }
 
+func newSnapshot(source, externalID string, metrics map[string]float64, at time.Time) snapshot {
+	snap := snapshot{Metrics: metrics, CapturedAt: at}
+	snap.Meta.Source, snap.Meta.ExternalID = source, externalID
+	return snap
+}
+
+// observe records today's value of the primary metric in a history ring and
+// derives growth from it. firstToday reports that the ring had no point for
+// today yet, which is when a metric snapshot is due.
+func observe(history []item.Point, value float64, today string) (next []item.Point, growth item.Growth, firstToday bool) {
+	firstToday = len(history) == 0 || history[len(history)-1].D != today
+	next = item.SetPoint(history, item.Point{D: today, V: value})
+	return next, item.ComputeGrowth(next, value, today), firstToday
+}
+
 // WriteFetched stores one batch of freshly fetched items, all from one source.
 //
 // It writes only what the fetcher owns. On an existing item that is the
@@ -222,14 +237,10 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 		}
 
 		if value, ok := it.Metrics[it.PrimaryMetric]; ok {
-			seenToday := len(history) > 0 && history[len(history)-1].D == today
-			history = item.SetPoint(history, item.Point{D: today, V: value})
-			set["history"] = history
-			set["growth"] = item.ComputeGrowth(history, value, today)
-			if !seenToday {
-				snap := snapshot{Metrics: it.Metrics, CapturedAt: now}
-				snap.Meta.Source, snap.Meta.ExternalID = source, id
-				snaps = append(snaps, snap)
+			next, growth, firstToday := observe(history, value, today)
+			set["history"], set["growth"] = next, growth
+			if firstToday {
+				snaps = append(snaps, newSnapshot(source, id, it.Metrics, now))
 			}
 		} else if !existed {
 			onInsert["history"] = []item.Point{}
