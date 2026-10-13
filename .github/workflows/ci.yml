@@ -4,12 +4,18 @@ name: CI
 # Next.js frontend (web). PRs land on develop; sync-main.yml promotes develop
 # to main.
 #
+# A PR is merged automatically once both jobs pass. To keep one open, mark it
+# as a draft or add the `hold` label; remove either and CI runs again and
+# merges. Not merged automatically: PRs from forks, and PRs that change files
+# under .github/workflows (GitHub refuses that to the workflow token).
+#
 # Merging does not deploy. Releases stay manual: scripts/release.sh.
 
 on:
   push:
     branches: [main, develop]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -62,3 +68,47 @@ jobs:
         run: npm run typecheck
       - name: Layout guard
         run: npm run lint:layout
+
+  automerge:
+    name: auto-merge
+    needs: [build-test, web]
+    if: >-
+      github.event_name == 'pull_request' &&
+      contains(fromJSON('["develop","main"]'), github.event.pull_request.base.ref) &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !github.event.pull_request.draft &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) &&
+      !contains(github.event.pull_request.labels.*.name, 'hold')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      # --match-head-commit: merge exactly the commit that was tested. A push
+      # that lands while this job is starting makes the merge fail, and the new
+      # commit gets its own run.
+      - name: Merge
+        id: merge
+        env:
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if gh pr diff "$PR" --name-only | grep -q '^\.github/workflows/'; then
+            echo "::notice::This PR changes a workflow file; the workflow token may not merge it. Merge it by hand."
+            exit 0
+          fi
+          gh pr merge "$PR" --merge --match-head-commit "$SHA"
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+
+      # A merge made with the workflow token does not fire push workflows, so
+      # the develop → main sync is started explicitly when it is switched on.
+      - name: Start the sync to main
+        if: >-
+          steps.merge.outputs.merged == 'true' &&
+          github.event.pull_request.base.ref == 'develop' &&
+          vars.AUTO_SYNC_MAIN == 'true'
+        run: gh workflow run sync-main.yml --ref develop
