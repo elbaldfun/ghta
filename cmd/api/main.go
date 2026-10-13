@@ -225,7 +225,11 @@ func (r *migrateRun) start(from, to int) bool {
 	if r.running {
 		return false
 	}
-	*r = migrateRun{running: true, from: from, to: to, started: time.Now().UTC()}
+	// Field by field: assigning a whole migrateRun would overwrite the mutex
+	// this method is holding.
+	r.running, r.from, r.to = true, from, to
+	r.started, r.finished = time.Now().UTC(), time.Time{}
+	r.stats, r.err = taxonomy.Stats{}, ""
 	return true
 }
 
