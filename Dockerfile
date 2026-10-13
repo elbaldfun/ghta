@@ -6,7 +6,9 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api
+# One image, two entrypoints: the api and the worker (docs/REBUILD.md) always
+# ship from the same commit.
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/api ./cmd/worker
 
 # ---- run ----
 FROM gcr.io/distroless/static-debian12:nonroot
@@ -15,6 +17,7 @@ WORKDIR /app
 # startup, so the YAML has to ship alongside the binary.
 COPY --from=build /src/taxonomy /app/taxonomy
 COPY --from=build /out/api /app/api
+COPY --from=build /out/worker /app/worker
 USER nonroot:nonroot
 EXPOSE 3000
 ENTRYPOINT ["/app/api"]

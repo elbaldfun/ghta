@@ -76,6 +76,36 @@ services:
         aliases: [ghta-api]
     mem_limit: 640m
 
+  # Every scheduled job of the rebuilt system (docs/REBUILD.md): the same image
+  # as `api` with the other entrypoint. It only talks to MongoDB and outwards,
+  # so it sits on the internal network alone and can be restarted at any time
+  # without the site noticing.
+  #
+  # Behind a profile until the cutover: `docker compose up -d` leaves it alone,
+  # `scripts/release.sh worker` starts it. Before the cutover it must not run —
+  # the api still runs the old jobs and the two would fetch everything twice.
+  worker:
+    image: ghta-api:latest
+    profiles: [worker]
+    entrypoint: ["/app/worker"]
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      LOG_LEVEL: info
+      MONGODB_DB: ghta
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/ghta?authSource=admin
+      GITHUB_API_TOKEN: ${GITHUB_API_TOKEN}
+      HF_TOKEN: ${HF_TOKEN:-}
+      # Seconds-first cron, UTC. One pipeline a night: fetch, reconcile, rank,
+      # icon, shot, devsync, one job at a time.
+      PIPELINE_CRON: ${PIPELINE_CRON:-0 30 3 * * *}
+      # Keep the Go heap under the container limit instead of being OOM-killed
+      # at it: a 20,000-model HuggingFace shard is held in memory while written.
+      GOMEMLIMIT: 400MiB
+    mem_limit: 512m
+
   web:
     image: ghta-web:latest
     restart: unless-stopped

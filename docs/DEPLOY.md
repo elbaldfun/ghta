@@ -72,7 +72,20 @@ scripts/release.sh all             # 两个都发，后端先行
 scripts/release.sh compose         # 同步 deploy/docker-compose.yml 并重建有变化的服务
 scripts/release.sh site            # 发布 deploy/starrank.caddy 到共享 Caddy
 scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
+scripts/release.sh worker          # 发任务进程（重构切换之后才用，见下）
 ```
+
+`worker` 是重构后跑全部定时任务的进程（`docs/REBUILD.md`）。它和 `api` 是同一个镜像的
+两个入口，所以：
+
+- compose 里 `worker` 服务挂在 `worker` profile 后面，`docker compose up -d` 不会启动它。
+  **切换之前不要启动**：旧 `api` 还在跑旧任务，两边会把全量抓取各做一遍。
+- 第一次启动和之后的更新都用 `scripts/release.sh worker`。`all` 在 worker 已经上线后会
+  顺带重启它（顺序 api → worker → web）。
+- 回滚 `api` 会把 worker 一起带回上一个镜像；没有单独的 `rollback worker`。
+- worker 不对外提供服务，发布后的检查是"启动 10 秒后仍在运行且没有被 docker 重启过"。
+  看日志：`docker logs --tail 50 ghta-worker-1`。每次任务运行在 `job_runs` 集合里有一条记录。
+- 手动跑一次某个任务：`docker compose run --rm worker -run rank`（任务名见 `-list`）。
 
 脚本做的事：
 
