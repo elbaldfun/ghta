@@ -1,0 +1,62 @@
+# 分类树迁移映射 —— 每升一代一段
+# ─────────────────────────────────────────────────────────────
+# 由 POST /internal/taxonomy-migrate 执行，幂等，可中断续跑。三种操作成本不同：
+#   rename  旧叶子 1:1 改名           → 批量改写 categoryPath，不花钱
+#   merge   多个旧叶子并成一个        → 同上
+#   split   一个旧叶子拆成多个新叶子  → 条目标回待分类，重新走规则层 / LLM 层；
+#                                       旧标签保留到重分类完成，站点照常服务
+# 货架（store.category）单独一段：rename / merge 直接改写；moved 表示该货架离开 apps 分支，
+# 条目的 store.category 改成对应领域叶子；rejudge 表示要 LLM 在 candidates 里重判。
+#
+# 条目在任何改写前都把原 categoryPath 存进 categoryPathPrev（只存第一次），30 天内可整体回滚。
+
+- from: 2
+  to: 3
+  domain:
+    # ── rename ──
+    - { kind: rename, old: web/css-ui,            new: web/ui-components }
+    - { kind: rename, old: mobile/cross-platform, new: client/cross-platform }
+    # ── merge ──
+    - { kind: merge, old: infra/ci-cd,            new: infra/automation }
+    - { kind: merge, old: infra/iac,              new: infra/automation }
+    - { kind: merge, old: data/search,            new: data/analytics }
+    - { kind: merge, old: blockchain/protocols,   new: blockchain/core }
+    - { kind: merge, old: blockchain/contracts,   new: blockchain/core }
+    # ── split：candidates 是 LLM 可选的新叶子；规则层先跑，命中就不进 LLM ──
+    - { kind: split, old: ai/llm,             candidates: [ai/llm-serving, ai/llm-training, agents/memory, agents/assistants, agents/mcp] }
+    - { kind: split, old: ai/agents,          candidates: [agents/frameworks, agents/mcp, agents/skills, agents/memory, agents/assistants] }
+    - { kind: split, old: devtools/ai-coding, candidates: [agents/coding, agents/skills, agents/mcp] }
+    - { kind: split, old: devtools/cli,       candidates: [devtools/terminal, devtools/code-quality, devtools/vcs, devtools/api-tools, agents/mcp] }
+    - { kind: split, old: web/frontend,       candidates: [web/frontend, web/ui-components, web/data-viz, client/desktop] }
+    - { kind: split, old: lang/utils,         candidates: [lang/algorithms, lang/parsing, lang/concurrency-net, lang/utils, client/desktop] }
+    - { kind: split, old: mobile/native,      candidates: [client/android, client/apple, client/desktop] }
+    - { kind: split, old: security/pentest,   candidates: [security/offensive, security/reverse, security/recon] }
+    # ── apps 四叶：有货架的条目机械换成 apps/<货架>；没有货架的去掉该标签，空了就重分类 ──
+    - { kind: shelf, old: apps/productivity }
+    - { kind: shelf, old: apps/media }
+    - { kind: shelf, old: apps/selfhosted }
+    - { kind: shelf, old: apps/browser-ext, fallback: network/browser-ext }
+  shelves:
+    # ── merge ──
+    - { kind: merge, old: selfhosted/photos,   new: selfhosted/cloud }
+    - { kind: merge, old: social/mail,         new: social/messaging }
+    - { kind: merge, old: social/chat,         new: social/messaging }
+    - { kind: merge, old: security/adblock,    new: security/privacy }
+    - { kind: merge, old: games/smart-home,    new: selfhosted/automation }
+    - { kind: merge, old: ai/image-gen,        new: ai/generation }
+    - { kind: merge, old: ai/media-gen,        new: ai/generation }
+    # ── rename ──
+    - { kind: rename, old: ai/platform,        new: ai/builder }
+    - { kind: rename, old: social/social-tools, new: social/tools }
+    # ── moved：离开 apps 分支，store.category 改成领域叶子（商店里仍以"开发者应用"视图可见）──
+    - { kind: moved, old: devtools/editor,    new: devtools/editors }
+    - { kind: moved, old: devtools/terminal,  new: devtools/terminal }
+    - { kind: moved, old: devtools/api,       new: devtools/api-tools }
+    - { kind: moved, old: devtools/database,  new: data/database }
+    - { kind: moved, old: devtools/git,       new: devtools/vcs }
+    - { kind: moved, old: devtools/pkg,       new: devtools/package-manager }
+    - { kind: moved, old: devtools/gamedev,   new: gamedev/engines }
+    - { kind: moved, old: security/pentest,   new: security/offensive }
+    - { kind: moved, old: ai/coding,          new: agents/coding }
+    # ── rejudge：LLM 在 candidates 里二选 ──
+    - { kind: rejudge, old: devtools/devops,  candidates: [infra/containers, infra/automation, infra/monitoring] }

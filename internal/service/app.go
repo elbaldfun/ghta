@@ -170,10 +170,11 @@ func (s *AppService) board(ctx context.Context, os, kind, category, shelf, sort 
 	})
 }
 
-// validShelfFilter accepts a full shelf slug ("system/screenshot") or a bare
-// major group ("system") — both whitelisted so the cache key space stays bounded.
+// validShelfFilter accepts a full shelf slug ("system/screenshot"), a bare
+// consumer major group ("system"), or the "dev" view — all whitelisted so the
+// cache key space stays bounded.
 func validShelfFilter(shelf string) bool {
-	if shelf == "" {
+	if shelf == "" || shelf == DevShelfGroup {
 		return true
 	}
 	if ValidShelfSlug(shelf) && shelf != StoreExcluded {
@@ -188,13 +189,16 @@ func validShelfFilter(shelf string) bool {
 }
 
 // shelfFilter matches the EFFECTIVE shelf (manual override wins over the LLM
-// verdict). A bare major group prefix-matches all its sub-shelves.
+// verdict). A bare major group prefix-matches all its sub-shelves; the "dev"
+// view matches every developer-app leaf.
 func shelfFilter(m bson.M, shelf string) {
 	if shelf == "" {
 		return
 	}
 	var cond any = shelf
-	if !strings.Contains(shelf, "/") {
+	if shelf == DevShelfGroup {
+		cond = bson.M{"$in": DevShelves}
+	} else if !strings.Contains(shelf, "/") {
 		cond = bson.M{"$regex": "^" + regexp.QuoteMeta(shelf) + "/"}
 	}
 	m["$and"] = bson.A{bson.M{"$or": bson.A{

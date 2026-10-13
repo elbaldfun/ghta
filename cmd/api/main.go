@@ -70,13 +70,21 @@ func main() {
 	metrics := service.NewMetricsService(store, logger)
 
 	// Taxonomy: the git-controlled category tree is the single source of truth.
-	taxNodes, err := taxonomy.Load("taxonomy/taxonomy.yaml")
+	tree, err := taxonomy.LoadTree("taxonomy/taxonomy.yaml")
 	if err != nil {
 		slog.Error("taxonomy load failed", "err", err)
 		os.Exit(1)
 	}
+	taxNodes := tree.Nodes
 	if err := taxonomy.Sync(rootCtx, store, taxNodes); err != nil {
 		slog.Error("taxonomy sync failed", "err", err)
+		os.Exit(1)
+	}
+	// Tree migrations (one step per version). Validated against the tree at
+	// boot so a typo in migrations.yaml fails here, not mid-migration.
+	migrations, err := taxonomy.LoadMigrations("taxonomy/migrations.yaml", tree)
+	if err != nil {
+		slog.Error("taxonomy migrations load failed", "err", err)
 		os.Exit(1)
 	}
 	rules, err := taxonomy.LoadRules("taxonomy/topic-map.yaml")
@@ -89,12 +97,15 @@ func main() {
 		slog.Error("facets load failed", "err", err)
 		os.Exit(1)
 	}
-	slog.Info("taxonomy synced", "categories", len(taxNodes), "topicRules", len(rules.Topics), "typeFacets", len(facets.Type))
+	slog.Info("taxonomy synced", "version", tree.Version, "categories", len(taxNodes), "topicRules", len(rules.Topics), "typeFacets", len(facets.Type), "migrations", len(migrations))
 
 	// AI categorization pipeline: type facet + domain (rules -> LLM).
 	aiProvider := provider.New(cfg, logger)
 	aiService := service.NewAIService(store, aiProvider)
-	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency, logger)
+	categorizer := job.NewCategorizer(store, rules, facets, aiService, cfg.CategorizeBatchSize, cfg.DomainMaxLabels, cfg.LLMConcurrency,
+		tree.Version, job.Gate{MinStars: cfg.CategorizeMinStars, HotWeekly: cfg.CategorizeHotWeekly}, logger)
+	migrator := taxonomy.NewMigrator(store, tree, logger)
+	taxAudit := job.NewTaxonomyAudit(store, tree, logger)
 	devSync := job.NewDevSync(store, ghAdapter, 0, cfg.RateLimitBuffer, logger)
 	altFinder := job.NewAltFinder(store, aiProvider, logger)
 	storeFinder := job.NewStoreFinder(store, aiProvider, logger)
@@ -115,6 +126,10 @@ func main() {
 	}
 	if _, err := scheduler.AddFunc(cfg.CategorizeCron, func() { categorizer.Run(rootCtx) }); err != nil {
 		slog.Error("invalid CATEGORIZE_CRON", "err", err)
+		os.Exit(1)
+	}
+	if _, err := scheduler.AddFunc(cfg.TaxonomyAuditCron, func() { _, _ = taxAudit.Run(rootCtx) }); err != nil {
+		slog.Error("invalid TAXONOMY_AUDIT_CRON", "err", err)
 		os.Exit(1)
 	}
 	if _, err := scheduler.AddFunc(cfg.DevSyncCron, func() { devSync.Run(rootCtx) }); err != nil {
@@ -152,7 +167,8 @@ func main() {
 	}
 	facetOrder = append(facetOrder, service.TypeFacet{Key: facets.Fallback, Name: facets.FallbackName})
 
-	router := newRouter(store, fetcher, categorizer, altFinder, storeFinder, shotFetcher, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder)
+	router := newRouter(store, fetcher, categorizer, altFinder, storeFinder, shotFetcher, iconFetcher, devSync, metrics, starHistory, ghAdapter, rootCtx, cfg.AdminToken, facetOrder,
+		taxDeps{tree: tree, migrations: migrations, migrator: migrator, audit: taxAudit})
 
 	srv := &http.Server{
 		Addr:              ":" + strconv.Itoa(cfg.Port),
@@ -189,7 +205,15 @@ func main() {
 	slog.Info("stopped")
 }
 
-func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, storeFinder *job.StoreFinder, shotFetcher *job.ShotFetcher, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet) *gin.Engine {
+// taxDeps bundles the taxonomy-versioning pieces the router exposes.
+type taxDeps struct {
+	tree       taxonomy.Tree
+	migrations []taxonomy.Migration
+	migrator   *taxonomy.Migrator
+	audit      *job.TaxonomyAudit
+}
+
+func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.Categorizer, altFinder *job.AltFinder, storeFinder *job.StoreFinder, shotFetcher *job.ShotFetcher, iconFetcher *job.IconFetcher, devSync *job.DevSync, metrics *service.MetricsService, starHistory *service.StarHistoryService, ghAdapter *github.Adapter, jobCtx context.Context, adminToken string, facetOrder []service.TypeFacet, tax taxDeps) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -217,7 +241,14 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	categoryService := service.NewCategoryService(store)
 	categoryHandler := handler.NewCategoryHandler(categoryService, facetOrder)
-	categoryHandler.RegisterPublic(r)                                                        // read-only tree + facets for navigation
+	categoryHandler.RegisterPublic(r) // read-only tree + facets for navigation
+	// Old-path -> new-path for every tree migration so far (rename/merge, and a
+	// split's largest successor): the website 301s stale category URLs with it.
+	aliases := taxonomy.Aliases(tax.migrations)
+	r.GET("/category/aliases", func(c *gin.Context) {
+		c.Header("Cache-Control", "public, max-age=3600")
+		c.JSON(http.StatusOK, gin.H{"version": tax.tree.Version, "aliases": aliases})
+	})
 	handler.NewHeatmapHandler(service.NewHeatmapService(store, categoryService)).Register(r) // GET /category/heat
 	handler.NewTrendHandler(store).Register(r)                                               // GET /trend — real per-repo star series
 
@@ -340,6 +371,91 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "id": id, "category": category})
+	})
+
+	// Internal: apply the tree migration step that lands on the loaded tree
+	// version (taxonomy/migrations.yaml). Mechanical ops run inline and
+	// return their counts; anything re-queued drains through the nightly
+	// categorizer / storefinder runs (or the /internal/categorize and
+	// /internal/store-find triggers). Idempotent: safe to call again.
+	admin.POST("/internal/taxonomy-migrate", func(c *gin.Context) {
+		var step *taxonomy.Migration
+		for i := range tax.migrations {
+			if tax.migrations[i].To == tax.tree.Version {
+				step = &tax.migrations[i]
+			}
+		}
+		if step == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no migration step targets tree version " + strconv.Itoa(tax.tree.Version)})
+			return
+		}
+		stats, err := tax.migrator.Run(c.Request.Context(), *step, service.CurrentStoreVersion)
+		if err != nil {
+			slog.Error("taxonomy migrate failed", "err", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "partial": stats})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "migrated", "from": step.From, "to": step.To, "stats": stats})
+	})
+
+	// Internal: undo the last migration for every item that still has its
+	// pre-migration snapshot (30-day window), marking them done on ?to=<v>.
+	admin.POST("/internal/taxonomy-rollback", func(c *gin.Context) {
+		to, err := strconv.Atoi(c.Query("to"))
+		if err != nil || to < 1 || to >= tax.tree.Version {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "to must be a version below the loaded tree"})
+			return
+		}
+		ids, err := taxonomy.LeafIDs(c.Request.Context(), store)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		n, err := tax.migrator.Rollback(c.Request.Context(), to, ids)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "rolled back", "to": to, "count": n})
+	})
+
+	// Internal: drop the pre-migration snapshots once the rollback window has
+	// passed. ?days=N (default 30) keeps anything touched more recently.
+	admin.POST("/internal/taxonomy-clear-snapshots", func(c *gin.Context) {
+		days := 30
+		if v := c.Query("days"); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 1 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "days must be >= 1"})
+				return
+			}
+			days = n
+		}
+		n, err := tax.migrator.ClearRollbackSnapshots(c.Request.Context(), time.Now().UTC().AddDate(0, 0, -days))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "cleared", "olderThanDays": days, "count": n})
+	})
+
+	// Internal: per-leaf size/heat vs the split/merge thresholds. GET returns
+	// the last nightly report; POST recomputes now.
+	admin.GET("/internal/taxonomy-audit", func(c *gin.Context) {
+		rep := tax.audit.Last()
+		if rep == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no audit yet; POST to compute"})
+			return
+		}
+		c.JSON(http.StatusOK, rep)
+	})
+	admin.POST("/internal/taxonomy-audit", func(c *gin.Context) {
+		rep, err := tax.audit.Run(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, rep)
 	})
 
 	// Internal (change 12 migration): reset done/failed items back to pending so

@@ -50,7 +50,7 @@ func testFacets(t *testing.T) *taxonomy.Facets {
 }
 
 func newTestCategorizer(t *testing.T, store *repository.Store, ai *service.AIService) *Categorizer {
-	return NewCategorizer(store, testRules, testFacets(t), ai, 15, 3, 2, slog.Default())
+	return NewCategorizer(store, testRules, testFacets(t), ai, 15, 3, 2, 1, Gate{}, slog.Default())
 }
 
 func jobTestStore(t *testing.T) *repository.Store {
@@ -86,7 +86,7 @@ func findItem(t *testing.T, store *repository.Store, externalID string) domain.T
 	return got
 }
 
-func hasPath(paths []string, want string) bool {
+func hasPathT(paths []string, want string) bool {
 	for _, p := range paths {
 		if p == want {
 			return true
@@ -111,7 +111,7 @@ func TestPipelineRuleTier(t *testing.T) {
 	newTestCategorizer(t, store, service.NewAIService(store, fp)).Run(ctx)
 
 	got := findItem(t, store, "o/ruled")
-	if got.AnalysisStatus != domain.AnalysisDone || got.ClassifiedBy != "rule" || !hasPath(got.CategoryPath, "ai/llm") {
+	if got.AnalysisStatus != domain.AnalysisDone || got.ClassifiedBy != "rule" || !hasPathT(got.CategoryPath, "ai/llm") {
 		t.Errorf("got status=%q by=%q path=%v, want done/rule/[ai/llm]", got.AnalysisStatus, got.ClassifiedBy, got.CategoryPath)
 	}
 	if got.Type != "cli" {
@@ -143,7 +143,7 @@ func TestPipelineLLMTierAndSuggestion(t *testing.T) {
 	newTestCategorizer(t, store, service.NewAIService(store, fp)).Run(ctx)
 
 	hit := findItem(t, store, "o/llm-hit")
-	if hit.AnalysisStatus != domain.AnalysisDone || hit.ClassifiedBy != "llm" || !hasPath(hit.CategoryPath, "ai/llm") || !hasPath(hit.CategoryPath, "web") {
+	if hit.AnalysisStatus != domain.AnalysisDone || hit.ClassifiedBy != "llm" || !hasPathT(hit.CategoryPath, "ai/llm") || !hasPathT(hit.CategoryPath, "web") {
 		t.Errorf("llm-hit = status %q by %q path %v", hit.AnalysisStatus, hit.ClassifiedBy, hit.CategoryPath)
 	}
 	if hit.Type != "library" {
@@ -217,7 +217,9 @@ func TestResourceClassNoFail(t *testing.T) {
 	}
 }
 
-// Whole-batch parse failure escalates a non-resource item to failed at threshold.
+// A successful call that omits a non-resource item counts against it and
+// escalates to failed at the threshold. (A whole-call failure — unparseable
+// reply, relay down — deliberately leaves items pending; see processBatch.)
 func TestCategorizerMarksFailed(t *testing.T) {
 	store := jobTestStore(t)
 	ctx := context.Background()
@@ -227,11 +229,30 @@ func TestCategorizerMarksFailed(t *testing.T) {
 		"analysisStatus": domain.AnalysisPending, "analysisFailCount": maxAnalysisFail - 1,
 	})
 
-	fp := &fakeProvider{resp: "garbage, no json"}
+	fp := &fakeProvider{resp: `{"results":[]}`}
 	newTestCategorizer(t, store, service.NewAIService(store, fp)).Run(ctx)
 
 	got := findItem(t, store, "o/bad")
 	if got.AnalysisStatus != domain.AnalysisFailed || got.AnalysisFailCount != maxAnalysisFail {
 		t.Errorf("got status %q failCount %d, want failed %d", got.AnalysisStatus, got.AnalysisFailCount, maxAnalysisFail)
+	}
+}
+
+// An unparseable reply is a whole-call failure: the item stays pending with
+// no failure counted, so a relay outage never buries classifiable repos.
+func TestCategorizerLeavesPendingOnCallFailure(t *testing.T) {
+	store := jobTestStore(t)
+	ctx := context.Background()
+
+	_, _ = store.Items().InsertOne(ctx, bson.M{
+		"source": domain.SourceGitHub, "externalId": "o/outage", "name": "mystery",
+		"analysisStatus": domain.AnalysisPending,
+	})
+	fp := &fakeProvider{resp: "garbage, no json"}
+	newTestCategorizer(t, store, service.NewAIService(store, fp)).Run(ctx)
+
+	got := findItem(t, store, "o/outage")
+	if got.AnalysisStatus != domain.AnalysisPending || got.AnalysisFailCount != 0 {
+		t.Errorf("got status %q failCount %d, want pending 0", got.AnalysisStatus, got.AnalysisFailCount)
 	}
 }

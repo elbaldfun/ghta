@@ -45,14 +45,31 @@ import (
 	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
-// aliasOldToNew maps current-tree paths to the change-12 tree used by golden.
-// learning/* is intentionally absent: it maps to "no domain" (legacy bucket).
+// aliasOldToNew maps older-tree paths to the v3 tree used by golden: the v1
+// aliases from change 12 plus the v2->v3 mechanical moves (taxonomy/migrations.yaml).
+// Split leaves map to their largest expected successor; learning/* is
+// intentionally absent (it maps to "no domain").
 var aliasOldToNew = map[string]string{
 	"web/frontend-framework": "web/frontend",
 	"web/backend-framework":  "web/backend",
 	"data/data-pipeline":     "data/pipeline",
 	"lang/stdlib-utils":      "lang/utils",
-	"data/cache":             "data/database", // merged in the new tree
+	"data/cache":             "data/database",
+	// v2 -> v3
+	"web/css-ui":            "web/ui-components",
+	"mobile/cross-platform": "client/cross-platform",
+	"infra/ci-cd":           "infra/automation",
+	"infra/iac":             "infra/automation",
+	"data/search":           "data/analytics",
+	"blockchain/protocols":  "blockchain/core",
+	"blockchain/contracts":  "blockchain/core",
+	"ai/llm":                "ai/llm-serving",
+	"ai/agents":             "agents/frameworks",
+	"devtools/ai-coding":    "agents/coding",
+	"devtools/cli":          "devtools/terminal",
+	"lang/utils":            "lang/algorithms",
+	"mobile/native":         "client/android",
+	"security/pentest":      "security/offensive",
 }
 
 type goldenItem struct {

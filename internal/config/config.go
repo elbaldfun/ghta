@@ -49,6 +49,11 @@ type Config struct {
 	CategorizeBatchSize int // items per AI categorization call
 	DomainMaxLabels     int // max domain leaf paths per item (multi-label cap)
 	LLMConcurrency      int // LLM batches processed in parallel
+	// Long-tail classification gate: GitHub repos under CategorizeMinStars are
+	// classified only once weeklyIncrease >= CategorizeHotWeekly. 0 disables.
+	CategorizeMinStars  float64
+	CategorizeHotWeekly float64
+	TaxonomyAuditCron   string
 
 	// Embedding classification layer (skipped when EmbedModel is empty or the
 	// provider has no credentials).
@@ -120,6 +125,21 @@ func Load() (*Config, error) {
 		errs = append(errs, "LLM_CONCURRENCY must be a positive number")
 	}
 	cfg.LLMConcurrency = conc
+
+	// CATEGORIZE_MIN_STARS / CATEGORIZE_HOT_WEEKLY — the long-tail gate. The
+	// defaults match today's corpus floor (1k stars), so nothing changes until
+	// sub-1k repos are ingested; then only the ones gaining 50+/week get judged.
+	minStars, err := strconv.ParseFloat(getEnv("CATEGORIZE_MIN_STARS", "1000"), 64)
+	if err != nil || minStars < 0 {
+		errs = append(errs, "CATEGORIZE_MIN_STARS must be a number >= 0")
+	}
+	cfg.CategorizeMinStars = minStars
+	hot, err := strconv.ParseFloat(getEnv("CATEGORIZE_HOT_WEEKLY", "50"), 64)
+	if err != nil || hot < 0 {
+		errs = append(errs, "CATEGORIZE_HOT_WEEKLY must be a number >= 0")
+	}
+	cfg.CategorizeHotWeekly = hot
+	cfg.TaxonomyAuditCron = getEnv("TAXONOMY_AUDIT_CRON", "0 45 5 * * *") // after categorize: size/heat per leaf vs split/merge thresholds
 
 	// Embedding layer
 	cfg.EmbedModel = getEnv("EMBED_MODEL", "text-embedding-3-small")

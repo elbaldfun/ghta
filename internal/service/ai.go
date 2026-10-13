@@ -181,10 +181,11 @@ func parseBatchResponse(raw string) (map[string]batchElement, error) {
 			continue
 		}
 		var w wrap
-		if err := json.Unmarshal([]byte(candidate), &w); err == nil && len(w.Results) > 0 {
-			if out := build(w.Results); len(out) > 0 {
-				return out, nil
-			}
+		if err := json.Unmarshal([]byte(candidate), &w); err == nil && w.Results != nil {
+			// A parsed (possibly empty) results array is a successful call: an
+			// item missing from it was omitted by the model, which is an
+			// item-level failure for the caller to count, not a call failure.
+			return build(w.Results), nil
 		}
 	}
 

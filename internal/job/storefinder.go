@@ -161,6 +161,13 @@ func (f *StoreFinder) runOnce(ctx context.Context, limit int) int {
 			// Dotted paths on purpose: a whole-document $set on `store` would
 			// wipe a manually-set categoryOverride.
 			update := bson.M{"$set": set, "$unset": bson.M{"store.failCount": ""}}
+			// One tree: the shelf is a leaf of the taxonomy, so the verdict
+			// also becomes a domain label (consumer shelves under apps/, dev
+			// shelves are the leaf itself). Excluded items get no label. The
+			// categoryId mirror is refreshed by the next categorizer pass.
+			if r.Category != service.StoreExcluded && (it.Store == nil || it.Store.CategoryOverride == "") {
+				update["$addToSet"] = bson.M{"categoryPath": service.ShelfDomainPath(r.Category)}
+			}
 			if _, err := f.store.Items().UpdateByID(ctx, it.ID, update); err != nil {
 				f.log.Error("storefinder: update failed", "item", it.ExternalID, "err", err)
 				continue
