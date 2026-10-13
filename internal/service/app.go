@@ -376,7 +376,7 @@ type appRow struct {
 	Type            string               `bson:"type"`
 	Platforms       []string             `bson:"platforms"`
 	PlatformSource  string               `bson:"platformSource"`
-	CategoryPath    []string             `bson:"categoryPath"`
+	CategoryPath    domain.PathList      `bson:"categoryPath"` // tolerates the legacy single-string shape
 	LatestReleaseAt *time.Time           `bson:"latestReleaseAt"`
 	AlternativeTo   []domain.Alternative `bson:"alternativeTo"`
 	Store           *domain.StoreInfo    `bson:"store"`
