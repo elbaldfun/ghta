@@ -1,13 +1,14 @@
 name: CI
 
-# Every pull request into main is built and tested: the Go backend
-# (build-test) and the Next.js frontend (web).
+# Every pull request is built and tested: the Go backend (build-test) and the
+# Next.js frontend (web). PRs land on develop; sync-main.yml promotes develop
+# to main.
 #
 # Merging does not deploy. Releases stay manual: scripts/release.sh.
 
 on:
   push:
-    branches: [main, v1]
+    branches: [main, develop]
   pull_request:
 
 permissions:
