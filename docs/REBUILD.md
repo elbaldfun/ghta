@@ -101,7 +101,9 @@
   "assets": { "iconUrl", "screenshotUrl", "shotSource" },
   "ranks": { "overall", "language", "domain": { "<path>": n }, "at" },
   "jobs": {                           // 每个任务一条同构状态
-    "judge": { "status", "fail", "at" },   // 分类、货架、替代品合一后的判定任务
+    "judge": { "status", "fail", "at" },   // 分类；M3 之后是合一的判定任务
+    "store": { "status", "fail", "version", "at" },   // 货架判定，M3 合一后删除
+    "alt":   { "status", "at" },                      // 替代品推断，M3 合一后删除
     "icon":  { "status", "fail", "at" },
     "shot":  { "status", "fail", "at" }
   },
@@ -118,7 +120,7 @@
 - `sourceData`（无类型 map）：拆成带类型的 `gh` / `hf` 和 `item_blobs`
 - 顶层散落的 `analysisStatus`、`altStatus`、`iconStatus`、`shotStatus`、`store.status` 及各自的失败计数
 - `dailyIncrease` / `weeklyIncrease` / `monthlyIncrease`：并入 `growth`
-- `store` 子文档与 `store.version`：并入 `labels`，只保留一个版本号
+- `store` 子文档：判定结果并入 `labels`，状态与版本号进 `jobs.store`；M3 合一后只剩 `labels.version` 一个版本号
 
 ### 4.2 `item_blobs`（冷数据）
 
@@ -148,13 +150,14 @@
 | `alternativeTo` | `labels.alternatives` | — |
 | `generatedTopics` | `labels.tags` | — |
 | `classifiedBy`、`taxonomyVersion` | `labels.by`、`labels.version` | 缺版本号记为 2 |
-| `analysisStatus`、`store.status`、`altStatus` | `jobs.judge` | 三者都完成才算 `done`；任一待处理则 `pending` |
+| `analysisStatus`、`analysisFailCount` | `jobs.judge` | 缺失记为 `pending` |
+| `store.status`、`failCount`、`version`、`altStatus` | `jobs.store`、`jobs.alt` | 原样保留到 M3。货架判定只跑过应用类条目，合并成一个状态会把 5 万条非应用条目重新送进 LLM |
 | `iconStatus`、`shotStatus` | `jobs.icon`、`jobs.shot` | — |
 | `iconUrl`、`screenshotUrl`、`shotSource` | `assets.*` | — |
 | `daily/weekly/monthlyIncrease` | `growth.d1/d7/d30` | 以 `history` 重算的值为准，与旧值的差异记入报告 |
 | `metric_snapshots` 最近 35 天 | `history` | 每天取最后一个点 |
 | `sourceData.readme`、`releases` | `item_blobs` | — |
-| `sourceData` 其余字段 | `gh.*` / `hf.*` / 顶层 | 逐字段列白名单，名单外的字段丢弃并在报告里计数 |
+| `sourceData` 其余字段 | `gh.*` / `hf.*` / 顶层 | 逐字段列白名单，名单外的字段丢弃并在报告里计数。有意不带走的四个：`url`（可由标识推出）、`topics`（与 `topicNames` 重复）、`organization`、`migratedFrom` |
 
 导入器是一条可重复执行的命令：每次运行先清空新集合再全量导入，输出一份校验报告。
 它只读旧集合，任何时候运行都不影响线上。
