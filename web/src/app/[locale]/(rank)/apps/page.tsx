@@ -1,3 +1,4 @@
+import { DEV_SHELVES, shelfLabelKey } from '@/lib/shelves';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
@@ -33,10 +34,7 @@ const SHELF_SUBS: Record<string, string[]> = {
   system: ['screenshot', 'launcher', 'files', 'transfer', 'phone', 'backup'],
   security: ['passwords', 'privacy'],
   games: ['games', 'emulator'],
-  dev: [
-    'devtools/terminal', 'devtools/editors', 'devtools/api-tools', 'devtools/vcs', 'devtools/package-manager', 'devtools/code-quality',
-    'data/database', 'infra/containers', 'infra/automation', 'infra/monitoring', 'gamedev/engines', 'security/offensive', 'agents/coding',
-  ],
+  dev: DEV_SHELVES,
 };
 const DEV = 'dev';
 /** Full shelf value for a (major, sub) pair: dev subs are already full paths. */
@@ -60,8 +58,7 @@ function validShelf(s: string): boolean {
 }
 /** i18n key for a shelf value. */
 function shelfKey(major: string, value: string): string {
-  const slug = major === DEV ? `dev/${value}` : value;
-  return `shelf_${slug.replace(/[/-]/g, '_')}`;
+  return major === DEV && value === DEV ? 'shelfM_dev' : shelfLabelKey(value);
 }
 const OS_LABEL: Record<OS, string> = {
   macos: 'macOS',

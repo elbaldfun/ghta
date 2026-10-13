@@ -144,6 +144,9 @@ func TestMigrateOps(t *testing.T) {
 	ins("o/shelf-none", []string{"apps/productivity-old"}, nil)
 	ins("o/shelf-excl", []string{"apps/productivity-old", "web/frontend"}, bson.M{"store": bson.M{"category": "excluded"}})
 	ins("o/moved", []string{"web/frontend"}, bson.M{"store": bson.M{"category": "devtools/editor"}})
+	// Legacy shapes: categoryPath stored as a bare string (pre multi-label).
+	ins("o/legacy-empty", nil, bson.M{"categoryPath": "", "store": bson.M{"category": "devtools/editor"}})
+	ins("o/legacy-one", nil, bson.M{"categoryPath": "infra/ci-cd", "store": bson.M{"category": "devtools/editor"}})
 	ins("o/rejudge", []string{"web/frontend"}, bson.M{"store": bson.M{"category": "devtools/devops", "status": "done", "version": 1}})
 
 	m := Migration{From: 2, To: 3,
@@ -164,8 +167,9 @@ func TestMigrateOps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
-	// rewritten: o/rename once, o/merge twice (one per merged source).
-	if st.DomainRewritten != 3 || st.DomainRequeued < 1 || st.AppsRelabelled != 2 || st.ShelfRewritten != 1 || st.ShelfRequeued != 1 {
+	// rewritten: o/rename once, o/merge twice (one per merged source),
+	// o/legacy-one once; shelves moved: o/moved and both legacy items.
+	if st.DomainRewritten != 4 || st.DomainRequeued < 1 || st.AppsRelabelled != 2 || st.ShelfRewritten != 3 || st.ShelfRequeued != 1 {
 		t.Errorf("stats %+v", st)
 	}
 
@@ -196,6 +200,12 @@ func TestMigrateOps(t *testing.T) {
 	}
 	if it := get("o/moved"); it.Store.Category != "devtools/editors" || it.Store.Version != 2 || !has(it.CategoryPath, "devtools/editors") {
 		t.Errorf("moved: %+v paths=%v", it.Store, it.CategoryPath)
+	}
+	if it := get("o/legacy-empty"); it.Store.Category != "devtools/editors" || !eq(it.CategoryPath, "devtools/editors") || len(it.CategoryID) != 1 {
+		t.Errorf("legacy empty string path: %+v paths=%v ids=%v", it.Store, it.CategoryPath, it.CategoryID)
+	}
+	if it := get("o/legacy-one"); !eq(it.CategoryPath, "infra/automation", "devtools/editors") || len(it.CategoryID) != 2 {
+		t.Errorf("legacy single string path: paths=%v ids=%v", it.CategoryPath, it.CategoryID)
 	}
 	if it := get("o/rejudge"); it.Store.Version != 0 || it.Store.Status != "" {
 		t.Errorf("rejudge should drop the verdict version: %+v", it.Store)

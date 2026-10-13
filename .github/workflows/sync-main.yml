@@ -1,0 +1,43 @@
+name: Sync develop to main
+
+# develop is the integration branch: every PR lands there. main is what
+# production runs — scripts/release.sh only ships commits contained in main.
+# This workflow promotes develop to main with a merge commit.
+#
+# It runs on demand (Actions → "Sync develop to main" → Run workflow), and on
+# every push to develop once the repository variable AUTO_SYNC_MAIN is "true".
+# The variable is left unset while the rebuild is in progress (docs/REBUILD.md):
+# develop then carries code that must not reach production before the cutover.
+#
+# A sync that includes changes under .github/workflows is rejected by GitHub
+# (the workflow token may not push workflow files); merge develop into main by
+# hand that one time.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-main
+
+jobs:
+  sync:
+    if: github.event_name == 'workflow_dispatch' || vars.AUTO_SYNC_MAIN == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge develop into main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin develop
+          git merge --no-edit origin/develop
+          git push origin main

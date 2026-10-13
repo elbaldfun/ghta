@@ -89,6 +89,20 @@ scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
 
 **顺序：后端先行。** 前端可能发送新参数（如新的 `sort` 值），老 API 会返回 400。
 
+### 分支与发布
+
+| 分支 | 用途 | 怎么进去 |
+|---|---|---|
+| `develop` | 集成分支，所有 PR 的目标 | PR，CI 通过后人工合并 |
+| `main` | 生产分支，`release.sh` 只发它包含的提交 | `sync-main.yml` 从 `develop` 同步；热修 PR |
+
+- 同步：GitHub → Actions → "Sync develop to main" → Run workflow。仓库变量 `AUTO_SYNC_MAIN` 设为 `true` 后，
+  每次 `develop` 有推送都会自动同步。
+- 重构期间（`docs/REBUILD.md`）不设这个变量：`develop` 带着切换前不能上生产的代码。切换当天手动同步一次，
+  之后再打开自动同步。
+- 生产热修：从 `main` 拉分支，PR 进 `main`，发版，然后开一个 `main` → `develop` 的 PR 把修复合回去。
+- 同步内容里包含 `.github/workflows` 的改动时，GitHub 会拒绝机器人的推送，那一次需要手动把 `develop` 合进 `main`。
+
 ### 手动触发任务
 
 ```bash
