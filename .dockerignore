@@ -7,7 +7,7 @@ docs
 logs
 bin
 
-# Frontend is deployed separately on Vercel.
+# Frontend has its own image (web/Dockerfile, built from web/).
 web
 
 # Secrets — must never enter the build context.

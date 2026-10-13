@@ -1,7 +1,10 @@
 # Production stack for the starrank.dev droplet (1 vCPU / 2 GB RAM).
 #
-# Only Caddy publishes ports. MongoDB and the API are reachable solely on the
-# internal compose network — the database must never be exposed to the internet.
+# Nothing here publishes ports. Public traffic enters through the droplet's
+# shared Caddy, which is a separate compose project (droplet-edge repo,
+# /opt/edge) because other sites live on this box too. `web` and `api` join its
+# external `edge` network; MongoDB stays on the internal compose network only —
+# the database must never be exposed to the internet.
 #
 # Secrets come from deploy/.env on the server (gitignored, never committed).
 
@@ -55,22 +58,35 @@ services:
     extra_hosts:
       - ${LLM_RELAY_HOST_PIN:-dragoncode.codes:192.238.249.146}
     # No `ports:` — traffic arrives through Caddy.
+    networks:
+      default:
+      edge:
+        aliases: [ghta-api]
     mem_limit: 640m
 
-  caddy:
-    image: caddy:2-alpine
+  web:
+    image: ghta-web:latest
     restart: unless-stopped
     depends_on: [api]
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data      # Let's Encrypt certs + account keys; must persist
-      - caddy_config:/config
-    mem_limit: 128m
+    environment:
+      # Container-to-container at runtime: SSR/ISR fetches skip Caddy and TLS.
+      # The prefixed alias, not `api`: on the shared edge network a bare
+      # service name could resolve to another project's container.
+      API_URL: http://ghta-api:3000
+      NEXT_PUBLIC_SITE_URL: https://starrank.dev
+      PORT: "3000"
+    # No `ports:` — traffic arrives through Caddy.
+    networks:
+      default:
+      edge:
+        aliases: [ghta-web]
+    mem_limit: 512m
 
 volumes:
   mongo_data:
-  caddy_data:
-  caddy_config:
+
+networks:
+  # Owned by droplet-edge; exists before this project starts. The aliases are
+  # project-prefixed because the network is shared with other sites.
+  edge:
+    external: true
