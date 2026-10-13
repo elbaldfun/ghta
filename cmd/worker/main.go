@@ -16,6 +16,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -63,8 +64,8 @@ func run(log *slog.Logger, runList string, list bool) error {
 		return fmt.Errorf("MONGODB_URI and MONGODB_DB are required")
 	}
 	// Only fetch needs the token; a one-off run of other jobs does not.
-	if os.Getenv("GITHUB_API_TOKEN") == "" && (runList == "" || wants(runList, "fetch")) {
-		return fmt.Errorf("GITHUB_API_TOKEN is required to fetch")
+	if os.Getenv("GITHUB_API_TOKEN") == "" && (runList == "" || wants(runList, "fetch", "reconcile", "devsync")) {
+		return fmt.Errorf("GITHUB_API_TOKEN is required by fetch, reconcile and devsync")
 	}
 	st, err := store.Connect(ctx, uri, db)
 	if err != nil {
@@ -119,11 +120,16 @@ func nightly(st *store.Store, log *slog.Logger) []worker.Job {
 	if err != nil {
 		buffer = 200
 	}
+	gh := github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log)
 	return []worker.Job{
-		pipeline.NewFetch(st, log,
-			github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log),
-			huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
+		pipeline.NewFetch(st, log, gh, huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
+		// Before rank: a repository found gone or renamed must leave the rankings.
+		pipeline.NewReconcile(st, gh, buffer, log),
 		pipeline.NewRank(st),
+		pipeline.NewIcon(st, log),
+		pipeline.NewShot(st, log),
+		// Last: a full sweep can sit out GitHub's hourly window more than once.
+		pipeline.NewDevSync(st, gh, buffer, log),
 	}
 }
 
@@ -152,10 +158,10 @@ func pick(jobs []worker.Job, csv string) ([]worker.Job, error) {
 	return out, nil
 }
 
-// wants reports whether a -run list names job.
-func wants(csv, job string) bool {
+// wants reports whether a -run list names any of jobs.
+func wants(csv string, jobs ...string) bool {
 	for _, n := range strings.Split(csv, ",") {
-		if strings.TrimSpace(n) == job {
+		if slices.Contains(jobs, strings.TrimSpace(n)) {
 			return true
 		}
 	}
