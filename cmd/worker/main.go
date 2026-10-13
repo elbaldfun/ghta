@@ -6,6 +6,9 @@
 //	worker -run fetch,rank  run the named jobs once, in pipeline order, and exit
 //	worker -list            print the pipeline and exit
 //
+// The judge job joins the pipeline when JUDGE_BASE_URL and JUDGE_MODEL name an
+// OpenAI-compatible model server; see internal/judge.
+//
 // With -run the exit status is 1 when a job fails. See docs/REDESIGN.md §5.3.
 package main
 
@@ -25,10 +28,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 
+	"github.com/elbaldfun/ghta/internal/judge"
 	"github.com/elbaldfun/ghta/internal/pipeline"
 	"github.com/elbaldfun/ghta/internal/source/github"
 	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/store"
+	"github.com/elbaldfun/ghta/internal/taxonomy"
 	"github.com/elbaldfun/ghta/internal/worker"
 )
 
@@ -56,7 +61,11 @@ func run(log *slog.Logger, runList string, list bool) error {
 	defer stop()
 
 	if list {
-		fmt.Println(strings.Join(names(nightly(nil, log)), "\n"))
+		jobs, err := nightly(nil, log)
+		if err != nil {
+			return err
+		}
+		fmt.Println(strings.Join(names(jobs), "\n"))
 		return nil
 	}
 	uri, db := os.Getenv("MONGODB_URI"), os.Getenv("MONGODB_DB")
@@ -72,8 +81,13 @@ func run(log *slog.Logger, runList string, list bool) error {
 		return err
 	}
 	defer st.Close(context.Background())
+	host, _ := os.Hostname()
+	st.Worker = getEnv("WORKER_NAME", host)
 
-	jobs := nightly(st, log)
+	jobs, err := nightly(st, log)
+	if err != nil {
+		return err
+	}
 	if err := st.EnsureIndexes(ctx); err != nil {
 		return err
 	}
@@ -105,7 +119,7 @@ func run(log *slog.Logger, runList string, list bool) error {
 		return fmt.Errorf("PIPELINE_CRON %q: %w", spec, err)
 	}
 	sched.Start()
-	log.Info("worker started", "db", db, "pipelineCron", spec, "jobs", names(jobs))
+	log.Info("worker started", "worker", st.Worker, "db", db, "pipelineCron", spec, "jobs", names(jobs))
 
 	<-ctx.Done()
 	log.Info("worker stopping: waiting for the running job")
@@ -115,22 +129,50 @@ func run(log *slog.Logger, runList string, list bool) error {
 
 // nightly is the pipeline, in the order the jobs run. Later jobs read what
 // earlier ones wrote, so the order is part of the design.
-func nightly(st *store.Store, log *slog.Logger) []worker.Job {
-	buffer, err := strconv.Atoi(getEnv("RATE_LIMIT_BUFFER", "200"))
-	if err != nil {
-		buffer = 200
-	}
+//
+// The judge is in it only where a model is configured (JUDGE_BASE_URL): the
+// model lives on a private network the production host cannot reach, so the
+// judge runs from a machine that can, against the same database.
+func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
+	buffer := envInt("RATE_LIMIT_BUFFER", 200)
 	gh := github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log)
-	return []worker.Job{
+	jobs := []worker.Job{
 		pipeline.NewFetch(st, log, gh, huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
 		// Before rank: a repository found gone or renamed must leave the rankings.
 		pipeline.NewReconcile(st, gh, buffer, log),
+	}
+	if base := os.Getenv("JUDGE_BASE_URL"); base != "" {
+		model := os.Getenv("JUDGE_MODEL")
+		if model == "" {
+			return nil, fmt.Errorf("JUDGE_MODEL is required when JUDGE_BASE_URL is set")
+		}
+		tree, err := taxonomy.LoadTree(getEnv("TAXONOMY_PATH", "taxonomy/taxonomy.yaml"))
+		if err != nil {
+			return nil, err
+		}
+		// Before rank: domain rankings follow the labels.
+		jobs = append(jobs, pipeline.NewJudge(st, judge.New(judge.NewClient(base, model, os.Getenv("JUDGE_API_KEY")), tree),
+			pipeline.JudgeConfig{
+				TreeVersion: tree.Version,
+				MaxPerRun:   envInt("JUDGE_MAX_PER_RUN", 3000),
+				MinStars:    float64(envInt("JUDGE_MIN_STARS", 1000)),
+				HotWeekly:   float64(envInt("JUDGE_HOT_WEEKLY", 50)),
+			}, log))
+	}
+	return append(jobs,
 		pipeline.NewRank(st),
 		pipeline.NewIcon(st, log),
 		pipeline.NewShot(st, log),
 		// Last: a full sweep can sit out GitHub's hourly window more than once.
 		pipeline.NewDevSync(st, gh, buffer, log),
+	), nil
+}
+
+func envInt(key string, fallback int) int {
+	if n, err := strconv.Atoi(os.Getenv(key)); err == nil {
+		return n
 	}
+	return fallback
 }
 
 // pick returns the named jobs in pipeline order, whatever order they were

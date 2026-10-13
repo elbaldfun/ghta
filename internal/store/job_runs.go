@@ -29,6 +29,7 @@ const (
 type JobRun struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Job        string             `bson:"job" json:"job"`
+	Worker     string             `bson:"worker,omitempty" json:"worker,omitempty"`
 	Status     string             `bson:"status" json:"status"`
 	StartedAt  time.Time          `bson:"startedAt" json:"startedAt"`
 	FinishedAt time.Time          `bson:"finishedAt,omitempty" json:"finishedAt,omitempty"`
@@ -56,7 +57,7 @@ func (s *Store) ensureJobRunIndexes(ctx context.Context) error {
 // StartRun records that a job began and returns the record's id.
 func (s *Store) StartRun(ctx context.Context, job string, at time.Time) (primitive.ObjectID, error) {
 	id := primitive.NewObjectID()
-	_, err := s.JobRuns().InsertOne(ctx, JobRun{ID: id, Job: job, Status: RunRunning, StartedAt: at.UTC()})
+	_, err := s.JobRuns().InsertOne(ctx, JobRun{ID: id, Job: job, Worker: s.Worker, Status: RunRunning, StartedAt: at.UTC()})
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("start run %s: %w", job, err)
 	}
@@ -89,12 +90,17 @@ func (s *Store) FinishRun(ctx context.Context, id primitive.ObjectID, end JobRun
 	return nil
 }
 
-// CloseInterruptedRuns marks every run still recorded as running as
-// interrupted. The worker calls it on startup: it is the only writer, so a
-// run left running belongs to a process that no longer exists.
+// CloseInterruptedRuns marks this worker's runs still recorded as running as
+// interrupted. A worker calls it on startup: one process runs under a worker
+// name at a time, so such a run belongs to a process that no longer exists.
+// Another worker's runs are not touched.
 func (s *Store) CloseInterruptedRuns(ctx context.Context, at time.Time) (int, error) {
-	res, err := s.JobRuns().UpdateMany(ctx,
-		bson.M{"status": RunRunning},
+	mine := bson.M{"worker": s.Worker}
+	if s.Worker == "" {
+		mine = bson.M{"worker": bson.M{"$exists": false}}
+	}
+	mine["status"] = RunRunning
+	res, err := s.JobRuns().UpdateMany(ctx, mine,
 		bson.M{"$set": bson.M{"status": RunInterrupted, "finishedAt": at.UTC()}})
 	if err != nil {
 		return 0, fmt.Errorf("close interrupted runs: %w", err)

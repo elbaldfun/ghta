@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -92,4 +93,37 @@ func TestJobRunsExpire(t *testing.T) {
 		}
 	}
 	t.Fatalf("no 90-day TTL index on job_runs: %v", idx)
+}
+
+// Two workers share a database: the nightly pipeline and the judge that runs
+// next to its model. Starting one must not close the other's live run.
+func TestCloseInterruptedRunsIsPerWorker(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	t0 := time.Date(2026, 10, 14, 3, 30, 0, 0, time.UTC)
+
+	pipeline, judge := New(st.DB), New(st.DB)
+	pipeline.Worker, judge.Worker = "pipeline", "mac"
+	live, err := pipeline.StartRun(ctx, "fetch", t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dead, err := judge.StartRun(ctx, "judge", t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := judge.CloseInterruptedRuns(ctx, t0.Add(time.Hour)); err != nil || n != 1 {
+		t.Fatalf("closed %d runs, %v; want the judge's own", n, err)
+	}
+	status := map[primitive.ObjectID]string{}
+	runs, err := st.Runs(ctx, "", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range runs {
+		status[r.ID] = r.Status
+	}
+	if status[live] != RunRunning || status[dead] != RunInterrupted {
+		t.Fatalf("pipeline run %s, judge run %s", status[live], status[dead])
+	}
 }

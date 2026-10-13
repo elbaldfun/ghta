@@ -118,6 +118,24 @@ scripts/release.sh worker          # 发任务进程（重构切换之后才用�
 - 生产热修：从 `main` 拉分支，PR 进 `main`，发版，然后开一个 `main` → `develop` 的 PR 把修复合回去。
 - 同步内容里包含 `.github/workflows` 的改动时，GitHub 会拒绝机器人的推送，那一次需要手动把 `develop` 合进 `main`。
 
+### 判定任务（judge）
+
+`judge` 用大模型给条目定领域、形态、货架、文案、替代品和标签，一次调用全部给出
+（`internal/judge`）。模型是局域网里的 LM Studio，droplet 连不到，所以这个任务不在 droplet
+的 worker 里跑：只有设置了 `JUDGE_BASE_URL` 的 worker 流水线里才有 `judge`。
+
+- 在能连到模型的机器上跑：`JUDGE_BASE_URL=http://<模型机>:1234/v1 JUDGE_MODEL=<模型名>
+  MONGODB_URI=… MONGODB_DB=ghta WORKER_NAME=judge ./worker -run judge`。
+  `WORKER_NAME` 要和 droplet 上的 `pipeline` 不同：worker 启动时只收尾自己名下没跑完的记录。
+- 每条问两遍，第二遍换一批同伴，只问领域、形态、货架。两遍一致记 `labels.confidence: agreed`；
+  不一致问第三遍取多数，记 `majority`；三遍各不相同记 `split`，保留第一遍的答案，等人工复核。
+- 一次运行最多处理 `JUDGE_MAX_PER_RUN` 条（默认 3000）。星数低于 `JUDGE_MIN_STARS`（默认 1000）
+  的条目只有周增长达到 `JUDGE_HOT_WEEKLY`（默认 50）才判定。
+- 模型调用连续失败 3 次任务就报错退出，没写完的条目保持 pending，下次接着跑。
+- 换提示词后要全量重判：把 `internal/judge` 的 `PromptVersion` 加一。换分类树按树版本自动重判。
+- 评测：`JUDGE_BASE_URL=… JUDGE_MODEL=… go run ./cmd/eval -judge`，在 golden 上按同样的
+  两遍流程打分。
+
 ### 手动触发任务
 
 ```bash

@@ -118,6 +118,9 @@ type Labels struct {
 	Alternatives  []Alternative `bson:"alternatives,omitempty"`
 	Tags          []string      `bson:"tags,omitempty"`
 	By            string        `bson:"by,omitempty"`
+	// Confidence is how the judge's answers fell: "agreed", "majority" or
+	// "split" (judge.Agreed and friends). A split item wants a human look.
+	Confidence string `bson:"confidence,omitempty"`
 	// Version is the taxonomy tree generation Domain was judged on.
 	Version int `bson:"version,omitempty"`
 	// Prev snapshots Domain before a taxonomy migration rewrote it.
