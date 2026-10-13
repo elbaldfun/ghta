@@ -61,14 +61,33 @@ docker compose restart api        # 重启
 
 ### 发布新版本
 
-本机是 arm64、服务器是 amd64，**必须交叉编译**：
+所有发布都走 `scripts/release.sh`（Claude Code 里说“发布版本”会按
+`.claude/skills/release` 自动执行同一套流程）：
 
 ```bash
-cd /Users/clawbot/go/src/ghta
-docker buildx build --platform linux/amd64 -t ghta-api:latest --load .
-docker save ghta-api:latest | gzip -1 | ssh 24.199.88.38 'gunzip | docker load'
-ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d api'
+scripts/release.sh status          # 线上 api / web 各是哪个 commit + 最近发布记录
+scripts/release.sh api             # 发后端
+scripts/release.sh web             # 发前端
+scripts/release.sh all             # 两个都发，后端先行
+scripts/release.sh compose         # 同步 deploy/docker-compose.yml 并重建有变化的服务
+scripts/release.sh site            # 发布 deploy/starrank.caddy 到共享 Caddy
+scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
 ```
+
+脚本做的事：
+
+1. 要求工作区干净、HEAD 已并入 `origin/main`（只发已合并的代码；紧急情况用
+   `RELEASE_ALLOW_UNMERGED=1` 跳过）。
+2. `go vet` + `go test`（仅 api）。
+3. 交叉编译 `linux/amd64` 镜像——本机是 arm64、服务器是 amd64，**必须交叉编译**。
+   镜像带 `org.opencontainers.image.revision` 标签，记录对应的 commit。
+4. 把线上正在用的镜像另存为 `:prev`，再 `docker save | ssh docker load` 传过去
+   （没有镜像仓库）。
+5. 确认服务器上的 compose 与仓库一致，然后 `docker compose up -d <服务>`。
+6. 等健康检查返回 200，并确认容器跑的确实是新镜像。
+7. 往服务器 `/opt/ghta/releases.log` 追加一行发布记录。
+
+**顺序：后端先行。** 前端可能发送新参数（如新的 `sort` 值），老 API 会返回 400。
 
 ### 手动触发任务
 
@@ -97,17 +116,14 @@ ssh 24.199.88.38 'cd /opt/ghta && set -a && . ./.env && set +a && \
 ## 前端：droplet 上的 Next.js（standalone）
 
 镜像 `ghta-web`，源在 `web/Dockerfile`；compose 服务名 `web`，由 Caddy 反代
-`starrank.dev`。发布方式与后端一致（交叉编译 + save/load）：
+`starrank.dev`。发布用 `scripts/release.sh web`，它等价于：
 
 ```bash
-cd /Users/clawbot/go/src/ghta
 docker buildx build --platform linux/amd64 -t ghta-web:latest --load \
   --build-arg API_URL=https://api.starrank.dev \
   --build-arg NEXT_PUBLIC_SITE_URL=https://starrank.dev \
-  --build-arg NEXT_PUBLIC_GA_ID=<GA 衡量 ID> \
+  --build-arg NEXT_PUBLIC_GA_ID=<取自 deploy/release.env> \
   -f web/Dockerfile web/
-docker save ghta-web:latest | gzip -1 | ssh 24.199.88.38 'gunzip | docker load'
-ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d web'
 ```
 
 要点：
@@ -117,8 +133,8 @@ ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d web'
 - `NEXT_PUBLIC_*` 在构建时内联进浏览器 bundle，改值必须重新构建镜像。
 - 博客 Markdown（`web/content/blog/`）是运行时从磁盘读的，Dockerfile 已显式
   COPY 进镜像；新增文章要重新构建镜像。
-- compose 有改动时：`scp deploy/docker-compose.yml 24.199.88.38:/opt/ghta/`
-  再 `ssh 24.199.88.38 'cd /opt/ghta && docker compose up -d'`。
+- GA 衡量 ID 写在 `deploy/release.env`（公开值，可入库）；留空则构建出的前端不带统计。
+- compose 有改动时：`scripts/release.sh compose`。
 
 ## 入口（Caddy）
 
@@ -128,7 +144,7 @@ Caddy 是这台机器上所有站点共用的入口，由 `droplet-edge` 仓库�
 1. **站点文件** `deploy/starrank.caddy`（starrank.dev / www / api 三个域名）。改动后发布：
 
    ```bash
-   ssh 24.199.88.38 /opt/edge/bin/apply-site starrank < deploy/starrank.caddy
+   scripts/release.sh site
    ```
 
    脚本会连同其他站点一起校验，通过才热重载；失败自动回滚，不影响别的站。
