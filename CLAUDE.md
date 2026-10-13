@@ -8,6 +8,7 @@
 - 发版只用 `scripts/release.sh`（`api` / `web` / `all` / `rollback`），只发已并入 `origin/main` 的 HEAD，后端先于前端。负责人说"发布版本"就是让你自己发。
 - 生产机只看 `docker logs --tail N`，绝不用 `--since`；查库用 `docker run --rm --network ghta_default -m 220m --env-file /opt/ghta/.env mongo:7 sh -c 'mongosh --host mongo …'` 从容器外连，不要 `docker exec` 进 mongo 容器。不要碰 `/opt/edge`（与 opticdrop.app 共用的 Caddy）以外的其他项目。
 - LLM 分类任务同一时刻只能有一个 Run（中继并发上限很低），触发前先确认上一轮的 `categorizer done` 日志。
+- 重构进行中（方案见 `docs/REBUILD.md`）：新代码只读写新集合（`items`、`item_blobs`、`boards` 等），不改旧集合 `tracked_items`，也不在新代码里写旧数据形态的兼容分支，规范化只放在导入器里。重构的 PR 进 `develop`，切换前 `develop` 不同步到 `main`。
 - 分类树只改 `taxonomy/*.yaml`：改叶子要同时写 `migrations.yaml`，版本号加一；`go test ./internal/taxonomy ./internal/service` 会校验树、规则表、golden、货架枚举四者一致。
 
 ## 项目进度同步到 Obsidian
@@ -18,7 +19,7 @@
 - 项目链接名：`[[StarRank]]`
 - 条目目录：`/Users/clawbot/Obsidian/TaskNotes/Tasks/`
 - 条目标题统一以 `StarRank ` 开头
-- 仓库里 `docs/REDESIGN.md`、`docs/PRODUCT-REVIEW.md`、`docs/TAXONOMY-V3.md` 是方案与分析，不是待办表；待办以 Obsidian 为准
+- 仓库里 `docs/REBUILD.md`、`docs/REDESIGN.md`、`docs/PRODUCT-REVIEW.md`、`docs/TAXONOMY-V3.md` 是方案与分析，不是待办表；待办以 Obsidian 为准
 
 ### 什么时候写回
 
