@@ -57,6 +57,9 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 	}); err != nil {
 		return fmt.Errorf("developers indexes: %w", err)
 	}
+	if err := s.ensureBoardIndexes(ctx); err != nil {
+		return err
+	}
 	return s.ensureJobRunIndexes(ctx)
 }
 

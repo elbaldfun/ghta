@@ -63,7 +63,7 @@ func TestJudgeJoinsOnlyWithAModel(t *testing.T) {
 		t.Fatal("JUDGE_BASE_URL without JUDGE_MODEL was accepted")
 	}
 	t.Setenv("JUDGE_MODEL", "some-model")
-	if got := strings.Join(names(pipelineJobs(t)), ","); got != "fetch,reconcile,migrate,judge,rank,icon,shot,devsync" {
+	if got := strings.Join(names(pipelineJobs(t)), ","); got != "fetch,reconcile,migrate,judge,rank,boards,icon,shot,devsync" {
 		t.Fatalf("pipeline with a model: %s", got)
 	}
 }

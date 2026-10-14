@@ -86,6 +86,9 @@ scripts/release.sh worker          # 发任务进程（重构切换之后才用�
 - worker 不对外提供服务，发布后的检查是"启动 10 秒后仍在运行且没有被 docker 重启过"。
   看日志：`docker logs --tail 50 ghta-worker-1`。每次任务运行在 `job_runs` 集合里有一条记录。
 - 手动跑一次某个任务：`docker compose run --rm worker -run rank`（任务名见 `-list`）。
+- `boards` 任务接在 `rank` 后面，把开发者、话题、生态、热力图、分类计数、形态分面、语言和
+  停更统计算好整块写进 `boards`，接口只读结果；排名类榜单的前 100 名每天另存一份到
+  `boards_history`（保留 400 天）。改了榜单规则想马上生效：`-run boards`，全库两三秒。
 
 脚本做的事：
 
