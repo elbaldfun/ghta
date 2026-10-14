@@ -184,6 +184,8 @@ func TestDecide(t *testing.T) {
 		{"shelf outvotes the first answer",
 			[]Verdict{v("app", "productivity/notes"), v("app", ex, "data/database"), v("app", ex, "data/database")},
 			false, Majority, []string{"data/database"}, "app", ex},
+		{"no shelf two answers share", []Verdict{v("app", "productivity/notes", "web/frontend"), v("app", "productivity/todo", "web/frontend"), v("app", ex, "web/frontend")},
+			false, Split, []string{"web/frontend"}, "app", ex},
 		{"both have no domain", []Verdict{v("awesome", ex), v("awesome", ex)}, false, Agreed, nil, "awesome", ex},
 	}
 	for _, c := range cases {

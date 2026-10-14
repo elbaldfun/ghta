@@ -1,6 +1,10 @@
 package judge
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/elbaldfun/ghta/internal/item"
+)
 
 // Confidence says how the votes on an item fell.
 const (
@@ -10,7 +14,9 @@ const (
 	// Majority: the first two differed and a third settled it.
 	Majority = "majority"
 	// Split: three answers and still no majority on some field. The item
-	// keeps the first answer for that field and belongs in the review queue.
+	// keeps the first answer for the domain and the form, stays off the store
+	// until reviewed (an unsettled shelf is no shelf), and is found for review
+	// by this value.
 	Split = "split"
 )
 
@@ -53,6 +59,9 @@ func Decide(votes []Verdict) (d Decision, more bool) {
 	}
 	if okShelf {
 		d.Verdict.Shelf = shelf
+	} else {
+		// Unsure where it goes: kept off the store rather than on a doubtful shelf.
+		d.Verdict.Shelf = item.ShelfExcluded
 	}
 	if !okPrimary {
 		primary = first.Primary()

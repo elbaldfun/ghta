@@ -39,6 +39,11 @@
 #  Q32 bun 双标维持
 #  总原则：用户可根据分类快速找到想要的仓库（type 管形态、domain 管检索）
 #
+# ── 货架标注（2026-10-14，负责人确认）──
+#  apps/ 叶子即商店货架；开发者货架（devtools/terminal、security/offensive 等）就是领域叶子本身。
+#  新增 22 条货架标注；gitea/gogs 由 selfhosted/cloud 改为 devtools/vcs，SigNoz 改为 infra/monitoring；
+#  searxng、career-ops、openship 去掉货架：拿不准或没有合适货架的暂不上架，之后统一复核。
+#
 # 抽样：生产 API 分层抽样 284 条（头部/上升/语言分层/形态信号/无topics难例/长尾/薄弱叶子定向补样；
 #       Q28 剔除 2 条含混条目）。REVIEW 已清零。
 
@@ -119,26 +124,26 @@ items:
   - { id: ggerganov/llama.cpp,                           domain: [ai/llm-serving],                                      type: library } # NOTE: 与 ggml-org/llama.cpp 重复地址
   - { id: meta-llama/codellama,                          domain: [ai/llm-serving],                                      type: library }
   - { id: nomic-ai/gpt4all,                              domain: [apps/ai/local-llm, ai/llm-serving],                                      type: app }
-  - { id: ollama/ollama,                                 domain: [ai/llm-serving],                                      type: cli }
+  - { id: ollama/ollama,                                 domain: [ai/llm-serving, apps/ai/local-llm],                                      type: cli }
   - { id: janhq/jan,                                     domain: [apps/ai/local-llm, agents/assistants],                     type: app }
   - { id: open-webui/open-webui,                         domain: [agents/assistants, apps/ai/assistant],                     type: app }
   - { id: infiniflow/ragflow,                            domain: [agents/memory],                                      type: software }
   - { id: langgenius/dify,                               domain: [agents/frameworks, apps/ai/builder],                           type: app }
   - { id: langchain-ai/langchain,                        domain: [agents/frameworks, agents/memory],                           type: library }
   - { id: OpenHands/OpenHands,                           domain: [agents/coding],               type: software }
-  - { id: NousResearch/hermes-agent,                     domain: [agents/frameworks],                                   type: cli }
-  - { id: openclaw/openclaw,                             domain: [agents/frameworks],                                   type: app }  # REVIEW v3: split leaf, auto-picked
-  - { id: nullclaw/nullclaw,                             domain: [agents/frameworks],                                   type: software }  # REVIEW v3: split leaf, auto-picked
+  - { id: NousResearch/hermes-agent,                     domain: [agents/frameworks, apps/ai/assistant],                                   type: cli }
+  - { id: openclaw/openclaw,                             domain: [agents/frameworks, apps/ai/assistant],                                   type: app }  # REVIEW v3: split leaf, auto-picked
+  - { id: nullclaw/nullclaw,                             domain: [agents/frameworks, apps/ai/assistant],                                   type: software }  # REVIEW v3: split leaf, auto-picked
   - { id: HKUDS/Vibe-Trading,                            domain: [agents/frameworks],                                   type: software }  # REVIEW v3: split leaf, auto-picked
   - { id: Panniantong/Agent-Reach,                       domain: [agents/frameworks],                                   type: software }
   - { id: headroomlabs-ai/headroom,                      domain: [ai/llm-serving],                                      type: software } # Q18
   - { id: diegosouzapw/OmniRoute,                        domain: [ai/llm-serving],                                      type: software } # Q18
   - { id: JustVugg/colibri,                              domain: [ai/llm-serving],                                      type: software }
   - { id: microsoft/VibeVoice,                           domain: [ai/speech-audio],                             type: library }
-  - { id: jamiepine/voicebox,                            domain: [ai/speech-audio],                             type: app }
-  - { id: AUTOMATIC1111/stable-diffusion-webui,          domain: [ai/media-gen],                                type: app }
-  - { id: Comfy-Org/ComfyUI,                             domain: [ai/media-gen],                                type: app }
-  - { id: lllyasviel/Fooocus,                            domain: [ai/media-gen],                                type: app }
+  - { id: jamiepine/voicebox,                            domain: [ai/speech-audio, apps/creative/audio],                             type: app }
+  - { id: AUTOMATIC1111/stable-diffusion-webui,          domain: [ai/media-gen, apps/ai/generation],                                type: app }
+  - { id: Comfy-Org/ComfyUI,                             domain: [ai/media-gen, apps/ai/generation],                                type: app }
+  - { id: lllyasviel/Fooocus,                            domain: [ai/media-gen, apps/ai/generation],                                type: app }
   - { id: calesthio/OpenMontage,                         domain: [ai/media-gen, agents/frameworks],                     type: software }  # REVIEW v3: split leaf, auto-picked
   - { id: d3/d3,                                         domain: [web/frontend],                                type: library } # Q30: 可视化库归前端
   - { id: zml/zml,                                       domain: [ai/ml-framework],                             type: library }
@@ -150,8 +155,8 @@ items:
   - { id: MoonshotAI/kimi-cli,                           domain: [agents/coding],               type: cli }
   - { id: xai-org/grok-build,                            domain: [agents/coding],               type: cli }
   - { id: openinterpreter/openinterpreter,               domain: [agents/coding],               type: cli }
-  - { id: ogulcancelik/herdr,                            domain: [agents/coding],                          type: cli }  # REVIEW v3: split leaf, auto-picked
-  - { id: rtk-ai/rtk,                                    domain: [agents/coding],                          type: cli }  # REVIEW v3: split leaf, auto-picked
+  - { id: ogulcancelik/herdr,                            domain: [agents/coding, devtools/terminal],                          type: cli }  # REVIEW v3: split leaf, auto-picked
+  - { id: rtk-ai/rtk,                                    domain: [agents/coding, devtools/terminal],                          type: cli }  # REVIEW v3: split leaf, auto-picked
   - { id: farion1231/cc-switch,                          domain: [agents/coding],                          type: app }
   - { id: tirth8205/code-review-graph,                   domain: [agents/coding],                          type: cli }
   - { id: Graphify-Labs/graphify,                        domain: [agents/coding],                          type: software }
@@ -166,7 +171,7 @@ items:
   - { id: nextlevelbuilder/ui-ux-pro-max-skill,          domain: [agents/skills, web/ui-components],      type: skill } # Q3+Q21: 三标达上限
   - { id: Fei-Away/Codex-Dream-Skin,                     domain: [agents/skills],                  type: skill } # Q3+Q21: skill 包双标
   - { id: garrytan/gstack,                               domain: [agents/skills],                  type: skill } # Q3+Q21: skill 包双标
-  - { id: santifer/career-ops,                           domain: [agents/frameworks, apps/productivity/notes],                type: cli }  # REVIEW v3: split leaf, auto-picked
+  - { id: santifer/career-ops,                           domain: [agents/frameworks],                type: cli }  # REVIEW v3: split leaf, auto-picked
   - { id: iOfficeAI/OfficeCLI,                           domain: [apps/productivity/docs, agents/frameworks],                type: cli }  # REVIEW v3: split leaf, auto-picked
 
   # ── Web ─────────────────────────────────────────────────────
@@ -205,8 +210,8 @@ items:
   - { id: powerline/fonts,                               domain: [devtools/terminal],                                type: software }
   - { id: jesseduffield/lazygit,                         domain: [devtools/vcs],                  type: cli }
   - { id: git/git,                                       domain: [devtools/vcs],                                type: cli }
-  - { id: go-gitea/gitea,                                domain: [devtools/vcs, apps/selfhosted/cloud],               type: app }
-  - { id: gogs/gogs,                                     domain: [devtools/vcs, apps/selfhosted/cloud],               type: app }
+  - { id: go-gitea/gitea,                                domain: [devtools/vcs],               type: app }
+  - { id: gogs/gogs,                                     domain: [devtools/vcs],               type: app }
   - { id: astral-sh/uv,                                  domain: [devtools/package-manager],                    type: cli }
   - { id: wg/wrk,                                        domain: [devtools/testing],                            type: cli } # Q12
   - { id: lightpanda-io/browser,                         domain: [devtools/testing],                            type: software } # Q12
@@ -218,13 +223,13 @@ items:
   - { id: NilsIrl/dockerc,                               domain: [infra/containers],                            type: cli }
   - { id: nektos/act,                                    domain: [infra/automation],                                 type: cli }
   - { id: coollabsio/coolify,                            domain: [infra/containers, apps/selfhosted/cloud],           type: app }
-  - { id: oblien/openship,                               domain: [infra/automation, apps/selfhosted/cloud],                type: app }  # REVIEW v3: split leaf, auto-picked
+  - { id: oblien/openship,                               domain: [infra/automation],                type: app }  # REVIEW v3: split leaf, auto-picked
   - { id: louislam/uptime-kuma,                          domain: [infra/monitoring, apps/selfhosted/monitoring],           type: app }
   - { id: netdata/netdata,                               domain: [infra/monitoring],                            type: software }
-  - { id: fatedier/frp,                                  domain: [infra/networking],                            type: software }
+  - { id: fatedier/frp,                                  domain: [infra/networking, apps/selfhosted/tunnel],                            type: software }
   - { id: caddyserver/caddy,                             domain: [infra/networking],                            type: software } # Q11: web server 归 networking
-  - { id: clash-verge-rev/clash-verge-rev,               domain: [infra/networking],                            type: app }
-  - { id: schollz/croc,                                  domain: [infra/networking],                            type: cli } # Q17: 纯 CLI 管道保留 networking
+  - { id: clash-verge-rev/clash-verge-rev,               domain: [infra/networking, apps/network/proxy],                            type: app }
+  - { id: schollz/croc,                                  domain: [infra/networking, apps/system/transfer],                            type: cli } # Q17: 纯 CLI 管道保留 networking
   - { id: syncthing/syncthing,                           domain: [apps/system/transfer],          type: app } # Q17
   - { id: curl/curl,                                     domain: [devtools/api-tools, infra/networking],              type: cli }
 
@@ -272,8 +277,8 @@ items:
   - { id: mpv-player/mpv,                                domain: [apps/media/player],                                  type: app }
   - { id: OpenCut-app/OpenCut,                           domain: [apps/creative/video],                                  type: app }
   - { id: Genymobile/scrcpy,                             domain: [apps/system/phone],                           type: cli } # Q17
-  - { id: hydralauncher/hydra,                           domain: [gamedev/games],                               type: app } # 游戏平台按用户查找习惯归 gamedev
-  - { id: sherlock-project/sherlock,                     domain: [security/recon],                            type: cli }
+  - { id: hydralauncher/hydra,                           domain: [gamedev/games, apps/games/games],                               type: app } # 游戏平台按用户查找习惯归 gamedev
+  - { id: sherlock-project/sherlock,                     domain: [security/recon, security/offensive],                            type: cli }
   - { id: NationalSecurityAgency/ghidra,                 domain: [security/reverse],                            type: app } # Q19
   - { id: 996icu/996.ICU,                                domain: [],                                            type: software } # Q10: 非编程内容保留，domain 空
   - { id: k1tbyte/Wand-Enhancer,                         domain: [gamedev/games],                               type: app } # Q19
@@ -283,7 +288,7 @@ items:
   - { id: tauri-apps/tauri,                              domain: [client/cross-platform],                       type: library } # Q20
   - { id: termux/termux-app,                             domain: [devtools/terminal, client/android],                 type: app }
   - { id: hexops/mach,                                   domain: [gamedev/engines],                             type: library }
-  - { id: PixelGuys/Cubyz,                               domain: [gamedev/games],                               type: app }
+  - { id: PixelGuys/Cubyz,                               domain: [gamedev/games, apps/games/games],                               type: app }
   - { id: unionlabs/union,                               domain: [blockchain/core],                        type: software }
   - { id: bitcoin/bitcoin,                               domain: [blockchain/core],                        type: software }
 
@@ -299,9 +304,9 @@ items:
   - { id: openssl/openssl,                               domain: [security/crypto-auth],                        type: library }
   - { id: TheAlgorithms/JavaScript,                      domain: [lang/algorithms],                                  type: interview } # Q8: 主要应对面试
   - { id: anoma/anoma,                                   domain: [blockchain/core],                        type: software } # 假命中案例: cryptography topic，实为区块链协议
-  - { id: shadps4-emu/shadPS4,                           domain: [systems/emulation],                           type: app }
+  - { id: shadps4-emu/shadPS4,                           domain: [systems/emulation, apps/games/emulator],                           type: app }
   - { id: copy/v86,                                      domain: [systems/emulation],                           type: software }
-  - { id: ish-app/ish,                                   domain: [systems/emulation],                           type: app }
+  - { id: ish-app/ish,                                   domain: [systems/emulation, apps/system/phone],                           type: app }
   - { id: gorhill/uBlock,                                domain: [apps/network/browser-ext],                            type: app }
   - { id: refined-github/refined-github,                 domain: [apps/network/browser-ext],                            type: app }
   - { id: quasarframework/quasar,                        domain: [web/frontend, client/cross-platform],         type: library } # 假命中案例: 带扩展 topic 的全栈框架
@@ -315,8 +320,8 @@ items:
   - { id: yarnpkg/yarn,                                  domain: [devtools/package-manager],                    type: cli }
   - { id: pnpm/pnpm,                                     domain: [devtools/package-manager],                    type: cli }
   - { id: meilisearch/meilisearch,                       domain: [data/analytics],                                 type: software }
-  - { id: ItzCrazyKns/Vane,                              domain: [data/analytics, ai/llm-serving],                         type: app } # Q18  # REVIEW v3: split leaf, auto-picked
-  - { id: searxng/searxng,                               domain: [data/analytics, apps/selfhosted/cloud],                type: app }  # REVIEW v3: split leaf, auto-picked
+  - { id: ItzCrazyKns/Vane,                              domain: [data/analytics, ai/llm-serving, apps/ai/assistant],                         type: app } # Q18  # REVIEW v3: split leaf, auto-picked
+  - { id: searxng/searxng,                               domain: [data/analytics],                type: app }  # REVIEW v3: split leaf, auto-picked
   - { id: raysan5/raylib,                                domain: [gamedev/engines],                             type: library } # 假命中案例: embedded topic ≠ 嵌入式
   - { id: 78/xiaozhi-esp32,                              domain: [systems/embedded],                            type: software }
   - { id: arendst/Tasmota,                               domain: [systems/embedded],                            type: software }
@@ -339,13 +344,13 @@ items:
   - { id: puppeteer/puppeteer,                           domain: [devtools/testing],                            type: library }
   - { id: microsoft/playwright,                          domain: [devtools/testing],                            type: library }
   - { id: prometheus/prometheus,                         domain: [infra/monitoring],                            type: software }
-  - { id: SigNoz/signoz,                                 domain: [infra/monitoring, apps/selfhosted/monitoring],           type: app }
+  - { id: SigNoz/signoz,                                 domain: [infra/monitoring],           type: app }
   - { id: grafana/loki,                                  domain: [infra/monitoring],                            type: software }
   - { id: Hack-with-Github/Awesome-Hacking,              domain: [security/offensive],                            type: awesome }
   - { id: swisskyrepo/PayloadsAllTheThings,              domain: [security/offensive],                            type: software }
   - { id: KeygraphHQ/shannon,                            domain: [security/offensive, agents/frameworks],                 type: software }  # REVIEW v3: split leaf, auto-picked
   - { id: pixijs/pixijs,                                 domain: [gamedev/engines],                             type: library }
-  - { id: Anuken/Mindustry,                              domain: [gamedev/games],                               type: app }
+  - { id: Anuken/Mindustry,                              domain: [gamedev/games, apps/games/games],                               type: app }
   - { id: libgdx/libgdx,                                 domain: [gamedev/engines],                             type: library }
   - { id: ethereum/go-ethereum,                          domain: [blockchain/core],                        type: software }
   - { id: ccxt/ccxt,                                     domain: [blockchain/core],                        type: library } # Q31: 暂标 protocols，建议队列候选 blockchain/trading
@@ -363,8 +368,8 @@ items:
   - { id: mem0ai/mem0,                                  domain: [agents/memory],                               type: library }
   - { id: microsoft/graphrag,                           domain: [agents/memory],                               type: library }
   - { id: open-webui/open-webui,                        domain: [agents/assistants, apps/ai/assistant],                           type: app }
-  - { id: lobehub/lobe-chat,                            domain: [agents/assistants],                           type: app }
-  - { id: ollama/ollama,                                domain: [ai/llm-serving],                              type: cli }
+  - { id: lobehub/lobe-chat,                            domain: [agents/assistants, apps/ai/assistant],                           type: app }
+  - { id: ollama/ollama,                                domain: [ai/llm-serving, apps/ai/local-llm],                              type: cli }
   - { id: vllm-project/vllm,                            domain: [ai/llm-serving],                              type: library }
   - { id: unslothai/unsloth,                            domain: [ai/llm-training],                             type: library }
   - { id: hiyouga/LLaMA-Factory,                        domain: [ai/llm-training],                             type: library }
@@ -393,8 +398,8 @@ items:
   - { id: frida/frida,                                  domain: [security/reverse],                            type: cli }
   - { id: projectdiscovery/nuclei,                      domain: [security/offensive],                          type: cli }
   - { id: rapid7/metasploit-framework,                  domain: [security/offensive],                          type: cli }
-  - { id: projectdiscovery/subfinder,                   domain: [security/recon],                              type: cli }
-  - { id: sherlock-project/sherlock,                    domain: [security/recon],                              type: cli }
+  - { id: projectdiscovery/subfinder,                   domain: [security/recon, security/offensive],                              type: cli }
+  - { id: sherlock-project/sherlock,                    domain: [security/recon, security/offensive],                              type: cli }
   - { id: logseq/logseq,                                domain: [apps/productivity/notes],                     type: app }
   - { id: immich-app/immich,                            domain: [apps/selfhosted/cloud],                       type: app }
   - { id: yt-dlp/yt-dlp,                                domain: [apps/network/download],                       type: cli }
