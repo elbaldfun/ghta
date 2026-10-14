@@ -48,6 +48,8 @@ For each repository return:
   installs it: a home user picks the consumer shelf, an engineer at work the developer shelf.
   Answer "excluded" unless a user can download, run or self-host it: frameworks, libraries, SDKs, lists, tutorials,
   interview collections, skills, datasets, specs and hosted-only services are excluded. Command-line tools ARE apps.
+  Shelve it by what it does, not by where it runs: a coding agent used from the terminal belongs on agents/coding,
+  a security scanner on security/offensive. devtools/terminal is for terminal emulators, shells and shell utilities.
   Also answer "excluded" when it is runnable but no shelf describes it. Never force it onto the nearest shelf: a
   wrong shelf is worse than none. Read each shelf's description, not just its name.
 `
