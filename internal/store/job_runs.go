@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -124,4 +125,37 @@ func (s *Store) Runs(ctx context.Context, job string, limit int) ([]JobRun, erro
 		return nil, err
 	}
 	return runs, nil
+}
+
+// LatestRuns returns each job's latest run, by job name.
+func (s *Store) LatestRuns(ctx context.Context) ([]JobRun, error) {
+	cur, err := s.JobRuns().Aggregate(ctx, mongo.Pipeline{
+		{{Key: "$sort", Value: bson.D{{Key: "job", Value: 1}, {Key: "startedAt", Value: -1}}}},
+		{{Key: "$group", Value: bson.M{"_id": "$job", "run": bson.M{"$first": "$$ROOT"}}}},
+		{{Key: "$replaceWith", Value: "$run"}},
+		{{Key: "$sort", Value: bson.D{{Key: "job", Value: 1}}}},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("latest runs: %w", err)
+	}
+	runs := []JobRun{}
+	if err := cur.All(ctx, &runs); err != nil {
+		return nil, fmt.Errorf("latest runs: %w", err)
+	}
+	return runs, nil
+}
+
+// LastDone returns when job last finished a run without failing; ok is false
+// if it never has.
+func (s *Store) LastDone(ctx context.Context, job string) (at time.Time, ok bool, err error) {
+	var run JobRun
+	err = s.JobRuns().FindOne(ctx, bson.M{"job": job, "status": RunDone},
+		options.FindOne().SetSort(bson.D{{Key: "startedAt", Value: -1}})).Decode(&run)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return time.Time{}, false, nil
+	}
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("last %s run: %w", job, err)
+	}
+	return run.FinishedAt, true, nil
 }

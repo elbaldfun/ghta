@@ -48,6 +48,7 @@ func (a *API) Register(r gin.IRouter) {
 	a.registerRepos(v1)
 	a.registerDetail(v1)
 	a.registerApps(v1)
+	a.registerBadge(v1)
 }
 
 // errBadInput marks a request the client got wrong.
@@ -80,6 +81,11 @@ func (a *API) cached(c *gin.Context, maxAge int, body any) {
 		a.fail(c, err)
 		return
 	}
+	a.cachedBytes(c, maxAge, http.StatusOK, "application/json; charset=utf-8", b)
+}
+
+// cachedBytes writes b with a public cache lifetime and an ETag of the bytes.
+func (a *API) cachedBytes(c *gin.Context, maxAge, status int, contentType string, b []byte) {
 	sum := sha256.Sum256(b)
 	etag := `"` + hex.EncodeToString(sum[:12]) + `"`
 	c.Header("Cache-Control", "public, max-age="+strconv.Itoa(maxAge))
@@ -88,7 +94,7 @@ func (a *API) cached(c *gin.Context, maxAge int, body any) {
 		c.Status(http.StatusNotModified)
 		return
 	}
-	c.Data(http.StatusOK, "application/json; charset=utf-8", b)
+	c.Data(status, contentType, b)
 }
 
 // intParam reads an optional integer query parameter within [lo, hi].
