@@ -19,6 +19,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson"
 
+	"github.com/elbaldfun/ghta/internal/api"
 	"github.com/elbaldfun/ghta/internal/config"
 	"github.com/elbaldfun/ghta/internal/domain"
 	"github.com/elbaldfun/ghta/internal/handler"
@@ -29,6 +30,7 @@ import (
 	"github.com/elbaldfun/ghta/internal/source"
 	"github.com/elbaldfun/ghta/internal/source/github"
 	"github.com/elbaldfun/ghta/internal/source/huggingface"
+	newstore "github.com/elbaldfun/ghta/internal/store"
 	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
 
@@ -275,6 +277,10 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// The rebuilt store's interface (docs/REBUILD.md M4). It reads only the new
+	// collections, which share the database with the old ones until cutover.
+	api.New(newstore.New(store.DB), slog.Default()).Register(r)
 
 	trending := handler.NewTrendingHandler(service.NewTrendService(store, starHistory))
 	r.GET("/trending", trending.List)
