@@ -21,6 +21,7 @@ func (a *API) registerBoards(r gin.IRouter) {
 	r.GET("/stats/languages", a.languages)
 	r.GET("/stats/staleness", a.staleness)
 	r.GET("/models", a.models)
+	r.GET("/hot", a.hot)
 }
 
 // GET /v1/developers?board=rising|merit&domain=all&limit=24&page=1
@@ -188,4 +189,26 @@ func (a *API) models(c *gin.Context) {
 	}
 	a.cached(c, maxAgeBoard, gin.H{"data": page(rows, limit, pg), "total": len(rows), "page": pg,
 		"task": task, "sort": sort, "computedAt": at})
+}
+
+// GET /v1/hot?since=daily|weekly|monthly&limit=25 — GitHub's trending list
+// for the window, as scraped last night, in GitHub's order.
+func (a *API) hot(c *gin.Context) {
+	since, err := oneOf(c, "since", boards.HotWindows...)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	limit, err := intParam(c, "limit", 25, 1, 50)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	var rows []boards.HotRepo
+	at, err := a.st.Board(c.Request.Context(), boards.HotKey(since), &rows)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	a.cached(c, maxAgeBoard, gin.H{"data": page(rows, limit, 1), "since": since, "computedAt": at})
 }
