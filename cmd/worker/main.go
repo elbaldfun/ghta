@@ -29,6 +29,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 
+	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/judge"
 	"github.com/elbaldfun/ghta/internal/pipeline"
 	"github.com/elbaldfun/ghta/internal/source/github"
@@ -146,6 +147,15 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	if err != nil {
 		return nil, err
 	}
+	facets, err := taxonomy.LoadFacets(filepath.Join(dir, "facets.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	forms := make([]boards.Facet, 0, len(facets.Type)+1)
+	for _, f := range facets.Type {
+		forms = append(forms, boards.Facet{Key: f.Key, Name: f.Name})
+	}
+	forms = append(forms, boards.Facet{Key: facets.Fallback, Name: facets.FallbackName})
 	jobs := []worker.Job{
 		pipeline.NewFetch(st, log, gh, huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
 		// Before rank: a repository found gone or renamed must leave the rankings.
@@ -169,6 +179,8 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	}
 	return append(jobs,
 		pipeline.NewRank(st),
+		// After rank and the judge: boards read growth and labels as of tonight.
+		pipeline.NewBoards(st, tree, forms),
 		pipeline.NewIcon(st, log),
 		pipeline.NewShot(st, log),
 		// Last: a full sweep can sit out GitHub's hourly window more than once.
