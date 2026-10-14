@@ -134,6 +134,23 @@ func (a *Adapter) Search(ctx context.Context, query string, limit int) ([]domain
 	return items, nil
 }
 
+// SearchItems is Search with typed output, for the rebuilt pipeline.
+func (a *Adapter) SearchItems(ctx context.Context, query string, limit int) ([]item.Fetched, error) {
+	if limit < 1 || limit > 100 {
+		limit = 30
+	}
+	resp, err := a.client.search(ctx, query, limit, "")
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	out := make([]item.Fetched, 0, len(resp.Data.Search.Edges))
+	for _, edge := range resp.Data.Search.Edges {
+		out = append(out, mapRepoItem(edge.Node, now))
+	}
+	return out, nil
+}
+
 type repoNode struct {
 	Name        string                 `json:"name"`
 	Owner       struct{ Login string } `json:"owner"`

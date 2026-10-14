@@ -158,6 +158,8 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	forms = append(forms, boards.Facet{Key: facets.Fallback, Name: facets.FallbackName})
 	jobs := []worker.Job{
 		pipeline.NewFetch(st, log, gh, huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
+		// Before the judge: a trending repo the fetch missed is taken in tonight.
+		pipeline.NewHot(st, trending(), gh, log),
 		// Before rank: a repository found gone or renamed must leave the rankings.
 		pipeline.NewReconcile(st, gh, buffer, log),
 		// Before the judge: it picks up what a tree change sends back to it.
@@ -186,6 +188,14 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 		// Last: a full sweep can sit out GitHub's hourly window more than once.
 		pipeline.NewDevSync(st, gh, buffer, log),
 	), nil
+}
+
+// trending scrapes GitHub's trending page, all languages.
+func trending() pipeline.Trending {
+	hc := github.NewTrendingClient()
+	return func(ctx context.Context, window string) ([]github.TrendingRepo, error) {
+		return github.FetchTrending(ctx, hc, window, "")
+	}
 }
 
 func envInt(key string, fallback int) int {

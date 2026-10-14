@@ -158,3 +158,25 @@ func TestModelsEndpoint(t *testing.T) {
 		t.Fatalf("missing board = %d", w.Code)
 	}
 }
+
+func TestHotEndpoint(t *testing.T) {
+	st := testStore(t)
+	at := time.Date(2026, 10, 14, 4, 0, 0, 0, time.UTC)
+	must(t, st.PutBoard(context.Background(), boards.HotKey("daily"),
+		[]boards.HotRepo{{FullName: "a/b", StarsGained: 9, Tracked: true}, {FullName: "c/d"}}, at))
+	r := router(st)
+	var out struct {
+		Data  []boards.HotRepo `json:"data"`
+		Since string           `json:"since"`
+	}
+	if w := get(t, r, "/v1/hot?limit=1", nil, &out); w.Code != http.StatusOK || out.Since != "daily" ||
+		len(out.Data) != 1 || out.Data[0].StarsGained != 9 {
+		t.Fatalf("hot = %d %+v", w.Code, out)
+	}
+	if w := get(t, r, "/v1/hot?since=yearly", nil, nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("bad window = %d", w.Code)
+	}
+	if w := get(t, r, "/v1/hot?since=weekly", nil, nil); w.Code != http.StatusNotFound {
+		t.Fatalf("missing board = %d", w.Code)
+	}
+}
