@@ -177,14 +177,9 @@ type nameMap map[string][2]string
 
 func nodeNames(tree taxonomy.Tree) nameMap {
 	m := nameMap{}
-	var walk func([]taxonomy.Node)
-	walk = func(nodes []taxonomy.Node) {
-		for _, n := range nodes {
-			m[n.Path] = [2]string{n.Name, n.NameEn}
-			walk(n.Children)
-		}
+	for _, n := range tree.Nodes {
+		m[n.Path] = [2]string{n.Name, n.NameEn}
 	}
-	walk(tree.Nodes)
 	return m
 }
 
@@ -230,16 +225,37 @@ func (c *Corpus) Categories(tree taxonomy.Tree) []CategoryNode {
 			}
 		}
 	}
-	var build func([]taxonomy.Node) []CategoryNode
-	build = func(nodes []taxonomy.Node) []CategoryNode {
+	// The tree comes flat, parents first; nest each node under its parent.
+	children := map[string][]taxonomy.Node{}
+	for _, n := range tree.Nodes {
+		parent := ""
+		if j := strings.LastIndexByte(n.Path, '/'); j > 0 {
+			parent = n.Path[:j]
+		}
+		children[parent] = append(children[parent], n)
+	}
+	var build func(parent string) []CategoryNode
+	build = func(parent string) []CategoryNode {
+		nodes := children[parent]
 		out := make([]CategoryNode, 0, len(nodes))
 		for _, n := range nodes {
 			out = append(out, CategoryNode{Path: n.Path, Name: n.Name, NameEn: n.NameEn,
-				Count: counts[n.Path], Children: build(n.Children)})
+				Count: counts[n.Path], Children: build(n.Path)})
 		}
 		return out
 	}
-	return build(tree.Nodes)
+	return build("")
+}
+
+// Tops are the tree's top-level domains, in tree order.
+func Tops(tree taxonomy.Tree) []string {
+	var out []string
+	for _, n := range tree.Nodes {
+		if !strings.Contains(n.Path, "/") {
+			out = append(out, n.Path)
+		}
+	}
+	return out
 }
 
 // Facet is one form with its live item count, for the filter chips.

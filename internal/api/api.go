@@ -1,5 +1,5 @@
 // Package api is the /v1 HTTP interface of the rebuilt store
-// (docs/REDESIGN.md 5.5). It reads items, item_blobs and boards only; every
+// (docs/REDESIGN.md 5.5). It reads items, item_blobs, boards and apps only; every
 // response is a declared DTO, never a stored document.
 //
 // Lists and boards are cacheable: they carry Cache-Control and an ETag, and a
@@ -47,6 +47,7 @@ func (a *API) Register(r gin.IRouter) {
 	a.registerBoards(v1)
 	a.registerRepos(v1)
 	a.registerDetail(v1)
+	a.registerApps(v1)
 }
 
 // errBadInput marks a request the client got wrong.
