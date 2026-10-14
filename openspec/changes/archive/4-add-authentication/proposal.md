@@ -1,5 +1,7 @@
 # Change: Google OAuth 认证与接口守卫
 
+> **不做（2026-10-14 归档）**：站点没有登录需求，`users` 集合与 `/user` 接口随重构删除（docs/REDESIGN.md 第十节第 5 条）；管理接口用 `ADMIN_API_TOKEN` 守卫。
+
 ## Why
 
 当前所有接口（包括分类删除、用户 CRUD）完全公开，任何人可改库；config 中的 Google OAuth 三件套（clientId/secret/callbackUrl）从未被使用。产品要对外（趋势站/付费 API）就必须有身份与权限边界。
