@@ -52,12 +52,13 @@ func TestAskValidatesAndReconciles(t *testing.T) {
 	  "hasGui":true,"taglineZh":"本地优先的笔记应用","taglineEn":"Local-first notes","alternatives":[{"name":"Notion","kind":"note-taking"},{"name":" notion ","kind":"x"},{"name":"","kind":""}],"tags":["Notes","notes","markdown"]},
 	 {"id":"b/term","paths":["lang/utils"],"type":"cli","shelf":"devtools/terminal","hasGui":false,"taglineZh":"","taglineEn":"","alternatives":[],"tags":[]},
 	 {"id":"c/lib","paths":["apps/productivity/notes","web/frontend","no/such-leaf"],"type":"library","shelf":"excluded","hasGui":false,"taglineZh":"","taglineEn":"","alternatives":[],"tags":[]},
+	 {"id":"f/list","paths":["web/frontend"],"type":"awesome","shelf":"productivity/notes","hasGui":false,"taglineZh":"","taglineEn":"","alternatives":[],"tags":[]},
 	 {"id":"d/bad","paths":[],"type":"gadget","shelf":"excluded"},
 	 {"id":"e/bad","paths":[],"type":"app","shelf":"no/such-shelf"},
 	 {"id":"z/unasked","paths":[],"type":"app","shelf":"excluded"}
 	]}`}
 	j := New(f, tree(t))
-	batch := []Input{{ID: "a/notes", Topics: []string{"notes"}, Readme: "Write notes."}, {ID: "b/term"}, {ID: "c/lib"}, {ID: "d/bad"}, {ID: "e/bad"}}
+	batch := []Input{{ID: "a/notes", Topics: []string{"notes"}, Readme: "Write notes."}, {ID: "b/term"}, {ID: "c/lib"}, {ID: "d/bad"}, {ID: "e/bad"}, {ID: "f/list"}}
 	got, err := j.Ask(context.Background(), batch, true)
 	if err != nil {
 		t.Fatal(err)
@@ -68,6 +69,8 @@ func TestAskValidatesAndReconciles(t *testing.T) {
 			TaglineZh: "本地优先的笔记应用", TaglineEn: "Local-first notes",
 			Alternatives: []item.Alternative{{Name: "Notion", Slug: "notion", Kind: "note-taking"}}, Tags: []string{"notes", "markdown"}},
 		"b/term": {Paths: []string{"lang/utils"}, Type: "cli", Shelf: "devtools/terminal"},
+		// A list is never on a shelf, whatever the model said.
+		"f/list": {Paths: []string{"web/frontend"}, Type: "awesome", Shelf: item.ShelfExcluded},
 		// Unknown paths are ignored.
 		"c/lib": {Paths: []string{"web/frontend"}, Type: "library", Shelf: item.ShelfExcluded},
 	}
