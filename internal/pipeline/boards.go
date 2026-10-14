@@ -10,6 +10,7 @@ import (
 
 	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/item"
+	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/store"
 	"github.com/elbaldfun/ghta/internal/taxonomy"
 	"github.com/elbaldfun/ghta/internal/worker"
@@ -42,23 +43,14 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 	day := item.DayOf(now)
 
 	var corpus boards.Corpus
-	cur, err := j.st.Items().Find(ctx, bson.M{"source": item.SourceGitHub, "stale": bson.M{"$ne": true}},
-		options.Find().SetBatchSize(2000).SetProjection(boards.Projection()))
-	if err != nil {
-		return rep, fmt.Errorf("read items: %w", err)
+	if err := readAll(ctx, j.st, bson.M{"source": item.SourceGitHub, "stale": bson.M{"$ne": true}},
+		boards.Projection(), &rep, corpus.Add); err != nil {
+		return rep, err
 	}
-	for cur.Next(ctx) {
-		var r boards.Row
-		if err := cur.Decode(&r); err != nil {
-			rep.Failed++
-			continue
-		}
-		corpus.Add(r)
-	}
-	err = cur.Err()
-	_ = cur.Close(ctx)
-	if err != nil {
-		return rep, fmt.Errorf("read items: %w", err)
+	var models boards.Models
+	if err := readAll(ctx, j.st, bson.M{"source": item.SourceHuggingFace, "stale": bson.M{"$ne": true}},
+		boards.ModelProjection(), &rep, models.Add); err != nil {
+		return rep, err
 	}
 	profiles, err := j.profiles(ctx)
 	if err != nil {
@@ -128,7 +120,15 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 		}
 	}
 
-	rep.Processed = corpus.Len()
+	for _, task := range append([]string{""}, huggingface.TaskGroups...) {
+		for _, sort := range boards.ModelSorts {
+			if err := put(boards.ModelsKey(task, sort), models.Board(task, sort)); err != nil {
+				return rep, err
+			}
+		}
+	}
+
+	rep.Processed = corpus.Len() + models.Len()
 	rep.Note("boards", written)
 	return rep, nil
 }
@@ -150,4 +150,26 @@ func (j *Boards) profiles(ctx context.Context) (map[string]boards.Profile, error
 		out[p.Login] = p
 	}
 	return out, nil
+}
+
+// readAll decodes every item matching filter through projection into add.
+// A row that does not decode is counted as failed and skipped.
+func readAll[T any](ctx context.Context, st *store.Store, filter, projection bson.M, rep *worker.Report, add func(T)) error {
+	cur, err := st.Items().Find(ctx, filter, options.Find().SetBatchSize(2000).SetProjection(projection))
+	if err != nil {
+		return fmt.Errorf("read items: %w", err)
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		var row T
+		if err := cur.Decode(&row); err != nil {
+			rep.Failed++
+			continue
+		}
+		add(row)
+	}
+	if err := cur.Err(); err != nil {
+		return fmt.Errorf("read items: %w", err)
+	}
+	return nil
 }

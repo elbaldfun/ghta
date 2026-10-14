@@ -20,6 +20,7 @@ func (a *API) registerBoards(r gin.IRouter) {
 	r.GET("/facets/type", a.typeFacets)
 	r.GET("/stats/languages", a.languages)
 	r.GET("/stats/staleness", a.staleness)
+	r.GET("/models", a.models)
 }
 
 // GET /v1/developers?board=rising|merit&domain=all&limit=24&page=1
@@ -158,4 +159,33 @@ func (a *API) staleness(c *gin.Context) {
 	}
 	s.Examples = s.Examples[:min(n, len(s.Examples))]
 	a.cached(c, maxAgeBoard, gin.H{"data": s, "computedAt": at})
+}
+
+// GET /v1/models?task=&sort=hot|likes|downloads|new&limit=30&page=1 — the
+// HuggingFace model boards; task is a task group, empty for all.
+func (a *API) models(c *gin.Context) {
+	sort, err := oneOf(c, "sort", boards.ModelSorts...)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	limit, err := intParam(c, "limit", 30, 1, 100)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	pg, err := intParam(c, "page", 1, 1, boards.ModelTopN)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	task := c.Query("task")
+	var rows []boards.Model
+	at, err := a.st.Board(c.Request.Context(), boards.ModelsKey(task, sort), &rows)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	a.cached(c, maxAgeBoard, gin.H{"data": page(rows, limit, pg), "total": len(rows), "page": pg,
+		"task": task, "sort": sort, "computedAt": at})
 }

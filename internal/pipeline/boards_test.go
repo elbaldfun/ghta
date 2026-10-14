@@ -9,6 +9,7 @@ import (
 
 	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/item"
+	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/store"
 	"github.com/elbaldfun/ghta/internal/taxonomy"
 )
@@ -59,9 +60,10 @@ func TestBoardsJob(t *testing.T) {
 	if err != nil || len(ids) != 1 || ids[0] != "al" {
 		t.Fatalf("rising head = %v, %v", ids, err)
 	}
-	// Every group's developer and topic boards, every pillar, and the five singles.
+	// Every group's developer and topic boards, every pillar, the five
+	// singles, and every model board.
 	groups := len(boards.Groups([]string{"ai"}))
-	want := int64(groups*4 + len(boards.Pillars)*2 + 5)
+	want := int64(groups*4 + len(boards.Pillars)*2 + 5 + (1+len(huggingface.TaskGroups))*len(boards.ModelSorts))
 	if n, _ := st.Boards().CountDocuments(ctx, bson.M{}); n != want {
 		t.Fatalf("boards = %d; want %d", n, want)
 	}

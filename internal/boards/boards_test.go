@@ -256,3 +256,55 @@ func TestStaleness(t *testing.T) {
 		t.Fatalf("examples = %+v; want the dormant repos, most stars first", s.Examples)
 	}
 }
+
+func model(id, task string, likes, d1, dl, trending float64, created int) ModelRow {
+	return ModelRow{ExternalID: id, Name: id, Metrics: map[string]float64{"likes": likes, "downloads30d": dl},
+		Growth: item.Growth{D1: f(d1)}, Hf: &item.HuggingFace{Author: "a", Task: task, TrendingScore: trending,
+			CreatedAt: time.Date(2026, 10, created, 0, 0, 0, 0, time.UTC)}}
+}
+
+func TestModels(t *testing.T) {
+	var m Models
+	gone := model("a/gone", "vision", 1e6, 1e6, 0, 0, 1)
+	gone.Stale = true
+	for _, r := range []ModelRow{
+		model("a/llm", "text-gen", 500, 0, 9000, 5, 3),
+		model("a/new", "text-gen", 10, 4, 10, 1, 9),
+		model("a/cv", "vision", 900, 2, 100, 9, 1),
+		gone, {ExternalID: "a/nohf"},
+	} {
+		m.Add(r)
+	}
+	ids := func(rows []Model) (out []string) {
+		for _, r := range rows {
+			out = append(out, r.ExternalID)
+		}
+		return out
+	}
+	for _, c := range []struct {
+		task, sort string
+		want       []string
+	}{
+		// Hot keeps only the models that gained today.
+		{"", ModelHot, []string{"a/new", "a/cv"}},
+		{"", ModelLikes, []string{"a/cv", "a/llm", "a/new"}},
+		{"", ModelDownloads, []string{"a/llm", "a/cv", "a/new"}},
+		{"text-gen", ModelNew, []string{"a/new", "a/llm"}},
+		{"rl", ModelLikes, nil},
+	} {
+		if got := ids(m.Board(c.task, c.sort)); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s/%s = %v; want %v", c.task, c.sort, got, c.want)
+		}
+	}
+	if b := m.Board("", ModelHot); b[0].URL != "https://huggingface.co/a/new" || b[0].Growth != 4 || b[0].Author != "a" {
+		t.Fatalf("row = %+v", b[0])
+	}
+
+	// A day with no gains at all: HuggingFace's trending score instead.
+	var quiet Models
+	quiet.Add(model("a/x", "nlp", 1, 0, 0, 2, 1))
+	quiet.Add(model("a/y", "nlp", 1, 0, 0, 8, 1))
+	if got := ids(quiet.Board("", ModelHot)); !reflect.DeepEqual(got, []string{"a/y", "a/x"}) {
+		t.Fatalf("quiet hot = %v", got)
+	}
+}
