@@ -137,3 +137,24 @@ func must(t *testing.T, err error) {
 		t.Fatal(err)
 	}
 }
+
+func TestModelsEndpoint(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	at := time.Date(2026, 10, 14, 4, 0, 0, 0, time.UTC)
+	must(t, st.PutBoard(ctx, boards.ModelsKey("vision", boards.ModelLikes), []boards.Model{{ExternalID: "a/b", Likes: 3}}, at))
+	r := router(st)
+	var out struct {
+		Data  []boards.Model `json:"data"`
+		Total int            `json:"total"`
+	}
+	if w := get(t, r, "/v1/models?task=vision&sort=likes", nil, &out); w.Code != http.StatusOK || out.Total != 1 || out.Data[0].Likes != 3 {
+		t.Fatalf("models = %d %+v", w.Code, out)
+	}
+	if w := get(t, r, "/v1/models?sort=size", nil, nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("bad sort = %d", w.Code)
+	}
+	if w := get(t, r, "/v1/models", nil, nil); w.Code != http.StatusNotFound {
+		t.Fatalf("missing board = %d", w.Code)
+	}
+}
