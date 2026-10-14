@@ -280,7 +280,14 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	// The rebuilt store's interface (docs/REBUILD.md M4). It reads only the new
 	// collections, which share the database with the old ones until cutover.
-	api.New(newstore.New(store.DB), slog.Default()).Register(r)
+	api.New(newstore.New(store.DB), slog.Default()).WithBackfill(func(ctx context.Context, id string) []api.Point {
+		points, _ := starHistory.Ensure(ctx, domain.SourceGitHub, id)
+		out := make([]api.Point, len(points))
+		for i, p := range points {
+			out[i] = api.Point{T: p.T.UnixMilli(), V: int(p.V)}
+		}
+		return out
+	}).Register(r)
 
 	trending := handler.NewTrendingHandler(service.NewTrendService(store, starHistory))
 	r.GET("/trending", trending.List)

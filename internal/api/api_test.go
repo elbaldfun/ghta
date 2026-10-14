@@ -40,10 +40,12 @@ func testStore(t *testing.T) *store.Store {
 	return st
 }
 
-func router(st *store.Store) *gin.Engine {
+func router(st *store.Store) *gin.Engine { return routerWith(New(st, nil)) }
+
+func routerWith(a *API) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	New(st, nil).Register(r)
+	a.Register(r)
 	return r
 }
 
