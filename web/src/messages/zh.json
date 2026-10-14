@@ -1,7 +1,7 @@
 {
   "privacy": {
     "title": "隐私政策",
-    "updated": "最后更新：2026 年 7 月 21 日",
+    "updated": "最后更新：2026 年 10 月 14 日",
     "intro": "StarRank Explorer（starrank.dev，以下简称「本站」）尊重你的隐私。本政策说明我们收集哪些信息、如何使用，以及你可以做出的选择。",
     "sections": {
       "collect": {
@@ -14,7 +14,7 @@
       },
       "thirdParty": {
         "h": "第三方服务",
-        "p": "本站使用以下第三方服务：\n· Google Analytics（Google LLC）——网站访问统计\n· Vercel Analytics（Vercel Inc.）——不使用 Cookie 的访问统计\n· Vercel——网站托管，会记录标准的服务器访问日志\n这些服务各自的隐私政策适用于其所收集的数据。"
+        "p": "本站使用以下第三方服务：\n· Google Analytics（Google LLC）——网站访问统计\n· DigitalOcean——网站托管，服务器会记录标准的访问日志\n这些服务各自的隐私政策适用于其所收集的数据。"
       },
       "ads": {
         "h": "广告",

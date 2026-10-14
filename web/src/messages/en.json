@@ -1,7 +1,7 @@
 {
   "privacy": {
     "title": "Privacy Policy",
-    "updated": "Last updated: 21 July 2026",
+    "updated": "Last updated: 14 October 2026",
     "intro": "StarRank Explorer (starrank.dev, “the site”) respects your privacy. This policy explains what we collect, how it is used, and the choices available to you.",
     "sections": {
       "collect": {
@@ -14,7 +14,7 @@
       },
       "thirdParty": {
         "h": "Third-party services",
-        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· Vercel Analytics (Vercel Inc.) — cookieless traffic analytics\n· Vercel — hosting, which keeps standard server access logs\nEach provider's own privacy policy governs the data it collects."
+        "p": "The site uses the following third parties:\n· Google Analytics (Google LLC) — traffic analytics\n· DigitalOcean — hosting; the server keeps standard access logs\nEach provider's own privacy policy governs the data it collects."
       },
       "ads": {
         "h": "Advertising",
