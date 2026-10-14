@@ -132,7 +132,10 @@ scripts/release.sh worker          # 发任务进程（重构切换之后才用�
 - 一次运行最多处理 `JUDGE_MAX_PER_RUN` 条（默认 3000）。星数低于 `JUDGE_MIN_STARS`（默认 1000）
   的条目只有周增长达到 `JUDGE_HOT_WEEKLY`（默认 50）才判定。
 - 模型调用连续失败 3 次任务就报错退出，没写完的条目保持 pending，下次接着跑。
-- 换提示词后要全量重判：把 `internal/judge` 的 `PromptVersion` 加一。换分类树按树版本自动重判。
+- 换提示词后要全量重判：把 `internal/judge` 的 `PromptVersion` 加一。
+- 换分类树不用手工操作：`migrate` 任务每晚排在 `judge` 之前，按 `taxonomy/migrations.yaml`
+  把能机械改写的标签改掉（改名、合并、货架改名），把要重判的条目（拆分的叶子、要重判的货架）
+  标回待判定。重判完成前条目保留旧标签。改写前的领域存在 `labels.prev`，只存第一次。
 - 评测：`JUDGE_BASE_URL=… JUDGE_MODEL=… go run ./cmd/eval -judge`，在 golden 上按同样的
   两遍流程打分。
 

@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -136,19 +137,26 @@ func run(log *slog.Logger, runList string, list bool) error {
 func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	buffer := envInt("RATE_LIMIT_BUFFER", 200)
 	gh := github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log)
+	dir := getEnv("TAXONOMY_DIR", "taxonomy")
+	tree, err := taxonomy.LoadTree(filepath.Join(dir, "taxonomy.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	steps, err := taxonomy.LoadMigrations(filepath.Join(dir, "migrations.yaml"), tree)
+	if err != nil {
+		return nil, err
+	}
 	jobs := []worker.Job{
 		pipeline.NewFetch(st, log, gh, huggingface.NewAdapter(os.Getenv("HF_TOKEN"), log)),
 		// Before rank: a repository found gone or renamed must leave the rankings.
 		pipeline.NewReconcile(st, gh, buffer, log),
+		// Before the judge: it picks up what a tree change sends back to it.
+		pipeline.NewMigrate(st, tree, steps, log),
 	}
 	if base := os.Getenv("JUDGE_BASE_URL"); base != "" {
 		model := os.Getenv("JUDGE_MODEL")
 		if model == "" {
 			return nil, fmt.Errorf("JUDGE_MODEL is required when JUDGE_BASE_URL is set")
-		}
-		tree, err := taxonomy.LoadTree(getEnv("TAXONOMY_PATH", "taxonomy/taxonomy.yaml"))
-		if err != nil {
-			return nil, err
 		}
 		// Before rank: domain rankings follow the labels.
 		jobs = append(jobs, pipeline.NewJudge(st, judge.New(judge.NewClient(base, model, os.Getenv("JUDGE_API_KEY")), tree),
