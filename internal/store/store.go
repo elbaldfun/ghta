@@ -61,6 +61,9 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 	if err := s.ensureBoardIndexes(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureAppIndexes(ctx); err != nil {
+		return err
+	}
 	return s.ensureJobRunIndexes(ctx)
 }
 

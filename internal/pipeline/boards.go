@@ -21,7 +21,8 @@ import (
 //
 // Like rank, it reads the corpus once through a narrow projection and works
 // in memory; a board is replaced whole, so a reader sees yesterday's or
-// today's, never half of each.
+// today's, never half of each. The app store's rows go to a collection of
+// their own (store.PutApps), which the api filters.
 type Boards struct {
 	st     *store.Store
 	tree   taxonomy.Tree
@@ -52,6 +53,15 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 		boards.ModelProjection(), &rep, models.Add); err != nil {
 		return rep, err
 	}
+	var apps []boards.App
+	if err := readAll(ctx, j.st, boards.AppFilter(), boards.AppProjection(), &rep, func(s boards.AppSource) {
+		if a, ok := boards.NewApp(s); ok {
+			a.At = now
+			apps = append(apps, a)
+		}
+	}); err != nil {
+		return rep, err
+	}
 	profiles, err := j.profiles(ctx)
 	if err != nil {
 		return rep, err
@@ -74,11 +84,7 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 		return j.st.PutBoardHead(ctx, key, day, ids, now)
 	}
 
-	var tops []string
-	for _, n := range j.tree.Nodes {
-		tops = append(tops, n.Path)
-	}
-	for _, g := range boards.Groups(tops) {
+	for _, g := range boards.Groups(boards.Tops(j.tree)) {
 		rising, merit := corpus.Developers(g, profiles)
 		for board, rows := range map[string][]boards.Developer{boards.DevRising: rising, boards.DevMerit: merit} {
 			key := boards.DevelopersKey(board, g.Key)
@@ -128,8 +134,27 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 		}
 	}
 
+	for _, shelf := range boards.Shelves(j.tree) {
+		if err := put(boards.BestOfKey(shelf), boards.BestOf(apps, shelf, now)); err != nil {
+			return rep, err
+		}
+	}
+	if err := put(boards.AltTargetsKey, boards.AltTargets(apps)); err != nil {
+		return rep, err
+	}
+	rows := make([]store.AppRow, len(apps))
+	for i, a := range apps {
+		rows[i] = a
+	}
+	removed, err := j.st.PutApps(ctx, rows, now)
+	if err != nil {
+		return rep, err
+	}
+
 	rep.Processed = corpus.Len() + models.Len()
 	rep.Note("boards", written)
+	rep.Note("apps", len(apps))
+	rep.Note("appsRemoved", int(removed))
 	return rep, nil
 }
 

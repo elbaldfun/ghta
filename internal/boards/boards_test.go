@@ -151,13 +151,12 @@ func ecoIDs(rows []EcoItem) []string {
 	return out
 }
 
+// tree is flat, parents before children, as taxonomy.LoadTree returns it.
 var tree = taxonomy.Tree{Nodes: []taxonomy.Node{
-	{Path: "ai", Name: "人工智能", NameEn: "AI", Children: []taxonomy.Node{
-		{Path: "ai/llm-serving", Name: "推理", NameEn: "Serving"}, {Path: "ai/vision", Name: "视觉"},
-	}},
-	{Path: "apps", Name: "应用", Children: []taxonomy.Node{
-		{Path: "apps/productivity", Name: "效率", Children: []taxonomy.Node{{Path: "apps/productivity/notes", Name: "笔记"}}},
-	}},
+	{Path: "ai", Name: "人工智能", NameEn: "AI"},
+	{Path: "ai/llm-serving", Name: "推理", NameEn: "Serving"}, {Path: "ai/vision", Name: "视觉"},
+	{Path: "apps", Name: "应用"},
+	{Path: "apps/productivity", Name: "效率"}, {Path: "apps/productivity/notes", Name: "笔记"},
 }}
 
 func TestHeat(t *testing.T) {
@@ -187,6 +186,9 @@ func TestCategories(t *testing.T) {
 		repo("o/a", "o", 1, 0, []string{"ai/llm-serving", "ai/vision"}),
 		repo("o/b", "o", 1, 0, []string{"apps/productivity/notes", "ai/vision"}),
 	).Categories(tree)
+	if len(nodes) != 2 {
+		t.Fatalf("roots = %+v; want the tree nested under its two top domains", nodes)
+	}
 	ai, apps := nodes[0], nodes[1]
 	// Each item once per node: o/a is in two ai leaves but ai counts it once.
 	if ai.Count != 2 || ai.Children[0].Count != 1 || ai.Children[1].Count != 2 {
@@ -194,6 +196,12 @@ func TestCategories(t *testing.T) {
 	}
 	if apps.Count != 1 || apps.Children[0].Count != 1 || apps.Children[0].Children[0].Count != 1 {
 		t.Fatalf("apps = %+v", apps)
+	}
+}
+
+func TestTops(t *testing.T) {
+	if got := Tops(tree); !reflect.DeepEqual(got, []string{"ai", "apps"}) {
+		t.Fatalf("tops = %v", got)
 	}
 }
 
