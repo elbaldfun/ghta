@@ -41,6 +41,7 @@ type sourceTally struct {
 	Shards           int `bson:"shards" json:"shards"`
 	Skipped          int `bson:"skipped" json:"skipped"` // already done today
 	Failed           int `bson:"failed" json:"failed"`
+	Aged             int `bson:"aged" json:"aged"` // not seen today, growth re-measured
 	store.FetchStats `bson:",inline"`
 }
 
@@ -85,9 +86,17 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 			}
 			rep.Processed += stats.Items
 		}
+		// Items this run did not see count as not growing today. One that a
+		// failed shard holds is re-measured when the retry fetches it.
+		aged, err := j.st.AgeGrowth(ctx, name, date)
+		if err != nil {
+			rep.Note(name, tally)
+			return rep, err
+		}
+		tally.Aged = aged
 		rep.Note(name, tally)
 		j.log.Info("fetch: source done", "source", name, "items", tally.Items, "new", tally.New,
-			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "failed", tally.Failed)
+			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "failed", tally.Failed, "aged", tally.Aged)
 	}
 
 	// Scattered shard failures are retried by the next run. Every shard

@@ -233,3 +233,44 @@ func TestShardStatus(t *testing.T) {
 		t.Errorf("no 30-day TTL index on fetch_runs: %v", idx)
 	}
 }
+
+func TestAgeGrowth(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	day := func(d int) time.Time { return time.Date(2026, 10, d, 3, 30, 0, 0, time.UTC) }
+
+	// Both seen for eight days, growing 100 a day; then only o/seen is fetched.
+	for d := 1; d <= 8; d++ {
+		v := float64(1000 + 100*d)
+		batch := []item.Fetched{repo("o/seen", v, ""), repo("o/gone", v, ""), repo("o/dead", v, "")}
+		if _, err := st.WriteFetched(ctx, batch, day(d)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := st.WriteFetched(ctx, []item.Fetched{repo("o/seen", 1900, "")}, day(9)); err != nil {
+		t.Fatal(err)
+	}
+	// A tombstoned item keeps its last growth; it is out of every ranking.
+	if err := st.MarkStale(ctx, item.SourceGitHub, "o/dead", "gone", day(9)); err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := st.AgeGrowth(ctx, item.SourceGitHub, "2026-10-09")
+	if err != nil || n != 1 {
+		t.Fatalf("aged = %d, %v; want only o/gone", n, err)
+	}
+	gone := getItem(t, st, "o/gone")
+	// Last seen at 1800 on the 8th: nothing since the 8th, 600 since the 2nd.
+	if *gone.Growth.D1 != 0 || *gone.Growth.D7 != 600 || len(gone.History) != 8 {
+		t.Fatalf("o/gone growth=%v/%v history=%d; want 0/600 and no new point", *gone.Growth.D1, *gone.Growth.D7, len(gone.History))
+	}
+	if seen := getItem(t, st, "o/seen"); *seen.Growth.D1 != 100 || *seen.Growth.D7 != 700 {
+		t.Fatalf("o/seen growth=%v/%v; a fetched item is left as fetched", *seen.Growth.D1, *seen.Growth.D7)
+	}
+	if dead := getItem(t, st, "o/dead"); *dead.Growth.D1 != 100 {
+		t.Fatalf("o/dead d1=%v; a tombstoned item is left alone", *dead.Growth.D1)
+	}
+	if n, _ := st.AgeGrowth(ctx, item.SourceGitHub, "2026-10-09"); n != 0 {
+		t.Fatalf("second run aged %d; want 0", n)
+	}
+}

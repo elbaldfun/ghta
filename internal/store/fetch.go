@@ -121,6 +121,64 @@ func observe(history []item.Point, value float64, today string) (next []item.Poi
 	return next, item.ComputeGrowth(next, value, today), firstToday
 }
 
+const ageBatch = 500
+
+// AgeGrowth re-measures the growth of the live items of one source that no
+// fetch observed today, taking their last observed value as today's: an item
+// out of the fetch range is counted as not growing, as the old metrics job
+// counted it. Otherwise its growth would stay at what it was the last day it
+// was seen, and an item that fell out of range would keep its place in the
+// growth rankings until reconcile looks at it a week later. No history point
+// is added — only an observation does that. Returns how many items changed.
+func (s *Store) AgeGrowth(ctx context.Context, source, today string) (int, error) {
+	cur, err := s.Items().Find(ctx,
+		bson.M{"source": source, "stale": bson.M{"$ne": true}, "history.0": bson.M{"$exists": true}, "history.d": bson.M{"$ne": today}},
+		options.Find().SetProjection(bson.M{"history": 1, "growth": 1}))
+	if err != nil {
+		return 0, fmt.Errorf("age growth: %w", err)
+	}
+	defer cur.Close(ctx)
+
+	var models []mongo.WriteModel
+	changed := 0
+	flush := func() error {
+		if len(models) == 0 {
+			return nil
+		}
+		if _, err := s.Items().BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false)); err != nil {
+			return fmt.Errorf("age growth: %w", err)
+		}
+		changed += len(models)
+		models = models[:0]
+		return nil
+	}
+	for cur.Next(ctx) {
+		var it struct {
+			ID      any          `bson:"_id"`
+			History []item.Point `bson:"history"`
+			Growth  item.Growth  `bson:"growth"`
+		}
+		if err := cur.Decode(&it); err != nil {
+			return changed, fmt.Errorf("age growth: %w", err)
+		}
+		g := item.ComputeGrowth(it.History, it.History[len(it.History)-1].V, today)
+		if g.Equal(it.Growth) {
+			continue
+		}
+		models = append(models, mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": it.ID}).SetUpdate(bson.M{"$set": bson.M{"growth": g}}))
+		if len(models) == ageBatch {
+			if err := flush(); err != nil {
+				return changed, err
+			}
+		}
+	}
+	if err := cur.Err(); err != nil {
+		return changed, fmt.Errorf("age growth: %w", err)
+	}
+	return changed, flush()
+}
+
 // WriteFetched stores one batch of freshly fetched items, all from one source.
 //
 // It writes only what the fetcher owns. On an existing item that is the
