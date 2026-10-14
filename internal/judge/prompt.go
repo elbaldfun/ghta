@@ -39,12 +39,17 @@ For each repository return:
   software = a standalone system that is run rather than imported and is not operated through its own UI: servers,
     databases, language runtimes and compilers, operating systems, infrastructure daemons, firmware, protocol nodes.
 - shelf: the ONE shelf of an app store of downloadable, runnable software it belongs on.
-  Either a consumer shelf from the list above (software a non-developer would install), or a developer shelf, which
-  is one of these domain leaves: ` + "`" + strings.Join(DevShelves, "`, `") + "`" + `
+  Either a consumer shelf from the list above, or a developer shelf, which is one of these domain leaves:
+  ` + "`" + strings.Join(DevShelves, "`, `") + "`" + `
   (terminals, editors, API clients, database clients, git tools, package managers, linters, container/CI/monitoring
   tools, game engines with an editor, offensive-security tools, coding agents).
+  Consumer or developer: a consumer shelf holds what a person installs for their own everyday use; a developer
+  shelf holds what developers and operators install to build or run software. When both seem to fit, ask who
+  installs it: a home user picks the consumer shelf, an engineer at work the developer shelf.
   Answer "excluded" unless a user can download, run or self-host it: frameworks, libraries, SDKs, lists, tutorials,
-  interview collections, datasets, specs and hosted-only services are excluded. Command-line tools ARE apps.
+  interview collections, skills, datasets, specs and hosted-only services are excluded. Command-line tools ARE apps.
+  Also answer "excluded" when it is runnable but no shelf describes it. Never force it onto the nearest shelf: a
+  wrong shelf is worse than none. Read each shelf's description, not just its name.
 `
 
 const fieldsFull = `- hasGui: true if it has a graphical or web UI a user interacts with; false if command-line or daemon only.

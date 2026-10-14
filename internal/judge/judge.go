@@ -26,6 +26,10 @@ const PromptVersion = 1
 // Types is the form facet, in the order the prompt explains it.
 var Types = []string{"library", "app", "cli", "software", "tutorial", "awesome", "interview", "skill"}
 
+// resourceTypes are the forms that are reading or reference material, not
+// runnable software.
+var resourceTypes = []string{"tutorial", "awesome", "interview", "skill"}
+
 // DevShelves are the developer-facing apps: plain domain leaves that the store
 // shows under one "dev" view. Every other shelf is a leaf of the apps branch.
 var DevShelves = []string{
@@ -197,6 +201,11 @@ type answer struct {
 func (j *Judge) verdict(a answer) (Verdict, bool) {
 	if !slices.Contains(Types, a.Type) || !j.isShelf[a.Shelf] {
 		return Verdict{}, false
+	}
+	// A list, a course or a skill pack is not software to put on a shelf,
+	// whatever it is a list of.
+	if slices.Contains(resourceTypes, a.Type) {
+		a.Shelf = item.ShelfExcluded
 	}
 	v := Verdict{
 		Type: a.Type, Shelf: a.Shelf, HasGui: a.HasGui,

@@ -152,81 +152,81 @@ nodes:
         name: 效率
         nameEn: Productivity
         children:
-          - { path: apps/productivity/notes, name: 笔记, nameEn: Notes, est: 220, from: [productivity/notes] }
-          - { path: apps/productivity/todo, name: 任务与日程, nameEn: Tasks & Calendar, est: 175, from: [productivity/todo] }
-          - { path: apps/productivity/docs, name: 文档与办公, nameEn: Docs & Office, est: 290, from: [productivity/docs] }
-          - { path: apps/productivity/knowledge, name: 知识管理, nameEn: Knowledge, est: 290, from: [productivity/knowledge] }
+          - { path: apps/productivity/notes, name: 笔记, nameEn: Notes, est: 220, from: [productivity/notes], desc: 个人笔记与卡片笔记应用：Markdown 笔记、大纲、日记；以记录为主 }
+          - { path: apps/productivity/todo, name: 任务与日程, nameEn: Tasks & Calendar, est: 175, from: [productivity/todo], desc: 待办清单、项目与看板管理、日历、预约排期、时间追踪 }
+          - { path: apps/productivity/docs, name: 文档与办公, nameEn: Docs & Office, est: 290, from: [productivity/docs], desc: 文档与办公套件：文字处理、表格、演示、PDF 处理与转换、文档协作 }
+          - { path: apps/productivity/knowledge, name: 知识管理, nameEn: Knowledge, est: 290, from: [productivity/knowledge], desc: 知识库与 Wiki、书签与稍后读、文献管理、团队知识管理；以整理和检索为主 }
       - path: apps/creative
         name: 创作
         nameEn: Creative
         children:
-          - { path: apps/creative/image, name: 图像, nameEn: Image, est: 385, from: [creative/image] }
-          - { path: apps/creative/video, name: 视频, nameEn: Video, est: 155, from: [creative/video] }
-          - { path: apps/creative/audio, name: 音频, nameEn: Audio, est: 135, from: [creative/audio] }
-          - { path: apps/creative/whiteboard, name: 白板与设计, nameEn: Whiteboard & Design, est: 90, from: [creative/whiteboard] }
-          - { path: apps/creative/cad, name: CAD 与 3D, nameEn: CAD & 3D, est: 130, from: [creative/cad] }
-          - { path: apps/creative/writing, name: 写作, nameEn: Writing, est: 125, from: [creative/writing] }
+          - { path: apps/creative/image, name: 图像, nameEn: Image, est: 385, from: [creative/image], desc: 图片编辑、绘画、修图、看图与图片管理；用 AI 生成图片的归 ai/generation }
+          - { path: apps/creative/video, name: 视频, nameEn: Video, est: 155, from: [creative/video], desc: 视频剪辑、转码、字幕与视频处理工具（含 FFmpeg 这类命令行工具） }
+          - { path: apps/creative/audio, name: 音频, nameEn: Audio, est: 135, from: [creative/audio], desc: 音频编辑、录音、作曲编曲、语音合成与变声工具 }
+          - { path: apps/creative/whiteboard, name: 白板与设计, nameEn: Whiteboard & Design, est: 90, from: [creative/whiteboard], desc: 白板、流程图与图表绘制、界面与平面设计工具 }
+          - { path: apps/creative/cad, name: CAD 与 3D, nameEn: CAD & 3D, est: 130, from: [creative/cad], desc: CAD、三维建模、三维打印切片与仿真 }
+          - { path: apps/creative/writing, name: 写作, nameEn: Writing, est: 125, from: [creative/writing], desc: 写作与排版工具：小说与长文写作、博客编辑器、电子书制作 }
       - path: apps/ai
         name: AI 应用
         nameEn: AI Apps
         children:
-          - { path: apps/ai/assistant, name: AI 助手, nameEn: Assistants, est: 525, from: [ai/assistant] }
-          - { path: apps/ai/local-llm, name: 本地运行, nameEn: Local LLM, est: 105, from: [ai/local-llm] }
-          - { path: apps/ai/generation, name: 图像视频生成, nameEn: Generation, est: 140, from: [ai/image-gen, ai/media-gen] }
-          - { path: apps/ai/builder, name: AI 应用搭建, nameEn: AI Builders, est: 170, from: [ai/platform] }
+          - { path: apps/ai/assistant, name: AI 助手, nameEn: Assistants, est: 525, from: [ai/assistant], desc: 面向普通用户的 AI 聊天与个人助手客户端；专门用来写代码的归 agents/coding }
+          - { path: apps/ai/local-llm, name: 本地运行, nameEn: Local LLM, est: 105, from: [ai/local-llm], desc: 在自己电脑上下载并运行大模型的工具：Ollama、LM Studio 类；只是聊天界面的归 ai/assistant }
+          - { path: apps/ai/generation, name: 图像视频生成, nameEn: Generation, est: 140, from: [ai/image-gen, ai/media-gen], desc: 用 AI 生成图片、视频、音乐的应用：Stable Diffusion WebUI、ComfyUI 类 }
+          - { path: apps/ai/builder, name: AI 应用搭建, nameEn: AI Builders, est: 170, from: [ai/platform], desc: 不写代码搭建 AI 应用与工作流的平台：Dify、Flowise、Langflow 类；代码框架不算 }
       - path: apps/selfhosted
         name: 自托管
         nameEn: Self-Hosted
         children:
-          - { path: apps/selfhosted/cloud, name: 网盘与相册, nameEn: Cloud & Photos, est: 420, from: [selfhosted/cloud, selfhosted/photos] }
-          - { path: apps/selfhosted/media-server, name: 媒体服务器, nameEn: Media Server, est: 115, from: [selfhosted/media-server] }
-          - { path: apps/selfhosted/monitoring, name: 监控面板, nameEn: Monitoring, est: 345, from: [selfhosted/monitoring] }
-          - { path: apps/selfhosted/tunnel, name: 内网穿透, nameEn: Tunnels, est: 120, from: [selfhosted/tunnel] }
-          - { path: apps/selfhosted/automation, name: 自动化与智能家居, nameEn: Automation & Smart Home, est: 535, from: [selfhosted/automation, games/smart-home] }
+          - { path: apps/selfhosted/cloud, name: 网盘与相册, nameEn: Cloud & Photos, est: 420, from: [selfhosted/cloud, selfhosted/photos], desc: 自托管的网盘、相册、文件同步与个人云；只限存储类，不是一切自托管服务 }
+          - { path: apps/selfhosted/media-server, name: 媒体服务器, nameEn: Media Server, est: 115, from: [selfhosted/media-server], desc: 自托管的影音库与流媒体服务：Jellyfin、Navidrome 类，以及配套的资源管理 }
+          - { path: apps/selfhosted/monitoring, name: 监控面板, nameEn: Monitoring, est: 345, from: [selfhosted/monitoring], desc: 个人与家用的状态页、站点可用性监控与设备仪表盘：Uptime Kuma 类；面向运维的指标、日志、追踪系统归 infra/monitoring }
+          - { path: apps/selfhosted/tunnel, name: 内网穿透, nameEn: Tunnels, est: 120, from: [selfhosted/tunnel], desc: 内网穿透、反向隧道与异地组网：frp、Tailscale 类 }
+          - { path: apps/selfhosted/automation, name: 自动化与智能家居, nameEn: Automation & Smart Home, est: 535, from: [selfhosted/automation, games/smart-home], desc: 智能家居与个人自动化：Home Assistant、n8n 类可视化工作流；CI/CD 与基础设施自动化归 infra/automation }
       - path: apps/network
         name: 网络
         nameEn: Network
         children:
-          - { path: apps/network/browser, name: 浏览器, nameEn: Browsers, est: 320, from: [network/browser] }
-          - { path: apps/network/download, name: 下载, nameEn: Download, est: 450, from: [network/download] }
-          - { path: apps/network/proxy, name: 代理与 VPN, nameEn: Proxy & VPN, est: 390, from: [network/proxy] }
-          - { path: apps/network/remote, name: 远程桌面, nameEn: Remote Desktop, est: 195, from: [network/remote] }
-          - { path: apps/network/browser-ext, name: 浏览器扩展, nameEn: Browser Extensions, est: 630, from: [apps/browser-ext] }
+          - { path: apps/network/browser, name: 浏览器, nameEn: Browsers, est: 320, from: [network/browser], desc: 网页浏览器及其分支版本 }
+          - { path: apps/network/download, name: 下载, nameEn: Download, est: 450, from: [network/download], desc: 下载工具：视频与音频下载、BT、网盘下载、批量抓取 }
+          - { path: apps/network/proxy, name: 代理与 VPN, nameEn: Proxy & VPN, est: 390, from: [network/proxy], desc: 给个人用的代理、VPN 与翻墙客户端及其服务端；Web 服务器与反向代理不算 }
+          - { path: apps/network/remote, name: 远程桌面, nameEn: Remote Desktop, est: 195, from: [network/remote], desc: 远程桌面与远程控制 }
+          - { path: apps/network/browser-ext, name: 浏览器扩展, nameEn: Browser Extensions, est: 630, from: [apps/browser-ext], desc: 浏览器扩展与用户脚本 }
       - path: apps/media
         name: 影音
         nameEn: Media
         children:
-          - { path: apps/media/player, name: 播放器, nameEn: Players, est: 340, from: [media/player] }
-          - { path: apps/media/music, name: 音乐, nameEn: Music, est: 250, from: [media/music] }
-          - { path: apps/media/reader, name: 阅读, nameEn: Readers, est: 280, from: [media/reader] }
+          - { path: apps/media/player, name: 播放器, nameEn: Players, est: 340, from: [media/player], desc: 本地视频与音频播放器 }
+          - { path: apps/media/music, name: 音乐, nameEn: Music, est: 250, from: [media/music], desc: 音乐播放与流媒体客户端、歌词与音乐库管理 }
+          - { path: apps/media/reader, name: 阅读, nameEn: Readers, est: 280, from: [media/reader], desc: 电子书、漫画、RSS 与新闻阅读器 }
       - path: apps/social
         name: 社交与通讯
         nameEn: Social & Messaging
         children:
-          - { path: apps/social/messaging, name: 聊天与邮件, nameEn: Chat & Mail, est: 425, from: [social/chat, social/mail] }
-          - { path: apps/social/tools, name: 社交工具, nameEn: Social Tools, est: 280, from: [social/social-tools] }
+          - { path: apps/social/messaging, name: 聊天与邮件, nameEn: Chat & Mail, est: 425, from: [social/chat, social/mail], desc: 即时通讯、邮件客户端与自托管的聊天、邮件服务 }
+          - { path: apps/social/tools, name: 社交工具, nameEn: Social Tools, est: 280, from: [social/social-tools], desc: 社交平台的第三方客户端与辅助工具、论坛与社区软件 }
       - path: apps/system
         name: 系统工具
         nameEn: System Tools
         children:
-          - { path: apps/system/screenshot, name: 截图录屏, nameEn: Screenshot & Recording, est: 95, from: [system/screenshot] }
-          - { path: apps/system/launcher, name: 启动器与窗口, nameEn: Launchers, est: 410, from: [system/launcher] }
-          - { path: apps/system/files, name: 文件管理, nameEn: Files, est: 320, from: [system/files] }
-          - { path: apps/system/transfer, name: 传输与同步, nameEn: Transfer & Sync, est: 105, from: [system/transfer] }
-          - { path: apps/system/phone, name: 手机工具, nameEn: Phone Tools, est: 310, from: [system/phone] }
-          - { path: apps/system/backup, name: 备份, nameEn: Backup, est: 105, from: [system/backup] }
+          - { path: apps/system/screenshot, name: 截图录屏, nameEn: Screenshot & Recording, est: 95, from: [system/screenshot], desc: 截图、录屏与直播推流工具 }
+          - { path: apps/system/launcher, name: 启动器与窗口, nameEn: Launchers, est: 410, from: [system/launcher], desc: 启动器、窗口管理、快捷键、菜单栏与桌面增强 }
+          - { path: apps/system/files, name: 文件管理, nameEn: Files, est: 320, from: [system/files], desc: 文件管理器、压缩解压、磁盘清理与搜索 }
+          - { path: apps/system/transfer, name: 传输与同步, nameEn: Transfer & Sync, est: 105, from: [system/transfer], desc: 设备间传文件、剪贴板与文件同步 }
+          - { path: apps/system/phone, name: 手机工具, nameEn: Phone Tools, est: 310, from: [system/phone], desc: 手机上用的系统工具，以及在电脑上管理、投屏、刷写手机的工具；与手机无关的不要放这里 }
+          - { path: apps/system/backup, name: 备份, nameEn: Backup, est: 105, from: [system/backup], desc: 备份与恢复、磁盘镜像、数据同步备份 }
       - path: apps/security
         name: 安全与隐私
         nameEn: Security & Privacy
         children:
-          - { path: apps/security/passwords, name: 密码管理, nameEn: Passwords, est: 110, from: [security/passwords] }
-          - { path: apps/security/privacy, name: 隐私与去广告, nameEn: Privacy & Ad Blocking, est: 350, from: [security/privacy, security/adblock] }
+          - { path: apps/security/passwords, name: 密码管理, nameEn: Passwords, est: 110, from: [security/passwords], desc: 密码管理器与两步验证工具 }
+          - { path: apps/security/privacy, name: 隐私与去广告, nameEn: Privacy & Ad Blocking, est: 350, from: [security/privacy, security/adblock], desc: 广告拦截、DNS 过滤、隐私保护与加密工具 }
       - path: apps/games
         name: 游戏
         nameEn: Games
         children:
-          - { path: apps/games/games, name: 游戏, nameEn: Games, est: 515, from: [games/games] }
-          - { path: apps/games/emulator, name: 模拟器, nameEn: Emulators, est: 135, from: [games/emulator] }
+          - { path: apps/games/games, name: 游戏, nameEn: Games, est: 515, from: [games/games], desc: 可以直接玩的开源游戏、游戏启动器与游戏库管理 }
+          - { path: apps/games/emulator, name: 模拟器, nameEn: Emulators, est: 135, from: [games/emulator], desc: 游戏机与旧平台模拟器 }
 
   # 移出 apps 的货架（原 devtools 大类 8 格 + security/pentest 共 5,220 条）去向：
   #   devtools/editor → devtools/editors        devtools/terminal → devtools/terminal
