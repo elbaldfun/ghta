@@ -4,7 +4,6 @@ import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { Sora, Manrope, IBM_Plex_Mono } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
 import { routing } from '@/i18n/routing';
 import { GoogleAnalytics } from '@/components/Analytics';
 import '../globals.css';
@@ -69,7 +68,6 @@ export default async function LocaleLayout({
         <Suspense>
           <GoogleAnalytics />
         </Suspense>
-        <Analytics />
       </body>
     </html>
   );
