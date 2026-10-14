@@ -9,6 +9,7 @@ import (
 
 func pipelineJobs(t *testing.T) []worker.Job {
 	t.Helper()
+	t.Setenv("TAXONOMY_DIR", "../../taxonomy")
 	jobs, err := nightly(nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -57,12 +58,12 @@ func TestJudgeJoinsOnlyWithAModel(t *testing.T) {
 
 	t.Setenv("JUDGE_BASE_URL", "http://127.0.0.1:1234/v1")
 	t.Setenv("JUDGE_MODEL", "")
+	t.Setenv("TAXONOMY_DIR", "../../taxonomy")
 	if _, err := nightly(nil, nil); err == nil {
 		t.Fatal("JUDGE_BASE_URL without JUDGE_MODEL was accepted")
 	}
 	t.Setenv("JUDGE_MODEL", "some-model")
-	t.Setenv("TAXONOMY_PATH", "../../taxonomy/taxonomy.yaml")
-	if got := strings.Join(names(pipelineJobs(t)), ","); got != "fetch,reconcile,judge,rank,icon,shot,devsync" {
+	if got := strings.Join(names(pipelineJobs(t)), ","); got != "fetch,reconcile,migrate,judge,rank,icon,shot,devsync" {
 		t.Fatalf("pipeline with a model: %s", got)
 	}
 }

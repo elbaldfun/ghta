@@ -101,7 +101,7 @@ services:
       # Stable across container re-creation: on startup the worker closes the
       # runs its own name left running, and a container hostname changes.
       WORKER_NAME: pipeline
-      # Seconds-first cron, UTC. One pipeline a night: fetch, reconcile, rank,
+      # Seconds-first cron, UTC. One pipeline a night: fetch, reconcile, migrate, rank,
       # icon, shot, devsync, one job at a time.
       PIPELINE_CRON: ${PIPELINE_CRON:-0 30 3 * * *}
       # Keep the Go heap under the container limit instead of being OOM-killed
