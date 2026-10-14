@@ -15,6 +15,12 @@ import (
 // asked for).
 var ErrRepoNotFound = errors.New("github repo not found")
 
+// ErrRepoBlocked signals a repository GitHub has taken down: 451 for a legal
+// takedown, or 403 carrying a "block" object for a terms-of-service block. It
+// still exists and still appears in search, but will not come back, so callers
+// retire it instead of retrying.
+var ErrRepoBlocked = errors.New("github repo blocked")
+
 // RepoInfo is the subset of GitHub's /repos/{owner}/{repo} REST response the
 // reconciler needs.
 type RepoInfo struct {
@@ -28,7 +34,8 @@ type RepoInfo struct {
 }
 
 // FetchRepo retrieves one repository via the REST API, following rename
-// redirects. Returns ErrRepoNotFound on 404 and a rate-limit error on 403/429;
+// redirects. Returns ErrRepoNotFound on 404, ErrRepoBlocked for a takedown and
+// a rate-limit error on any other 403 and on 429;
 // RateInfo is populated whenever the headers are present, even on error.
 func (c *Client) FetchRepo(ctx context.Context, fullName string) (*RepoInfo, RateInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, restBase+"/repos/"+fullName, nil)
@@ -57,7 +64,17 @@ func (c *Client) FetchRepo(ctx context.Context, fullName string) (*RepoInfo, Rat
 		return &r, rate, nil
 	case http.StatusNotFound:
 		return nil, rate, ErrRepoNotFound
+	case http.StatusUnavailableForLegalReasons:
+		return nil, rate, ErrRepoBlocked
 	case http.StatusForbidden, http.StatusTooManyRequests:
+		// A blocked repository answers 403 like a rate limit does; the body
+		// tells them apart.
+		var body struct {
+			Block *json.RawMessage `json:"block"`
+		}
+		if resp.StatusCode == http.StatusForbidden && json.NewDecoder(resp.Body).Decode(&body) == nil && body.Block != nil {
+			return nil, rate, ErrRepoBlocked
+		}
 		return nil, rate, fmt.Errorf("github rate limited fetching %s: status %d", fullName, resp.StatusCode)
 	default:
 		return nil, rate, fmt.Errorf("github repo %s: status %d", fullName, resp.StatusCode)

@@ -30,6 +30,7 @@ type RepoChecker interface {
 // longest-untouched records are checked against the REST API:
 //
 //   - 404                       → tombstone, reason "gone"
+//   - taken down by GitHub      → tombstone, reason "blocked"
 //   - 200 under another name    → move the record, or tombstone it when the
 //     new name is already tracked
 //   - 200 under the same name   → it fell below the fetch cutoff; record a
@@ -94,6 +95,8 @@ func (j *Reconcile) settle(ctx context.Context, id string, info *github.RepoInfo
 	switch {
 	case errors.Is(fetchErr, github.ErrRepoNotFound):
 		return "gone", j.st.MarkStale(ctx, src, id, "gone", now)
+	case errors.Is(fetchErr, github.ErrRepoBlocked):
+		return "blocked", j.st.MarkStale(ctx, src, id, "blocked", now)
 	case fetchErr != nil:
 		return "", fetchErr
 	}

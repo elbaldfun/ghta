@@ -25,6 +25,7 @@ type fakeGitHub struct {
 	repos  map[string]*github.RepoInfo // by the name asked for; missing = 404
 	users  map[string]*github.UserProfile
 	broken map[string]bool
+	taken  map[string]bool // taken down by GitHub
 	rate   github.RateInfo
 	asked  []string
 }
@@ -33,6 +34,9 @@ func (f *fakeGitHub) FetchRepo(_ context.Context, name string) (*github.RepoInfo
 	f.asked = append(f.asked, name)
 	if f.broken[name] {
 		return nil, f.rate, errors.New("status 500")
+	}
+	if f.taken[name] {
+		return nil, f.rate, github.ErrRepoBlocked
 	}
 	if r, ok := f.repos[name]; ok {
 		return r, f.rate, nil
@@ -71,6 +75,7 @@ func TestReconcile(t *testing.T) {
 		frozen("o/moved", 300, 10*24*time.Hour),
 		frozen("o/ghost", 200, 9*24*time.Hour),
 		frozen("o/flaky", 100, 8*24*time.Hour),
+		frozen("o/dmca", 80, 8*24*time.Hour+12*time.Hour),
 		tracked,
 	}
 	if _, err := st.Items().InsertMany(ctx, docs); err != nil {
@@ -87,20 +92,25 @@ func TestReconcile(t *testing.T) {
 			"o/ghost": {FullName: "new/taken", Stars: 50},
 		},
 		broken: map[string]bool{"o/flaky": true},
+		taken:  map[string]bool{"o/dmca": true},
 	}
 	job := NewReconcile(st, api, 100, nil)
 	job.now = func() time.Time { return now }
 	rep, err := job.Run(ctx)
-	if err != nil || rep.Processed != 4 || rep.Failed != 1 {
+	if err != nil || rep.Processed != 5 || rep.Failed != 1 {
 		t.Fatalf("report = %+v, %v", rep, err)
 	}
-	for verdict, want := range map[string]int{"gone": 1, "refreshed": 1, "renamed": 1, "merged": 1} {
+	for verdict, want := range map[string]int{"gone": 1, "blocked": 1, "refreshed": 1, "renamed": 1, "merged": 1} {
 		if rep.Notes[verdict] != want {
 			t.Errorf("notes[%s] = %v, want %d (%v)", verdict, rep.Notes[verdict], want, rep.Notes)
 		}
 	}
-	if len(api.asked) != 5 || api.asked[0] != "o/gone" {
-		t.Errorf("asked %v; want the five old records, longest-untouched first", api.asked)
+	if len(api.asked) != 6 || api.asked[0] != "o/gone" {
+		t.Errorf("asked %v; want the six old records, longest-untouched first", api.asked)
+	}
+	// Taken down by GitHub: retired, not retried every night.
+	if it, _ := find(t, st, "o/dmca"); !it.Stale || it.StaleReason != "blocked" {
+		t.Errorf("dmca: stale=%v reason=%q", it.Stale, it.StaleReason)
 	}
 
 	if it, _ := find(t, st, "o/gone"); !it.Stale || it.StaleReason != "gone" || !it.StaleAt.Equal(now) {
