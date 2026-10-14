@@ -324,7 +324,6 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	categoryHandler.RegisterAdmin(admin)
 	v1.RegisterInternal(admin) // GET /internal/jobs — the worker's latest runs
-	handler.NewUserHandler(service.NewUserService(store)).Register(admin)
 
 	// Internal: manually trigger a fetch. With ?source=&shard= it runs one shard
 	// synchronously (handy for smoke tests); otherwise a full pass in the background.

@@ -180,18 +180,6 @@ type Category struct {
 	UpdatedAt   time.Time           `bson:"updatedAt" json:"updatedAt"`
 }
 
-// User holds an authenticated account (OAuth binding added in the auth change).
-type User struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	GoogleID  string             `bson:"googleId,omitempty" json:"googleId,omitempty"`
-	Email     string             `bson:"email,omitempty" json:"email,omitempty"`
-	Name      string             `bson:"name,omitempty" json:"name,omitempty"`
-	Avatar    string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	Role      string             `bson:"role" json:"role"`
-	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
-}
-
 // FetchRunStatus is the lifecycle of one fetch shard.
 type FetchRunStatus string
 

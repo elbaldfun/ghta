@@ -137,7 +137,7 @@ AI 逐条无失败标记；手写限流与真实配额脱节；死代码/未用�
 1. `1-rewrite-backend-golang` — Go 重写 + **通用 TrackedItem/Source 模型** + GitHub 适配器 + 全部 P1/P2 正确性效率 + 配置/日志卫生（保留 Mongo）
 2. `2-add-star-history` — 通用指标快照 + 增量计算 + 跨源增长排行（GitHub 为首批数据）
 3. `3-improve-ai-categorization` — 结构化输出 + 批量分类 + 失败标记（跨源）
-4. `4-add-authentication` — Google OAuth + JWT + 接口守卫
+4. ~~`4-add-authentication` — Google OAuth + JWT + 接口守卫~~（不做，已归档：没有登录需求，管理接口用 `ADMIN_API_TOKEN` 守卫）
 5. `5-add-frontend-react` — React 前端 + 专业 UI（源维度感知；随各源 change 扩展）
 6. `6-add-source-appstore` — Apple App Store 适配器（iTunes RSS/Search）
 7. `7-add-source-chrome-webstore` — Chrome Web Store 适配器（抓取/第三方，含合规评估）

@@ -41,7 +41,7 @@
 | `GET /health` | 公开。进程在就返回 200；正文 `fetch` 是新 worker 上次成功抓取的时间，超过 36 小时 `status` 为 `degraded`。加 `?strict=1` 时过期返回 503，给外部监控用 |
 | `GET /v1/*` | 公开（重构后的只读接口，含 `/v1/badge/{owner}/{name}.svg`） |
 | `GET /trending`、`/trending/rising`、`/trending/item` | 公开（前端唯一使用的接口） |
-| `/category`、`/user` 全部 CRUD | **需 token**（含删除、用户列表） |
+| `/category` 全部 CRUD | **需 token**（含删除） |
 | `POST /internal/*` | **需 token**（触发抓取/归类等昂贵任务） |
 | `GET /internal/jobs` | **需 token**：新 worker 每个任务的最近一次运行，和最近的运行记录（`?job=&limit=`） |
 
@@ -241,6 +241,6 @@ Caddy 是这台机器上所有站点共用的入口，由 `droplet-edge` 仓库�
 - [ ] `/zh` 与 `/en` 均可访问，语言与明暗主题切换正常
 - [ ] 详情页统计、增长图、README 正常
 - [ ] `curl https://api.starrank.dev/health` → 200
-- [ ] `curl https://api.starrank.dev/user` → 401
+- [ ] `curl https://api.starrank.dev/category -X POST` → 401
 - [ ] DevTools → Sources 全局搜 `24.199.88.38`，**搜不到**（后端地址未泄漏）
 - [ ] `nmap -p 27017 24.199.88.38` 显示 filtered/closed（数据库未暴露）
