@@ -44,6 +44,7 @@ func New(st *store.Store, log *slog.Logger) *API {
 func (a *API) Register(r gin.IRouter) {
 	v1 := r.Group("/v1")
 	a.registerBoards(v1)
+	a.registerRepos(v1)
 }
 
 // errBadInput marks a request the client got wrong.

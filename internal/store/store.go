@@ -41,6 +41,7 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 		// The judge's queue.
 		{Keys: bson.D{{Key: "jobs.judge.status", Value: 1}, {Key: "metrics.stars", Value: -1}}},
 	}
+	items = append(items, listIndexes...)
 	if _, err := s.Items().Indexes().CreateMany(ctx, items); err != nil {
 		return fmt.Errorf("items indexes: %w", err)
 	}
