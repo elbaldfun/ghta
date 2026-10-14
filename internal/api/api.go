@@ -29,8 +29,9 @@ const (
 )
 
 type API struct {
-	st  *store.Store
-	log *slog.Logger
+	st       *store.Store
+	log      *slog.Logger
+	backfill Backfill
 }
 
 func New(st *store.Store, log *slog.Logger) *API {
@@ -45,6 +46,7 @@ func (a *API) Register(r gin.IRouter) {
 	v1 := r.Group("/v1")
 	a.registerBoards(v1)
 	a.registerRepos(v1)
+	a.registerDetail(v1)
 }
 
 // errBadInput marks a request the client got wrong.
