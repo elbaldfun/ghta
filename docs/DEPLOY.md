@@ -128,7 +128,8 @@ scripts/release.sh worker          # 发任务进程（重构切换之后才用�
   MONGODB_URI=… MONGODB_DB=ghta WORKER_NAME=judge ./worker -run judge`。
   `WORKER_NAME` 要和 droplet 上的 `pipeline` 不同：worker 启动时只收尾自己名下没跑完的记录。
 - 每条问两遍，第二遍换一批同伴，只问领域、形态、货架。两遍一致记 `labels.confidence: agreed`；
-  不一致问第三遍取多数，记 `majority`；三遍各不相同记 `split`，保留第一遍的答案，等人工复核。
+  不一致问第三遍取多数，记 `majority`；三遍各不相同记 `split`：领域和形态保留第一遍的答案，货架没有多数就先不上架，等人工复核。
+  复核时按 `labels.confidence: "split"` 查出来分批处理。
 - 一次运行最多处理 `JUDGE_MAX_PER_RUN` 条（默认 3000）。星数低于 `JUDGE_MIN_STARS`（默认 1000）
   的条目只有周增长达到 `JUDGE_HOT_WEEKLY`（默认 50）才判定。
 - 模型调用连续失败 3 次任务就报错退出，没写完的条目保持 pending，下次接着跑。
