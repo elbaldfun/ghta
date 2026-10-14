@@ -274,20 +274,20 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 
 	// ---- Public: health plus the read-only API the website consumes ----
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
-
 	// The rebuilt store's interface (docs/REBUILD.md M4). It reads only the new
 	// collections, which share the database with the old ones until cutover.
-	api.New(newstore.New(store.DB), slog.Default()).WithBackfill(func(ctx context.Context, id string) []api.Point {
+	// /health reports the new worker's fetch, so it reads "degraded" until then;
+	// it still answers 200, which is all the deploy and the container check need.
+	v1 := api.New(newstore.New(store.DB), slog.Default()).WithBackfill(func(ctx context.Context, id string) []api.Point {
 		points, _ := starHistory.Ensure(ctx, domain.SourceGitHub, id)
 		out := make([]api.Point, len(points))
 		for i, p := range points {
 			out[i] = api.Point{T: p.T.UnixMilli(), V: int(p.V)}
 		}
 		return out
-	}).Register(r)
+	})
+	v1.RegisterHealth(r)
+	v1.Register(r)
 
 	trending := handler.NewTrendingHandler(service.NewTrendService(store, starHistory))
 	r.GET("/trending", trending.List)
@@ -323,6 +323,7 @@ func newRouter(store *repository.Store, fetcher *job.Fetcher, categorizer *job.C
 	admin := r.Group("", handler.RequireAdminToken(adminToken))
 
 	categoryHandler.RegisterAdmin(admin)
+	v1.RegisterInternal(admin) // GET /internal/jobs — the worker's latest runs
 	handler.NewUserHandler(service.NewUserService(store)).Register(admin)
 
 	// Internal: manually trigger a fetch. With ?source=&shard= it runs one shard
