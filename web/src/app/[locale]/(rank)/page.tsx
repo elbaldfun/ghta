@@ -8,6 +8,7 @@ import {
   getFacets,
   getHot,
   getTotalCount,
+  formatTotal,
   searchRepos,
   type HotRepo,
 } from '@/lib/data';
@@ -115,7 +116,7 @@ export default async function RankHome({
               <h1 className="font-display text-lg font-extrabold">{heading}</h1>
               <span className="text-xs text-muted">
                 {searchParams.q && `${t('searchResultsFor')} "${searchParams.q}" · `}
-                {searchRes.data ? `${searchRes.data.totalCount.toLocaleString()} ${t('results')}` : ''}
+                {searchRes.data ? `${formatTotal(searchRes.data.totalCount)} ${t('results')}` : ''}
               </span>
             </div>
           </div>

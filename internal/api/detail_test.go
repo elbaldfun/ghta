@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ func TestRepoDetail(t *testing.T) {
 	it.Labels.Shelf, it.Labels.HasGui = "productivity/notes", &gui
 	it.Labels.Alternatives = []item.Alternative{{Name: "Notion", Slug: "notion"}}
 	it.Gh.Platforms = []string{"macos"}
+	it.Gh.ReleaseAssets = []item.ReleaseAsset{{Name: "App.dmg", Platform: "macos", URL: "u"}}
 	it.Gh.LatestRelease = &item.ReleaseRef{Tag: "v1.2"}
 	it.History = []item.Point{{D: "2026-10-13", V: 4990}}
 	excluded := ghRepo("o/lib", "Go", 10, 0)
@@ -39,6 +41,13 @@ func TestRepoDetail(t *testing.T) {
 	want := []Rank{{"overall", "", 40}, {"language", "Go", 7}, {"domain", "apps/productivity/notes", 1}, {"domain", "devtools/terminal", 3}}
 	if w.Code != http.StatusOK || !reflect.DeepEqual(d.Data.Ranks, want) {
 		t.Fatalf("ranks = %d %+v", w.Code, d.Data.Ranks)
+	}
+	// Stored types the DTO carries as they are must still speak JSON in
+	// camelCase, as every other field does.
+	for _, field := range []string{`"slug":"notion"`, `"platform":"macos"`, `"name":"App.dmg"`} {
+		if !strings.Contains(w.Body.String(), field) {
+			t.Fatalf("detail body lacks %s: %s", field, w.Body.String())
+		}
 	}
 	if d.Data.Shelf != "productivity/notes" || !*d.Data.HasGui || d.Data.Alternatives[0].Slug != "notion" ||
 		d.Data.Platforms[0] != "macos" || d.Data.LatestRelease.Tag != "v1.2" || d.Data.Stars != 5000 {

@@ -130,9 +130,9 @@ type Labels struct {
 
 // Alternative is a commercial product an open-source app can replace.
 type Alternative struct {
-	Name string `bson:"name"`
-	Slug string `bson:"slug"`
-	Kind string `bson:"kind,omitempty"`
+	Name string `bson:"name" json:"name"`
+	Slug string `bson:"slug" json:"slug"`
+	Kind string `bson:"kind,omitempty" json:"kind,omitempty"`
 }
 
 // Assets are the images extracted for an app.
@@ -183,10 +183,10 @@ type GitHub struct {
 
 // ReleaseAsset is a downloadable release file resolved to a platform.
 type ReleaseAsset struct {
-	Name     string `bson:"name"`
-	Platform string `bson:"platform"`
-	URL      string `bson:"url,omitempty"`
-	Size     int64  `bson:"size,omitempty"`
+	Name     string `bson:"name" json:"name"`
+	Platform string `bson:"platform" json:"platform"`
+	URL      string `bson:"url,omitempty" json:"url,omitempty"`
+	Size     int64  `bson:"size,omitempty" json:"size,omitempty"`
 }
 
 // ReleaseRef identifies the latest release.
