@@ -17,9 +17,10 @@ import (
 
 // fakeSource serves canned shards and records which were asked for.
 type fakeSource struct {
-	shards []string
-	fail   map[string]bool
-	calls  []string
+	shards   []string
+	fail     map[string]bool
+	failOnce map[string]bool // fails the first time it is asked for only
+	calls    []string
 	stars  float64
 	hook   func(shard string)
 }
@@ -37,6 +38,10 @@ func (f *fakeSource) FetchItems(ctx context.Context, shard string) ([]item.Fetch
 	if f.fail[shard] {
 		return nil, errors.New("rate limited")
 	}
+	if f.failOnce[shard] {
+		delete(f.failOnce, shard)
+		return nil, errors.New("github http 502")
+	}
 	out := make([]item.Fetched, 2)
 	for i := range out {
 		it := gh(fmt.Sprintf("%s/r%d", shard, i), "Go", f.stars)
@@ -52,10 +57,14 @@ func TestFetchResumesByShard(t *testing.T) {
 	src := &fakeSource{shards: []string{"a", "b", "c"}, fail: map[string]bool{"b": true}, stars: 100}
 	job := NewFetch(st, nil, src)
 	job.now = func() time.Time { return day }
+	job.retryPause = 0
 
 	rep, err := job.Run(ctx)
 	if err != nil || rep.Processed != 4 || rep.Failed != 1 {
 		t.Fatalf("first run = %+v, %v; one failing shard must not fail the run", rep, err)
+	}
+	if strings.Join(src.calls, ",") != "a,b,c,b" {
+		t.Fatalf("first run fetched %v; the failed shard is tried once more at the end", src.calls)
 	}
 	tally := rep.Notes["github"].(sourceTally)
 	if tally.Shards != 3 || tally.Failed != 1 || tally.New != 4 || tally.Snapshots != 4 {
@@ -90,10 +99,32 @@ func TestFetchResumesByShard(t *testing.T) {
 	}
 }
 
+func TestFetchRetriesFailedShardsOnce(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	src := &fakeSource{shards: []string{"a", "b", "c"}, failOnce: map[string]bool{"b": true}, stars: 100}
+	job := NewFetch(st, nil, src)
+	job.retryPause = 0
+
+	rep, err := job.Run(ctx)
+	if err != nil || rep.Failed != 0 || rep.Processed != 6 {
+		t.Fatalf("report %+v, %v; a shard that fails once must be recovered in the same run", rep, err)
+	}
+	if got := rep.Notes["github"].(sourceTally); got.Retried != 1 || got.Failed != 0 || got.Snapshots != 6 {
+		t.Fatalf("tally = %+v", got)
+	}
+	if s, _ := st.ShardStatus(ctx, "github", item.DayOf(job.now()), "b"); s != store.ShardDone {
+		t.Fatalf("shard b status = %q", s)
+	}
+}
+
 func TestFetchFailsWhenEverythingFails(t *testing.T) {
 	st := testStore(t)
 	src := &fakeSource{shards: []string{"a", "b"}, fail: map[string]bool{"a": true, "b": true}}
 	rep, err := NewFetch(st, nil, src).Run(context.Background())
+	if len(src.calls) != 2 {
+		t.Fatalf("fetched %v; when every shard fails there is no retry pass", src.calls)
+	}
 	if err == nil || !strings.Contains(err.Error(), "rate limited") || rep.Failed != 2 {
 		t.Fatalf("report %+v, err %v; a run where every shard fails must fail", rep, err)
 	}
