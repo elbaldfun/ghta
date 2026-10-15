@@ -8,15 +8,27 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
 const (
 	endpoint   = "https://api.github.com/graphql"
 	maxRetries = 5
+
+	// statusClientClosed is what GitHub answers when it gives up on a slow
+	// search on its side; the same query usually succeeds a moment later.
+	statusClientClosed = 499
+
+	// A rate-limited answer that names no wait gets this one; a named wait is
+	// capped so a bogus reset time cannot stall the run for hours.
+	defaultLimitWait = time.Minute
+	maxLimitWait     = 15 * time.Minute
 )
 
 // Client talks to the GitHub GraphQL API.
@@ -111,9 +123,14 @@ func (c *Client) search(ctx context.Context, query string, first int, after stri
 	}
 
 	var lastErr error
+	var wait time.Duration // before the next attempt; 0 means the backoff
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		if attempt > 0 {
-			delay := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			delay := wait
+			if delay == 0 {
+				delay = time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			}
+			wait = 0
 			c.log.Warn("github retry", "attempt", attempt, "delay", delay.String(), "err", lastErr)
 			if err := sleep(ctx, delay); err != nil {
 				return nil, err
@@ -133,14 +150,20 @@ func (c *Client) search(ctx context.Context, query string, first int, after stri
 			continue // network errors are retryable
 		}
 
-		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			resp.Body.Close()
-			lastErr = fmt.Errorf("github http %d", resp.StatusCode)
-			continue
-		}
 		if resp.StatusCode != http.StatusOK {
+			limited, d := rateLimited(resp, time.Now())
 			resp.Body.Close()
-			return nil, fmt.Errorf("github http %d (non-retryable)", resp.StatusCode)
+			switch {
+			case limited:
+				lastErr = fmt.Errorf("github http %d (rate limited)", resp.StatusCode)
+				wait = d
+				continue
+			case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == statusClientClosed || resp.StatusCode >= 500:
+				lastErr = fmt.Errorf("github http %d", resp.StatusCode)
+				continue
+			default:
+				return nil, fmt.Errorf("github http %d (non-retryable)", resp.StatusCode)
+			}
 		}
 
 		var out searchResponse
@@ -173,6 +196,44 @@ func (c *Client) waitIfRateLimited(ctx context.Context, rl rateLimit) {
 	}
 	c.log.Warn("github rate limit low, pausing", "remaining", rl.Remaining, "resetAt", rl.ResetAt, "wait", wait.String())
 	_ = sleep(ctx, wait)
+}
+
+// rateLimited reports whether a non-200 answer is GitHub's rate limiting
+// (primary or secondary) rather than a refusal, and how long to wait before
+// trying again. GitHub answers both kinds of limit with 403 or 429: a limited
+// answer carries Retry-After, an exhausted X-RateLimit-Remaining, or names the
+// secondary limit in its body. Any other 403 (a bad token, a blocked
+// repository) is not worth retrying.
+func rateLimited(resp *http.Response, now time.Time) (bool, time.Duration) {
+	if resp.StatusCode != http.StatusForbidden && resp.StatusCode != http.StatusTooManyRequests {
+		return false, 0
+	}
+	if v := resp.Header.Get("Retry-After"); v != "" {
+		if secs, err := strconv.Atoi(v); err == nil && secs >= 0 {
+			return true, capWait(time.Duration(secs) * time.Second)
+		}
+	}
+	if resp.Header.Get("X-RateLimit-Remaining") == "0" {
+		if reset, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); err == nil {
+			return true, capWait(time.Unix(reset, 0).Sub(now) + time.Second)
+		}
+		return true, defaultLimitWait
+	}
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
+	if strings.Contains(strings.ToLower(string(body)), "rate limit") {
+		return true, defaultLimitWait
+	}
+	return false, 0
+}
+
+func capWait(d time.Duration) time.Duration {
+	switch {
+	case d <= 0:
+		return time.Second
+	case d > maxLimitWait:
+		return maxLimitWait
+	}
+	return d
 }
 
 func sleep(ctx context.Context, d time.Duration) error {
