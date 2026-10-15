@@ -21,8 +21,8 @@ type fakeSource struct {
 	fail     map[string]bool
 	failOnce map[string]bool // fails the first time it is asked for only
 	calls    []string
-	stars  float64
-	hook   func(shard string)
+	stars    float64
+	hook     func(shard string)
 }
 
 func (f *fakeSource) Source() domain.Source { return domain.SourceGitHub }
