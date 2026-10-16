@@ -296,11 +296,13 @@
       "app": "앱",
       "library": "라이브러리",
       "software": "소프트웨어"
-    }
+    },
+    "boardTitle": "{name} 오픈소스 프로젝트 순위",
+    "boardDescription": "GitHub에서 가장 인기 있고 빠르게 성장하는 {name} 오픈소스 프로젝트를 스타와 주간 성장으로 순위를 매깁니다. 매일 업데이트."
   },
   "site": {
-    "name": "GHTA",
-    "tagline": "멀티소스 개발자·소프트웨어 트렌드"
+    "name": "StarRank",
+    "tagline": "스타와 성장으로 보는 오픈소스 순위"
   },
   "blog": {
     "title": "인사이트",

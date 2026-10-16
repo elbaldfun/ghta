@@ -296,11 +296,13 @@
       "app": "应用",
       "library": "库/框架",
       "software": "软件项目"
-    }
+    },
+    "boardTitle": "{name} 开源项目排行",
+    "boardDescription": "GitHub 上最受欢迎、涨得最快的 {name} 开源项目，按 star 和周增长排名，每日更新。"
   },
   "site": {
-    "name": "GHTA",
-    "tagline": "多源开发者与软件趋势"
+    "name": "StarRank",
+    "tagline": "开源项目热度榜：按 star 与增长排名"
   },
   "blog": {
     "title": "数据洞察",

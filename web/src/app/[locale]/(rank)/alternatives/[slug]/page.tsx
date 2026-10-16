@@ -5,6 +5,7 @@ import { getAppsByAlternative } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
 import { PageTabs } from '@/components/rank/PageTabs';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 // Fetched per request; the backend caches ~1h.
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
   const { name } = await getAppsByAlternative(slug);
-  return {
+  return { alternates: alternatesFor(locale, `/alternatives/${slug}`),
     title: t('altTitle', { name }),
     description: t('altSubtitle', { name }),
   };

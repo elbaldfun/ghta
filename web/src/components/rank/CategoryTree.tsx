@@ -2,40 +2,41 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
-import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { formatCompact } from '@/lib/rank-data';
+import { boardHref, type BoardFilters } from '@/lib/board-url';
 import { categoryLabel, type CategoryNode } from '@/lib/data';
 import { GridIcon } from './icons';
 import { track } from '@/lib/analytics';
 
 /**
  * Two-level domain tree (2a sidebar), rendered from the backend GET
- * /v1/categories. Selecting a node sets the `category` param (leaf path or parent segment),
- * resets to page 1; other filters (language/license/sort/type) are preserved.
+ * /v1/categories. Every node links to its category page (leaf path or parent
+ * segment) at page 1; language, form, license and sort are kept, a search is
+ * dropped.
  */
-export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: number | null }) {
+export function CategoryTree({
+  tree,
+  total,
+  filters,
+}: {
+  tree: CategoryNode[];
+  total: number | null;
+  filters: BoardFilters;
+}) {
   const t = useTranslations('rank');
   const locale = useLocale();
   const router = useRouter();
-  const params = useSearchParams();
-  const active = params.get('category');
+  const active = filters.category ?? null;
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     // Expand the ancestor of the active node, else a sensible default.
     const parent = active?.includes('/') ? active.split('/')[0] : active;
     return parent ? { [parent]: true } : { ai: true, web: true };
   });
 
-  function navigate(path: string | null) {
-    track('category_select', { category: path ?? 'all' });
-    const next = new URLSearchParams(params.toString());
-    next.delete('page');
-    next.delete('q');
-    if (path) next.set('category', path);
-    else next.delete('category');
-    const qs = next.toString();
-    router.push(qs ? `/?${qs}` : '/');
-  }
+  const hrefFor = (path: string | null) =>
+    boardHref({ ...filters, category: path ?? undefined, q: undefined, page: undefined });
+  const select = (path: string | null) => track('category_select', { category: path ?? 'all' });
 
   const count = (n: number) => (n > 0 ? <span className="text-[11px] text-muted">{formatCompact(n)}</span> : null);
   const allActive = !active;
@@ -46,7 +47,10 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
     <div className="border-b border-border bg-surface px-4 py-3 lg:hidden">
       <select
         value={active ?? ''}
-        onChange={(e) => navigate(e.target.value || null)}
+        onChange={(e) => {
+          select(e.target.value || null);
+          router.push(hrefFor(e.target.value || null));
+        }}
         aria-label={t('browseAll')}
         className="w-full appearance-none rounded-lg border border-border bg-surface2 px-3 py-2 text-[13px] font-semibold text-fg outline-none"
       >
@@ -77,8 +81,9 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
     <>
       {mobilePicker}
       <aside className="hidden border-r border-border bg-surface px-4 py-5 lg:block">
-      <button
-        onClick={() => navigate(null)}
+      <Link
+        href={hrefFor(null)}
+        onClick={() => select(null)}
         className={`mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 ${
           allActive ? 'bg-surface2' : 'hover:bg-surface2/60'
         }`}
@@ -90,17 +95,18 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
           {t('browseAll')}
         </span>
         {total !== null && count(total)}
-      </button>
+      </Link>
 
       {tree.map((group) => {
         const isOpen = !!expanded[group.path];
         const isActiveCat = active === group.path;
         return (
           <div key={group.path} className="mt-0.5">
-            <button
+            <Link
+              href={hrefFor(group.path)}
               onClick={() => {
                 setExpanded((e) => ({ ...e, [group.path]: active === group.path ? !isOpen : true }));
-                navigate(group.path);
+                select(group.path);
               }}
               className={`flex w-full items-center justify-between gap-1.5 rounded-lg px-3 py-2 ${
                 isActiveCat ? 'bg-surface2' : 'hover:bg-surface2/60'
@@ -115,15 +121,16 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
                 {categoryLabel(group, locale)}
               </span>
               {count(group.count)}
-            </button>
+            </Link>
             {isOpen && group.children && (
               <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-1.5">
                 {group.children.map((node) => {
                   const isActive = active === node.path;
                   return (
-                    <button
+                    <Link
                       key={node.path}
-                      onClick={() => navigate(node.path)}
+                      href={hrefFor(node.path)}
+                      onClick={() => select(node.path)}
                       className={`flex items-center justify-between rounded-[7px] px-2.5 py-1.5 ${
                         isActive ? 'bg-surface2' : 'hover:bg-surface2/60'
                       }`}
@@ -134,7 +141,7 @@ export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: num
                         {categoryLabel(node, locale)}
                       </span>
                       {count(node.count)}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>

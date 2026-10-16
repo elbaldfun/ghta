@@ -6,6 +6,7 @@ import { DeveloperCard } from '@/components/rank/DeveloperCard';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params: { locale },
@@ -13,7 +14,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('devTitle'), description: t('devSubtitle') };
+  return { alternates: alternatesFor(locale, '/developers'), title: t('devTitle'), description: t('devSubtitle') };
 }
 
 // The backend computes a top-500 board per board+domain; page within that.

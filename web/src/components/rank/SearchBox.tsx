@@ -74,7 +74,7 @@ export function SearchBox() {
     const q = value.trim();
     if (q) track('search', { search_term: q });
     setOpen(false);
-    router.push(q ? `/?q=${encodeURIComponent(q)}` : '/');
+    router.push(q ? `/github?q=${encodeURIComponent(q)}` : '/github');
   }
 
   function goto(s: Suggestion) {

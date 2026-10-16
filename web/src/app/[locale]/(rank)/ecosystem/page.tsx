@@ -6,6 +6,7 @@ import { RankTable } from '@/components/rank/RankTable';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params: { locale },
@@ -13,7 +14,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('ecoTitle'), description: t('ecoSubtitle') };
+  return { alternates: alternatesFor(locale, '/ecosystem'), title: t('ecoTitle'), description: t('ecoSubtitle') };
 }
 
 const PILLARS: EcoPillar[] = ['all', 'skill', 'mcp', 'agent'];

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getHot, type HotWindow } from '@/lib/data';
 import { BreakoutBoard } from '@/components/rank/BreakoutBoard';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 // Trending is fetched fresh per request (backend caches ~1h). Static export would
 // bake empty data on preview builds where API_URL is unset.
@@ -14,7 +15,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('breakoutTitle'), description: t('breakoutSubtitle') };
+  return { alternates: alternatesFor(locale, '/breakout'), title: t('breakoutTitle'), description: t('breakoutSubtitle') };
 }
 
 const WINDOWS: HotWindow[] = ['daily', 'weekly', 'monthly'];

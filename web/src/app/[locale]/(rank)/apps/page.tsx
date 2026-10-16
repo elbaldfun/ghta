@@ -8,6 +8,7 @@ import { FilterDropdown } from '@/components/rank/FilterDropdown';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageTabs } from '@/components/rank/PageTabs';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
 // build where the backend is unreachable.
@@ -75,7 +76,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('appsTitle'), description: t('appsSubtitle') };
+  return { alternates: alternatesFor(locale, '/apps'), title: t('appsTitle'), description: t('appsSubtitle') };
 }
 
 

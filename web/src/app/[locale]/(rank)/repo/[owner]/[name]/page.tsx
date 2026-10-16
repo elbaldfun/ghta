@@ -14,6 +14,8 @@ import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { Downloads } from '@/components/rank/Downloads';
 import { PageShell } from '@/components/rank/PageShell';
 import { CopyCommand } from '@/components/rank/CopyCommand';
+import { boardHref } from '@/lib/board-url';
+import { alternatesFor } from '@/lib/seo';
 
 interface Params {
   locale: string;
@@ -22,7 +24,7 @@ interface Params {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  return { title: `${params.owner}/${params.name}` };
+  return { alternates: alternatesFor(params.locale, `/repo/${params.owner}/${params.name}`), title: `${params.owner}/${params.name}` };
 }
 
 export default async function RepoDetailPage({ params }: { params: Params }) {
@@ -59,15 +61,15 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
         } #${r.rank.toLocaleString()}`,
         href:
           r.scope === 'category'
-            ? `/?category=${encodeURIComponent(r.key!)}`
+            ? boardHref({ category: r.key! })
             : r.scope === 'language'
-              ? `/?lang=${encodeURIComponent(r.key!)}`
-              : '/',
+              ? boardHref({ lang: r.key! })
+              : '/github',
       }))
     : repo.categoryPath.slice(0, 2).map((p) => ({
         key: `path:${p}`,
         label: labelFor(p),
-        href: `/?category=${encodeURIComponent(p)}`,
+        href: boardHref({ category: p }),
       }));
 
   const dot = langColor(repo.language);

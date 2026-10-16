@@ -296,11 +296,13 @@
       "app": "アプリ",
       "library": "ライブラリ",
       "software": "ソフトウェア"
-    }
+    },
+    "boardTitle": "{name} のオープンソースプロジェクト ランキング",
+    "boardDescription": "GitHub で人気・急上昇中の {name} オープンソースプロジェクトを、スター数と週間の伸びでランキング。毎日更新。"
   },
   "site": {
-    "name": "GHTA",
-    "tagline": "マルチソースの開発者・ソフトウェアトレンド"
+    "name": "StarRank",
+    "tagline": "スターと成長率で見るオープンソースランキング"
   },
   "blog": {
     "title": "インサイト",

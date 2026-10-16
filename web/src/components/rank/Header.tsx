@@ -23,7 +23,7 @@ export function RankHeader() {
           <span className="hidden text-xs text-muted sm:inline">Explorer</span>
         </Link>
         <nav className="order-3 -mx-1 flex w-full flex-wrap items-center gap-1 lg:order-2 lg:mx-0 lg:w-auto">
-          <NavLink href="/" label={t('navRankings')} />
+          <NavLink href="/github" label={t('navRankings')} alsoOn={['/']} />
           <NavLink href="/breakout" label={t('navBreakout')} />
           <NavDropdown
             label={t('navAi')}

@@ -1,170 +1,27 @@
 import type { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
-import {
-  categoryLabel,
-  findCategory,
-  getCategoryTree,
-  getFacets,
-  getHot,
-  getTotalCount,
-  formatTotal,
-  searchRepos,
-  type HotRepo,
-} from '@/lib/data';
-import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
-import { CategoryTree } from '@/components/rank/CategoryTree';
-import { ErrorState } from '@/components/rank/ErrorState';
-import { FilterBar } from '@/components/rank/FilterBar';
-import { HotBar } from '@/components/rank/HotBar';
-import { Pagination } from '@/components/rank/Pagination';
-import { RepoRow } from '@/components/rank/RepoRow';
-import { PageTabs } from '@/components/rank/PageTabs';
-import { PageShell } from '@/components/rank/PageShell';
+import { boardFilters, boardHref, type BoardQuery } from '@/lib/board-url';
+import { alternatesFor } from '@/lib/seo';
+import { GithubBoard } from '@/components/rank/GithubBoard';
 
-const PER_PAGE = 24;
-
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('homeTitle'), description: t('homeSubtitle') };
+  return { title: t('homeTitle'), description: t('homeSubtitle'), alternates: alternatesFor(locale, '') };
 }
 
-interface HomeSearchParams {
-  category?: string;
-  type?: string;
-  q?: string;
-  lang?: string;
-  license?: string;
-  sort?: string;
-  page?: string;
-}
-
-export default async function RankHome({
+export default async function Home({
   params: { locale },
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: HomeSearchParams;
+  searchParams: BoardQuery;
 }) {
   setRequestLocale(locale);
-  const t = await getTranslations('rank');
-
-  // Searches default to relevance; browsing (no query) has no relevance to
-  // rank by, so it falls back to stars.
-  let sort: SortOption = SORT_OPTIONS.includes(searchParams.sort as SortOption)
-    ? (searchParams.sort as SortOption)
-    : searchParams.q
-      ? 'relevance'
-      : 'stars';
-  if (sort === 'relevance' && !searchParams.q) sort = 'stars';
-  const page = Math.max(1, Number(searchParams.page) || 1);
-
-  // The "hot this week" strip only makes sense on the unfiltered landing view.
-  const isLanding =
-    !searchParams.category &&
-    !searchParams.type &&
-    !searchParams.q &&
-    !searchParams.lang &&
-    !searchParams.license &&
-    page === 1;
-
-  const [tree, facets, total, searchRes, hotWeekly, hotMonthly] = await Promise.all([
-    getCategoryTree(),
-    getFacets(),
-    getTotalCount(),
-    searchRepos({
-      category: searchParams.category,
-      type: searchParams.type,
-      q: searchParams.q,
-      language: searchParams.lang,
-      license: searchParams.license,
-      sort,
-      page,
-      perPage: PER_PAGE,
-    }),
-    isLanding ? getHot('weekly', 12) : Promise.resolve([] as HotRepo[]),
-    isLanding ? getHot('monthly', 12) : Promise.resolve([] as HotRepo[]),
-  ]);
-
-  const activeNode = searchParams.category ? findCategory(tree, searchParams.category) : undefined;
-  const heading = activeNode ? categoryLabel(activeNode, locale) : t('homeTitle');
-  // Breadcrumb: for a leaf ("a/b"), show its parent's label.
-  const parentPath = searchParams.category?.includes('/') ? searchParams.category.split('/')[0] : null;
-  const parentNode = parentPath ? findCategory(tree, parentPath) : undefined;
-  const breadcrumb = parentNode ? categoryLabel(parentNode, locale) : null;
-
-  return (
-    <>
-      {isLanding && <HotBar weekly={hotWeekly} monthly={hotMonthly} />}
-      {/* gutter=false: the sidebar owns its background up to the container
-          edge; the content column applies the gutter itself. */}
-      <PageShell gutter={false} className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
-        <CategoryTree tree={tree} total={total} />
-
-      <div className="px-4 py-[22px] lg:px-gutter">
-        <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
-        <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
-          <div>
-            {breadcrumb && (
-              <div className="mb-[5px] text-[11px] font-semibold tracking-wide text-muted">{breadcrumb}</div>
-            )}
-            <div className="flex items-baseline gap-2.5">
-              <h1 className="font-display text-lg font-extrabold">{heading}</h1>
-              <span className="text-xs text-muted">
-                {searchParams.q && `${t('searchResultsFor')} "${searchParams.q}" · `}
-                {searchRes.data ? `${formatTotal(searchRes.data.totalCount)} ${t('results')}` : ''}
-              </span>
-            </div>
-          </div>
-          <FilterBar types={facets} />
-        </div>
-
-        {searchRes.error !== null ? (
-          <ErrorState />
-        ) : searchRes.data.items.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <p className="text-[13px] text-muted">{t('noResults')}</p>
-            <Link
-              href="/"
-              className="rounded-full border border-border px-4 py-1.5 text-[12.5px] font-bold text-fg transition-colors hover:bg-surface2"
-            >
-              {t('clearFilters')}
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-hidden rounded-card border border-border bg-surface">
-              {searchRes.data.items.map((repo, i) => (
-                <RepoRow
-                  key={repo.fullName}
-                  repo={repo}
-                  rank={(page - 1) * PER_PAGE + i + 1}
-                  showUpdated={sort === 'updated'}
-                  growthWindow={sort === 'weekly' ? 'weekly' : 'daily'}
-                />
-              ))}
-            </div>
-            <Pagination
-              page={page}
-              perPage={PER_PAGE}
-              totalCount={searchRes.data.totalCount}
-              params={{
-                category: searchParams.category,
-                type: searchParams.type,
-                q: searchParams.q,
-                lang: searchParams.lang,
-                license: searchParams.license,
-                sort: searchParams.sort,
-              }}
-            />
-          </>
-        )}
-      </div>
-    </PageShell>
-    </>
-  );
+  // Filtered views used to live here as query parameters; they have their own
+  // pages under /github now.
+  if (Object.values(searchParams).some(Boolean)) {
+    permanentRedirect(`/${locale}${boardHref(boardFilters({}, searchParams))}`);
+  }
+  return <GithubBoard locale={locale} filters={{}} />;
 }

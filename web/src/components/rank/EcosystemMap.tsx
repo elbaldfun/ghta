@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { HeatCell } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
+import { boardHref } from '@/lib/board-url';
 
 type ColorBy = 'heat' | 'growth' | 'scale';
 
@@ -195,7 +196,7 @@ export function EcosystemMap({ cells }: { cells: HeatCell[] }) {
                 return (
                   <Link
                     key={k.path}
-                    href={`/?category=${encodeURIComponent(k.path)}`}
+                    href={boardHref({ category: k.path })}
                     className="flex items-center justify-between gap-2 rounded-[5px] px-2.5 py-2 transition-[filter] hover:brightness-[1.07]"
                     style={{ background: col.bg, color: col.fg }}
                   >

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params: { locale },
@@ -9,7 +10,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'privacy' });
   // Legal boilerplate has no search value and would dilute the site's index.
-  return { title: t('title'), robots: { index: false, follow: true } };
+  return { alternates: alternatesFor(locale, '/privacy'), title: t('title'), robots: { index: false, follow: true } };
 }
 
 // Section keys render in this order; each has a heading and a body in messages.
