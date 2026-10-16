@@ -5,7 +5,7 @@ import { getEcosystem, getHeatmap, getTrends } from '@/lib/data';
 import { formatCompact } from '@/lib/rank-data';
 import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankTable } from '@/components/rank/RankTable';
-import { PageTabs } from '@/components/rank/PageTabs';
+import { GithubTabs } from '@/components/rank/GithubTabs';
 import { PageShell } from '@/components/rank/PageShell';
 import { alternatesFor } from '@/lib/seo';
 
@@ -49,7 +49,7 @@ export default async function MapPage({
 
   return (
     <PageShell className="py-[22px]">
-      <PageTabs items={[{ href: '/github', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
+      <GithubTabs />
       <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-display text-xl font-extrabold">{t('mapTitle')}</h1>
         <span className="font-mono text-[11.5px] tabular-nums text-muted">

@@ -3,7 +3,6 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { NavLink } from './NavLink';
 import { PageShell } from './PageShell';
-import { NavDropdown } from './NavDropdown';
 import { SearchBox } from './SearchBox';
 import { LocaleMenu } from './LocaleMenu';
 import { ThemePill } from './ThemePill';
@@ -23,17 +22,14 @@ export function RankHeader() {
           <span className="hidden text-xs text-muted sm:inline">Explorer</span>
         </Link>
         <nav className="order-3 -mx-1 flex w-full flex-wrap items-center gap-1 lg:order-2 lg:mx-0 lg:w-auto">
-          <NavLink href="/github" label={t('navRankings')} alsoOn={['/']} />
-          <NavLink href="/breakout" label={t('navBreakout')} />
-          <NavDropdown
-            label={t('navAi')}
-            items={[
-              { href: '/ecosystem', label: t('navEcosystem') },
-              { href: '/topics', label: t('navTopics') },
-              { href: '/models', label: t('navModels') },
-            ]}
+          <NavLink href="/" label={t('navToday')} />
+          <NavLink
+            href="/github"
+            label="GitHub"
+            alsoOn={['/breakout', '/ai', '/ecosystem', '/topics', '/map', '/repo']}
           />
-          <NavLink href="/apps" label={t('navApps')} />
+          <NavLink href="/apps" label={t('navApps')} alsoOn={['/alternatives']} />
+          <NavLink href="/models" label={t('navModels')} />
           <NavLink href="/developers" label={t('navDevelopers')} />
           <NavLink href="/blog" label={tb('nav')} />
         </nav>

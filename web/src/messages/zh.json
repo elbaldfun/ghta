@@ -299,7 +299,8 @@
     },
     "boardTitle": "{name} 开源项目排行",
     "boardDescription": "GitHub 上最受欢迎、涨得最快的 {name} 开源项目，按 star 和周增长排名，每日更新。",
-    "sparkLabel": "近 {days} 天 star 变化：{gain}"
+    "sparkLabel": "近 {days} 天 star 变化：{gain}",
+    "navToday": "今天"
   },
   "site": {
     "name": "StarRank",
@@ -338,5 +339,26 @@
     "learnMore": "隐私政策",
     "accept": "接受",
     "reject": "拒绝"
+  },
+  "today": {
+    "todayTitle": "今天什么在涨",
+    "todaySubtitle": "开源项目、开源应用和模型里，此刻涨得最快的是哪些。数据来自最近一次每日快照。",
+    "colRepos": "仓库",
+    "colReposSub": "今日新增 star",
+    "colTrending": "GitHub Trending",
+    "colTrendingSub": "GitHub 官方榜",
+    "colApps": "开源应用",
+    "colAppsSub": "今日新增 star",
+    "colModels": "模型",
+    "colModelsSub": "今日新增点赞",
+    "seeAll": "全部",
+    "heatTitle": "领域热度",
+    "heatSub": "每个仓库每天新增的 star",
+    "insights": "洞察",
+    "statTotal": "收录项目",
+    "statUpdated": "数据更新",
+    "statUpdatedValue": "每日 03:30 UTC",
+    "allTime": "全时总榜",
+    "empty": "暂无数据"
   }
 }

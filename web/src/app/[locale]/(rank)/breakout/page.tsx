@@ -4,6 +4,7 @@ import { getHot, type HotWindow } from '@/lib/data';
 import { BreakoutBoard } from '@/components/rank/BreakoutBoard';
 import { PageShell } from '@/components/rank/PageShell';
 import { alternatesFor } from '@/lib/seo';
+import { GithubTabs } from '@/components/rank/GithubTabs';
 
 // Trending is fetched fresh per request (backend caches ~1h). Static export would
 // bake empty data on preview builds where API_URL is unset.
@@ -42,6 +43,7 @@ export default async function BreakoutPage({
 
   return (
     <PageShell className="py-[22px]">
+      <GithubTabs />
       <div className="mb-4 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">🔥 {t('breakoutTitle')}</h1>
         <span className="text-xs text-muted">{t('breakoutSubtitle')}</span>

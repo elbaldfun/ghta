@@ -7,13 +7,11 @@ import {
   findCategory,
   getCategoryTree,
   getFacets,
-  getHot,
   getTrends,
   getTotalCount,
   formatTotal,
   searchRepos,
   type CategoryNode,
-  type HotRepo,
   type TypeFacet,
 } from '@/lib/data';
 import { SORT_OPTIONS, type SortOption } from '@/lib/rank-data';
@@ -22,10 +20,9 @@ import { alternatesFor } from '@/lib/seo';
 import { CategoryTree } from './CategoryTree';
 import { ErrorState } from './ErrorState';
 import { FilterBar } from './FilterBar';
-import { HotBar } from './HotBar';
 import { Pagination } from './Pagination';
 import { RepoRow } from './RepoRow';
-import { PageTabs } from './PageTabs';
+import { GithubTabs } from './GithubTabs';
 import { PageShell } from './PageShell';
 
 const PER_PAGE = 24;
@@ -88,10 +85,7 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
   if (sort === 'relevance' && !f.q) sort = 'stars';
   const page = f.page ?? 1;
 
-  // The "hot this week" strip only makes sense on the unfiltered landing view.
-  const isLanding = !f.category && !f.type && !f.q && !f.lang && !f.license && page === 1;
-
-  const [tree, facets, total, searchRes, hotWeekly, hotMonthly] = await Promise.all([
+  const [tree, facets, total, searchRes] = await Promise.all([
     getCategoryTree(),
     getFacets(),
     getTotalCount(),
@@ -105,8 +99,6 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
       page,
       perPage: PER_PAGE,
     }),
-    isLanding ? getHot('weekly', 12) : Promise.resolve([] as HotRepo[]),
-    isLanding ? getHot('monthly', 12) : Promise.resolve([] as HotRepo[]),
   ]);
 
   // The rows' sparklines: seven days of change (eight daily points).
@@ -119,14 +111,13 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
 
   return (
     <>
-      {isLanding && <HotBar weekly={hotWeekly} monthly={hotMonthly} />}
       {/* gutter=false: the sidebar owns its background up to the container
           edge; the content column applies the gutter itself. */}
       <PageShell gutter={false} className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
         <CategoryTree tree={tree} total={total} filters={f} />
 
         <div className="px-4 py-[22px] lg:px-gutter">
-          <PageTabs items={[{ href: '/github', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
+          <GithubTabs />
           <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-5 gap-y-4">
             <div>
               {parentNode && (

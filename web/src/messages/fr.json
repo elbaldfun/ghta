@@ -299,7 +299,8 @@
     },
     "boardTitle": "{name} : les meilleurs projets open source",
     "boardDescription": "Les projets open source {name} les plus populaires et à la plus forte croissance sur GitHub, classés par étoiles et croissance hebdomadaire. Mis à jour chaque jour.",
-    "sparkLabel": "Étoiles sur les {days} derniers jours : {gain}"
+    "sparkLabel": "Étoiles sur les {days} derniers jours : {gain}",
+    "navToday": "Aujourd'hui"
   },
   "site": {
     "name": "StarRank",
@@ -338,5 +339,26 @@
     "learnMore": "Politique de confidentialité",
     "accept": "Accepter",
     "reject": "Refuser"
+  },
+  "today": {
+    "todayTitle": "Ce qui monte aujourd'hui",
+    "todaySubtitle": "Les projets, applications et modèles open source qui progressent le plus en ce moment, d'après le dernier instantané quotidien.",
+    "colRepos": "Dépôts",
+    "colReposSub": "étoiles gagnées aujourd'hui",
+    "colTrending": "GitHub Trending",
+    "colTrendingSub": "la liste de GitHub",
+    "colApps": "Applications open source",
+    "colAppsSub": "étoiles gagnées aujourd'hui",
+    "colModels": "Modèles",
+    "colModelsSub": "j'aime gagnés aujourd'hui",
+    "seeAll": "Tout",
+    "heatTitle": "Chaleur par domaine",
+    "heatSub": "nouvelles étoiles par dépôt et par jour",
+    "insights": "Analyses",
+    "statTotal": "Projets suivis",
+    "statUpdated": "Mise à jour",
+    "statUpdatedValue": "quotidienne, 03:30 UTC",
+    "allTime": "Classement général",
+    "empty": "Rien pour l'instant"
   }
 }

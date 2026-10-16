@@ -299,7 +299,8 @@
     },
     "boardTitle": "{name} のオープンソースプロジェクト ランキング",
     "boardDescription": "GitHub で人気・急上昇中の {name} オープンソースプロジェクトを、スター数と週間の伸びでランキング。毎日更新。",
-    "sparkLabel": "過去 {days} 日間のスター増減：{gain}"
+    "sparkLabel": "過去 {days} 日間のスター増減：{gain}",
+    "navToday": "今日"
   },
   "site": {
     "name": "StarRank",
@@ -338,5 +339,26 @@
     "learnMore": "プライバシーポリシー",
     "accept": "同意する",
     "reject": "拒否する"
+  },
+  "today": {
+    "todayTitle": "今日伸びているもの",
+    "todaySubtitle": "いま最も伸びているオープンソースのプロジェクト、アプリ、モデル。最新の日次スナップショットから。",
+    "colRepos": "リポジトリ",
+    "colReposSub": "今日増えたスター",
+    "colTrending": "GitHub Trending",
+    "colTrendingSub": "GitHub 公式リスト",
+    "colApps": "オープンソースアプリ",
+    "colAppsSub": "今日増えたスター",
+    "colModels": "モデル",
+    "colModelsSub": "今日増えたいいね",
+    "seeAll": "すべて",
+    "heatTitle": "分野の熱量",
+    "heatSub": "リポジトリあたりの1日の新規スター",
+    "insights": "インサイト",
+    "statTotal": "収録プロジェクト",
+    "statUpdated": "データ更新",
+    "statUpdatedValue": "毎日 03:30 UTC",
+    "allTime": "総合ランキング",
+    "empty": "まだありません"
   }
 }

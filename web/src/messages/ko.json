@@ -299,7 +299,8 @@
     },
     "boardTitle": "{name} 오픈소스 프로젝트 순위",
     "boardDescription": "GitHub에서 가장 인기 있고 빠르게 성장하는 {name} 오픈소스 프로젝트를 스타와 주간 성장으로 순위를 매깁니다. 매일 업데이트.",
-    "sparkLabel": "최근 {days}일 스타 변화: {gain}"
+    "sparkLabel": "최근 {days}일 스타 변화: {gain}",
+    "navToday": "오늘"
   },
   "site": {
     "name": "StarRank",
@@ -338,5 +339,26 @@
     "learnMore": "개인정보처리방침",
     "accept": "동의",
     "reject": "거부"
+  },
+  "today": {
+    "todayTitle": "오늘 뜨는 것",
+    "todaySubtitle": "지금 가장 빠르게 성장하는 오픈소스 프로젝트, 앱, 모델. 최신 일일 스냅샷 기준.",
+    "colRepos": "저장소",
+    "colReposSub": "오늘 늘어난 스타",
+    "colTrending": "GitHub Trending",
+    "colTrendingSub": "GitHub 공식 목록",
+    "colApps": "오픈소스 앱",
+    "colAppsSub": "오늘 늘어난 스타",
+    "colModels": "모델",
+    "colModelsSub": "오늘 늘어난 좋아요",
+    "seeAll": "전체",
+    "heatTitle": "분야별 열기",
+    "heatSub": "저장소당 하루 신규 스타",
+    "insights": "인사이트",
+    "statTotal": "수록 프로젝트",
+    "statUpdated": "데이터 갱신",
+    "statUpdatedValue": "매일 03:30 UTC",
+    "allTime": "전체 순위",
+    "empty": "아직 없음"
   }
 }
