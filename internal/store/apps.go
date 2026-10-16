@@ -110,9 +110,31 @@ func (s *Store) ListApps(ctx context.Context, q AppQuery, rows any) (int, error)
 	if limit <= 0 {
 		return int(total), nil
 	}
+	// The order is decided on ids alone, then only the page is read whole.
 	cur, err := s.Apps().Find(ctx, f, options.Find().
 		SetSort(bson.D{{Key: key, Value: -1}, {Key: "_id", Value: 1}}).
-		SetSkip(int64(q.Skip)).SetLimit(int64(limit)))
+		SetLimit(AppsDepth).SetProjection(bson.M{"_id": 1}))
+	if err != nil {
+		return 0, fmt.Errorf("list apps: %w", err)
+	}
+	var ids []struct {
+		ID string `bson:"_id"`
+	}
+	if err := cur.All(ctx, &ids); err != nil {
+		return 0, fmt.Errorf("list apps: %w", err)
+	}
+	order := make([]string, len(ids))
+	for i, r := range ids {
+		order[i] = r.ID
+	}
+	order = SpreadOwners(order, q.Limit, ownerPerPage)
+	page := order[min(q.Skip, len(order)):min(q.Skip+limit, len(order))]
+	cur, err = s.Apps().Aggregate(ctx, mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"_id": bson.M{"$in": page}}}},
+		{{Key: "$addFields", Value: bson.M{"_at": bson.M{"$indexOfArray": bson.A{page, "$_id"}}}}},
+		{{Key: "$sort", Value: bson.M{"_at": 1}}},
+		{{Key: "$project", Value: bson.M{"_at": 0}}},
+	})
 	if err != nil {
 		return 0, fmt.Errorf("list apps: %w", err)
 	}
@@ -120,6 +142,46 @@ func (s *Store) ListApps(ctx context.Context, q AppQuery, rows any) (int, error)
 		return 0, fmt.Errorf("list apps: %w", err)
 	}
 	return int(total), nil
+}
+
+// ownerPerPage is how many of one account's apps a page shows: some accounts
+// publish dozens of near-identical repositories and would fill a shelf alone.
+const ownerPerPage = 2
+
+// SpreadOwners reorders ids ("owner/name", best first) so that no page of
+// pageSize holds more than perPage ids of one owner. An id held back keeps its
+// place ahead of everything after it, so it leads the first page with room.
+func SpreadOwners(ids []string, pageSize, perPage int) []string {
+	if pageSize <= 0 {
+		return ids
+	}
+	out := make([]string, 0, len(ids))
+	rest := ids
+	for len(rest) > 0 {
+		seen := map[string]int{}
+		var held []string
+		n := 0
+		for i, id := range rest {
+			if n == pageSize {
+				held = append(held, rest[i:]...)
+				break
+			}
+			owner, _, _ := strings.Cut(id, "/")
+			if seen[owner] == perPage {
+				held = append(held, id)
+				continue
+			}
+			seen[owner]++
+			out = append(out, id)
+			n++
+		}
+		// A page nothing more fits on: the rest is one owner's, shown as is.
+		if n == 0 {
+			return append(out, held...)
+		}
+		rest = held
+	}
+	return out
 }
 
 // AppsReplacing decodes the apps that name the product slug as one they
