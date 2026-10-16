@@ -19,12 +19,8 @@ type Config struct {
 	MongoURI string
 	MongoDB  string
 
-	GitHubToken string
-	HFToken     string // optional; the HF list API works unauthenticated
-
-	// Bearer token guarding the admin surface (/internal/*, /category, /user).
-	// Empty means those routes refuse every request — a misconfigured deploy
-	// fails closed instead of exposing destructive endpoints to the internet.
+	// Bearer token guarding the admin surface (/internal/*). Empty means those
+	// routes refuse every request: a misconfigured deploy fails closed.
 	AdminToken string
 
 	// AI
@@ -34,26 +30,6 @@ type Config struct {
 	LMStudioBaseURL string
 	LMStudioModel   string
 	LMStudioAPIKey  string // auth for a hosted OpenAI-compatible relay (e.g. grok); empty for local LM Studio
-
-	// Fetch scheduling
-	FetchCron       string
-	CategorizeCron  string
-	DevSyncCron     string
-	AltFindCron     string
-	StoreCron       string
-	ShotCron        string
-	IconCron        string
-	ReconcileCron   string
-	RateLimitBuffer int // pause fetching when GitHub rateLimit.remaining drops below this
-
-	CategorizeBatchSize int // items per AI categorization call
-	DomainMaxLabels     int // max domain leaf paths per item (multi-label cap)
-	LLMConcurrency      int // LLM batches processed in parallel
-	// Long-tail classification gate: GitHub repos under CategorizeMinStars are
-	// classified only once weeklyIncrease >= CategorizeHotWeekly. 0 disables.
-	CategorizeMinStars  float64
-	CategorizeHotWeekly float64
-	TaxonomyAuditCron   string
 
 	// Embedding classification layer (skipped when EmbedModel is empty or the
 	// provider has no credentials).
@@ -72,8 +48,6 @@ func Load() (*Config, error) {
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
 		MongoURI:        os.Getenv("MONGODB_URI"),
 		MongoDB:         getEnv("MONGODB_DB", "github-trend"),
-		GitHubToken:     os.Getenv("GITHUB_API_TOKEN"),
-		HFToken:         os.Getenv("HF_TOKEN"),
 		AdminToken:      os.Getenv("ADMIN_API_TOKEN"),
 		AIProvider:      getEnv("AI_PROVIDER", "openai"),
 		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
@@ -81,14 +55,6 @@ func Load() (*Config, error) {
 		LMStudioBaseURL: getEnv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
 		LMStudioModel:   os.Getenv("LMSTUDIO_LOCAL_MODULE_NAME"),
 		LMStudioAPIKey:  os.Getenv("LMSTUDIO_API_KEY"),
-		FetchCron:       getEnv("FETCH_CRON", "0 30 3 * * *"),
-		CategorizeCron:  getEnv("CATEGORIZE_CRON", "0 0 5 * * *"),
-		DevSyncCron:     getEnv("DEVSYNC_CRON", "0 0 4 * * *"),
-		AltFindCron:     getEnv("ALTFIND_CRON", "0 0 6 * * *"),   // after categorize, so newly-classified apps get alternatives
-		StoreCron:       getEnv("STORE_CRON", "0 30 5 * * *"),    // after categorize; shelf/tagline/excluded judgement (change 15)
-		ShotCron:        getEnv("SHOT_CRON", "0 0 7 * * *"),      // screenshots from READMEs/og:image (change 15 v2b)
-		IconCron:        getEnv("ICON_CRON", "0 30 6 * * *"),     // after categorize; extracts app icons from homepages
-		ReconcileCron:   getEnv("RECONCILE_CRON", "0 0 7 * * *"), // rename-ghost hunt: verify oldest-unfetched repos against GitHub
 	}
 
 	// PORT
@@ -97,49 +63,6 @@ func Load() (*Config, error) {
 		errs = append(errs, "PORT must be a number")
 	}
 	cfg.Port = port
-
-	// RATE_LIMIT_BUFFER
-	buf, err := strconv.Atoi(getEnv("RATE_LIMIT_BUFFER", "200"))
-	if err != nil {
-		errs = append(errs, "RATE_LIMIT_BUFFER must be a number")
-	}
-	cfg.RateLimitBuffer = buf
-
-	// CATEGORIZE_BATCH_SIZE
-	batch, err := strconv.Atoi(getEnv("CATEGORIZE_BATCH_SIZE", "15"))
-	if err != nil || batch < 1 {
-		errs = append(errs, "CATEGORIZE_BATCH_SIZE must be a positive number")
-	}
-	cfg.CategorizeBatchSize = batch
-
-	// DOMAIN_MAX_LABELS
-	maxLabels, err := strconv.Atoi(getEnv("DOMAIN_MAX_LABELS", "3"))
-	if err != nil || maxLabels < 1 {
-		errs = append(errs, "DOMAIN_MAX_LABELS must be a positive number")
-	}
-	cfg.DomainMaxLabels = maxLabels
-
-	// LLM_CONCURRENCY
-	conc, err := strconv.Atoi(getEnv("LLM_CONCURRENCY", "1"))
-	if err != nil || conc < 1 {
-		errs = append(errs, "LLM_CONCURRENCY must be a positive number")
-	}
-	cfg.LLMConcurrency = conc
-
-	// CATEGORIZE_MIN_STARS / CATEGORIZE_HOT_WEEKLY — the long-tail gate. The
-	// defaults match today's corpus floor (1k stars), so nothing changes until
-	// sub-1k repos are ingested; then only the ones gaining 50+/week get judged.
-	minStars, err := strconv.ParseFloat(getEnv("CATEGORIZE_MIN_STARS", "1000"), 64)
-	if err != nil || minStars < 0 {
-		errs = append(errs, "CATEGORIZE_MIN_STARS must be a number >= 0")
-	}
-	cfg.CategorizeMinStars = minStars
-	hot, err := strconv.ParseFloat(getEnv("CATEGORIZE_HOT_WEEKLY", "50"), 64)
-	if err != nil || hot < 0 {
-		errs = append(errs, "CATEGORIZE_HOT_WEEKLY must be a number >= 0")
-	}
-	cfg.CategorizeHotWeekly = hot
-	cfg.TaxonomyAuditCron = getEnv("TAXONOMY_AUDIT_CRON", "0 45 5 * * *") // after categorize: size/heat per leaf vs split/merge thresholds
 
 	// Embedding layer
 	cfg.EmbedModel = getEnv("EMBED_MODEL", "text-embedding-3-small")
@@ -152,9 +75,6 @@ func Load() (*Config, error) {
 	// Required
 	if cfg.MongoURI == "" {
 		errs = append(errs, "MONGODB_URI is required")
-	}
-	if cfg.GitHubToken == "" {
-		errs = append(errs, "GITHUB_API_TOKEN is required")
 	}
 
 	// Enum

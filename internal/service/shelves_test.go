@@ -45,7 +45,4 @@ func TestShelvesMatchTree(t *testing.T) {
 	if ShelfDomainPath("productivity/notes") != "apps/productivity/notes" {
 		t.Error("consumer shelf path")
 	}
-	if !validShelfFilter(DevShelfGroup) || !validShelfFilter("system") || validShelfFilter("devtools") || validShelfFilter("excluded") {
-		t.Error("validShelfFilter groups")
-	}
 }

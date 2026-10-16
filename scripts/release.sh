@@ -4,9 +4,8 @@
 #   scripts/release.sh api            build + ship + restart the Go API
 #   scripts/release.sh web            build + ship + restart the Next.js frontend
 #   scripts/release.sh worker         build + ship + restart the job worker (it
-#                                     shares the api image; this also starts it
-#                                     the first time, at the cutover)
-#   scripts/release.sh all            api, worker if it is live, then web (backend
+#                                     shares the api image)
+#   scripts/release.sh all            api, worker, then web (backend
 #                                     first: the frontend may send params an
 #                                     older API answers 400 to)
 #   scripts/release.sh compose        sync deploy/docker-compose.yml, recreate what changed
@@ -160,11 +159,6 @@ restart() {
 	remote "cd $REMOTE_DIR && docker compose up -d $svc"
 }
 
-# The worker is live once its container exists; before the cutover it does not.
-worker_live() {
-	remote "docker inspect ghta-worker-1 >/dev/null 2>&1"
-}
-
 # The worker serves nothing, so "healthy" is: still running a little after the
 # start, without having been restarted by docker in between.
 wait_worker_running() {
@@ -219,11 +213,9 @@ case "$cmd" in
 		require_releasable_tree; require_docker; require_server
 		release api
 		# Same image as the api just shipped: only the container needs replacing.
-		if worker_live; then
-			restart worker
-			verify worker
-			record worker
-		fi
+		restart worker
+		verify worker
+		record worker
 		release web
 		;;
 	build)
@@ -238,10 +230,6 @@ case "$cmd" in
 		remote "cp -p $REMOTE_DIR/docker-compose.yml $REMOTE_DIR/docker-compose.yml.prev"
 		remote "cat > $REMOTE_DIR/docker-compose.yml" <deploy/docker-compose.yml
 		remote "cd $REMOTE_DIR && docker compose up -d"
-		# The worker sits behind a compose profile, so a bare `up` skips it.
-		if worker_live; then
-			restart worker
-		fi
 		wait_healthy "$API_HEALTH" && wait_healthy "$WEB_HEALTH" ||
 			die "unhealthy after compose sync — previous file is $REMOTE_DIR/docker-compose.yml.prev"
 		record compose
@@ -264,7 +252,7 @@ case "$cmd" in
 		remote "docker tag $image:latest $image:rollback-tmp && docker tag $image:prev $image:latest && docker tag $image:rollback-tmp $image:prev && docker rmi $image:rollback-tmp >/dev/null"
 		restart "$svc"
 		verify "$svc"
-		if [ "$svc" = api ] && worker_live; then
+		if [ "$svc" = api ]; then
 			restart worker
 			verify worker
 		fi

@@ -53,22 +53,7 @@ services:
       LOG_LEVEL: info
       MONGODB_DB: ghta
       MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/ghta?authSource=admin
-      GITHUB_API_TOKEN: ${GITHUB_API_TOKEN}
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
-      AI_PROVIDER: ${AI_PROVIDER:-openai}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      # LLM backend (change 12: grok relay) + classification tuning.
-      LMSTUDIO_BASE_URL: ${LMSTUDIO_BASE_URL:-}
-      LMSTUDIO_LOCAL_MODULE_NAME: ${LMSTUDIO_LOCAL_MODULE_NAME:-}
-      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
-      CATEGORIZE_BATCH_SIZE: ${CATEGORIZE_BATCH_SIZE:-15}
-      DOMAIN_MAX_LABELS: ${DOMAIN_MAX_LABELS:-3}
-      LLM_CONCURRENCY: ${LLM_CONCURRENCY:-1}
-      EMBED_MODEL: ${EMBED_MODEL:-}
-    # The grok relay's DNS resolves to a CN CDN edge that 504s from this US
-    # droplet; pin it to a working origin IP (override via LLM_RELAY_HOST_PIN).
-    extra_hosts:
-      - ${LLM_RELAY_HOST_PIN:-dragoncode.codes:192.238.249.146}
     # No `ports:` — traffic arrives through Caddy.
     networks:
       default:
@@ -76,17 +61,12 @@ services:
         aliases: [ghta-api]
     mem_limit: 640m
 
-  # Every scheduled job of the rebuilt system (docs/REBUILD.md): the same image
-  # as `api` with the other entrypoint. It only talks to MongoDB and outwards,
-  # so it sits on the internal network alone and can be restarted at any time
-  # without the site noticing.
-  #
-  # Behind a profile until the cutover: `docker compose up -d` leaves it alone,
-  # `scripts/release.sh worker` starts it. Before the cutover it must not run —
-  # the api still runs the old jobs and the two would fetch everything twice.
+  # Every scheduled job (docs/REBUILD.md): the same image as `api` with the
+  # other entrypoint. The api only reads. The worker only talks to MongoDB and
+  # outwards, so it sits on the internal network alone and can be restarted at
+  # any time without the site noticing.
   worker:
     image: ghta-api:latest
-    profiles: [worker]
     entrypoint: ["/app/worker"]
     restart: unless-stopped
     depends_on:

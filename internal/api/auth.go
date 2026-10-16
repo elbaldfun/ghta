@@ -1,4 +1,4 @@
-package handler
+package api
 
 import (
 	"crypto/subtle"
@@ -8,13 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RequireAdminToken guards the admin surface (job triggers and the category/user
-// CRUD) with a shared bearer token.
-//
-// These routes can delete data, list every user, and kick off jobs that burn the
-// GitHub API quota, so they must never be reachable anonymously once the API is
-// on the public internet. The public frontend only reads GET /trending*, which
-// stays open.
+// RequireAdminToken guards the admin surface (/internal/*) with a shared bearer
+// token. It is read-only today, but it reports the worker's internals and must
+// not be reachable anonymously on the public internet.
 //
 // An empty token makes every guarded request fail with 503 rather than passing:
 // forgetting to set ADMIN_API_TOKEN takes the admin surface offline instead of
