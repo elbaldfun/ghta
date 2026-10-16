@@ -107,6 +107,7 @@ const maxListLimit = 50
 // GET /v1/repos — a page of GitHub repositories.
 //
 //	q         text search (relevance order unless sort is given)
+//	owner     a GitHub account, exactly as stored
 //	language  exact language
 //	domain    a leaf path or a top-level domain
 //	type      a form (cli, app, library, …)
@@ -121,6 +122,7 @@ func (a *API) listRepos(c *gin.Context) {
 	q := store.ListQuery{
 		Source:   item.SourceGitHub,
 		Q:        strings.TrimSpace(c.Query("q")),
+		Owner:    c.Query("owner"),
 		Language: c.Query("language"),
 		Domain:   c.Query("domain"),
 		Type:     c.Query("type"),

@@ -300,7 +300,13 @@
     "boardTitle": "{name} 오픈소스 프로젝트 순위",
     "boardDescription": "GitHub에서 가장 인기 있고 빠르게 성장하는 {name} 오픈소스 프로젝트를 스타와 주간 성장으로 순위를 매깁니다. 매일 업데이트.",
     "sparkLabel": "최근 {days}일 스타 변화: {gain}",
-    "navToday": "오늘"
+    "navToday": "오늘",
+    "badgeTitle": "README 배지",
+    "badgeHint": "이 저장소의 최고 순위를 README에 표시하세요. 매일 갱신됩니다.",
+    "copyMarkdown": "Markdown 복사",
+    "copied": "복사됨",
+    "ownerRepos": "{owner}의 다른 저장소",
+    "domainPeers": "{name}에서 이번 주 상승 중"
   },
   "site": {
     "name": "StarRank",

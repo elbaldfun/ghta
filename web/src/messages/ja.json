@@ -300,7 +300,13 @@
     "boardTitle": "{name} のオープンソースプロジェクト ランキング",
     "boardDescription": "GitHub で人気・急上昇中の {name} オープンソースプロジェクトを、スター数と週間の伸びでランキング。毎日更新。",
     "sparkLabel": "過去 {days} 日間のスター増減：{gain}",
-    "navToday": "今日"
+    "navToday": "今日",
+    "badgeTitle": "README バッジ",
+    "badgeHint": "このリポジトリの最高順位を README に表示できます。毎日更新されます。",
+    "copyMarkdown": "Markdown をコピー",
+    "copied": "コピーしました",
+    "ownerRepos": "{owner} のほかのリポジトリ",
+    "domainPeers": "{name} で今週伸びている"
   },
   "site": {
     "name": "StarRank",

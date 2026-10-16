@@ -300,7 +300,13 @@
     "boardTitle": "{name}: los mejores proyectos de código abierto",
     "boardDescription": "Los proyectos de código abierto de {name} más populares y de mayor crecimiento en GitHub, clasificados por estrellas y crecimiento semanal. Actualizado a diario.",
     "sparkLabel": "Estrellas en los últimos {days} días: {gain}",
-    "navToday": "Hoy"
+    "navToday": "Hoy",
+    "badgeTitle": "Insignia para el README",
+    "badgeHint": "Muestra la mejor posición de este repositorio en su README. Se actualiza a diario.",
+    "copyMarkdown": "Copiar Markdown",
+    "copied": "Copiado",
+    "ownerRepos": "Más de {owner}",
+    "domainPeers": "En alza en {name}"
   },
   "site": {
     "name": "StarRank",

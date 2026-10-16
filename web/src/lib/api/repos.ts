@@ -357,3 +357,23 @@ export async function getRelatedRepos(repo: RepoSummary, limit = 12): Promise<Re
     .filter((r) => r.fullName !== repo.fullName)
     .slice(0, limit);
 }
+
+/** The owner's other repositories, most starred first. */
+export async function getOwnerRepos(repo: RepoSummary, limit = 6): Promise<RepoSummary[]> {
+  const params = new URLSearchParams({ owner: repo.owner, sort: 'stars', limit: String(limit + 1) });
+  const res = await apiGet<{ data: Card[] }>(`/repos?${params}`, 3600);
+  if (res.error !== null) return [];
+  return res.data.data
+    .map(mapCard)
+    .filter((r) => r.fullName !== repo.fullName)
+    .slice(0, limit);
+}
+
+/** Projects in the repo's first domain gaining the most stars this week. */
+export async function getDomainPeers(repo: RepoSummary, limit = 6): Promise<RepoSummary[]> {
+  const domain = repo.categoryPath[0];
+  if (!domain) return [];
+  const res = await searchRepos({ category: domain, sort: 'weekly', perPage: limit + 1 });
+  if (res.error !== null) return [];
+  return res.data.items.filter((r) => r.fullName !== repo.fullName).slice(0, limit);
+}

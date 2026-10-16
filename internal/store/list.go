@@ -59,7 +59,10 @@ var nameCollation = &options.Collation{Locale: "en", Strength: 2}
 
 // ListQuery selects and orders a page of items. Empty fields do not filter.
 type ListQuery struct {
-	Source   string
+	Source string
+	// Owner is a GitHub account, as stored; it matches the id's prefix so the
+	// unique (source, externalId) index serves it.
+	Owner    string
 	Language string
 	// Domain is a leaf path ("ai/vision") or a top-level domain ("ai").
 	Domain  string
@@ -99,6 +102,9 @@ func ContainsCJK(s string) bool {
 
 func (q ListQuery) filter() bson.M {
 	f := bson.M{"source": q.Source, "stale": bson.M{"$ne": true}}
+	if q.Owner != "" {
+		f["externalId"] = bson.M{"$regex": "^" + regexp.QuoteMeta(q.Owner) + "/"}
+	}
 	if q.Language != "" {
 		f["language"] = q.Language
 	}

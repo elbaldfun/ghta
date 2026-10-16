@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { routing } from '@/i18n/routing';
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+/** The API as the public reaches it: badges are embedded in other sites' READMEs. */
+export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.starrank.dev';
 
 /**
  * The canonical URL and hreflang alternates of one page. `path` is the page's

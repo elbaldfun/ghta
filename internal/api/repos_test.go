@@ -94,6 +94,8 @@ func TestListRepos(t *testing.T) {
 		"/v1/repos?q=react&sort=stars":        "o/react-kit,o/react",
 		"/v1/repos?q=%E7%AC%94%E8%AE%B0":      "o/tagged", // 笔记, in the Chinese tagline
 		"/v1/repos?limit=2&page=3":            "o/tie-b",
+		"/v1/repos?owner=o&language=Go":       "o/tie-a,o/tie-b",
+		"/v1/repos?owner=o.":                  "", // a literal account, not a pattern
 	} {
 		get(t, r, url, nil, &p)
 		if names(p) != want {
