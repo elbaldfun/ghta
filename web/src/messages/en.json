@@ -299,7 +299,8 @@
     },
     "boardTitle": "{name} — top open-source projects",
     "boardDescription": "The most popular and fastest-growing {name} open-source projects on GitHub, ranked by stars and weekly growth. Updated daily.",
-    "sparkLabel": "Stars over the last {days} days: {gain}"
+    "sparkLabel": "Stars over the last {days} days: {gain}",
+    "navToday": "Today"
   },
   "site": {
     "name": "StarRank",
@@ -338,5 +339,26 @@
     "learnMore": "Privacy Policy",
     "accept": "Accept",
     "reject": "Decline"
+  },
+  "today": {
+    "todayTitle": "What's rising today",
+    "todaySubtitle": "The fastest-growing open-source projects, apps and models right now, from yesterday's snapshot.",
+    "colRepos": "Repositories",
+    "colReposSub": "stars gained today",
+    "colTrending": "GitHub Trending",
+    "colTrendingSub": "GitHub's own list",
+    "colApps": "Open-source apps",
+    "colAppsSub": "stars gained today",
+    "colModels": "Models",
+    "colModelsSub": "likes gained today",
+    "seeAll": "All",
+    "heatTitle": "Domain heat",
+    "heatSub": "new stars per repository per day",
+    "insights": "Insights",
+    "statTotal": "Projects tracked",
+    "statUpdated": "Data refresh",
+    "statUpdatedValue": "daily, 03:30 UTC",
+    "allTime": "All-time ranking",
+    "empty": "Nothing yet"
   }
 }

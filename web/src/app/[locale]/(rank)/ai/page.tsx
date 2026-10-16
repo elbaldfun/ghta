@@ -16,6 +16,7 @@ import { Carousel } from '@/components/rank/Carousel';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
 import { RankTable } from '@/components/rank/RankTable';
 import { PageShell } from '@/components/rank/PageShell';
+import { GithubTabs } from '@/components/rank/GithubTabs';
 import { boardHref } from '@/lib/board-url';
 import { alternatesFor } from '@/lib/seo';
 
@@ -67,6 +68,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
 
   return (
     <PageShell className="py-[22px]">
+      <GithubTabs />
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-xl font-extrabold">{t('aiHubTitle')}</h1>
       </div>

@@ -7,6 +7,7 @@ import { ErrorState } from '@/components/rank/ErrorState';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
 import { alternatesFor } from '@/lib/seo';
+import { GithubTabs } from '@/components/rank/GithubTabs';
 
 export async function generateMetadata({
   params: { locale },
@@ -74,6 +75,7 @@ export default async function EcosystemPage({
 
   return (
     <PageShell className="py-[22px]">
+      <GithubTabs />
       <div className="mb-1 flex items-baseline gap-2.5">
         <h1 className="font-display text-lg font-extrabold">{t('ecoTitle')}</h1>
         <span className="text-xs text-muted">{t('ecoSubtitle')}</span>
