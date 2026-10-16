@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { getBestOf } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 // v2c pilot (change 15 review): FIVE hand-picked collections only — prove
 // indexing/ranking on a small, dense set before opening more. Expansion is
@@ -33,7 +34,7 @@ export async function generateMetadata({
   if (!shelf) return {};
   const t = await getTranslations({ locale: params.locale, namespace: 'rank' });
   const label = t(`shelf_${shelf.replace(/[/-]/g, '_')}` as never) as string;
-  return {
+  return { alternates: alternatesFor(params.locale, `/apps/best/${params.major}/${params.sub}`),
     title: t('bestTitle', { label }),
     description: t(`bestIntro_${shelf.replace(/[/-]/g, '_')}` as never) as string,
   };

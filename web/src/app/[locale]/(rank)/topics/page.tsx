@@ -5,6 +5,8 @@ import { getTopics, type TopicSort } from '@/lib/data';
 import { ErrorState } from '@/components/rank/ErrorState';
 import { formatCompact } from '@/lib/rank-data';
 import { PageShell } from '@/components/rank/PageShell';
+import { boardHref } from '@/lib/board-url';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params: { locale },
@@ -12,7 +14,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('topicsTitle'), description: t('topicsSubtitle') };
+  return { alternates: alternatesFor(locale, '/topics'), title: t('topicsTitle'), description: t('topicsSubtitle') };
 }
 
 export default async function TopicsPage({
@@ -71,7 +73,7 @@ export default async function TopicsPage({
             return (
               <Link
                 key={tp.topic}
-                href={`/?q=${encodeURIComponent(tp.topic)}`}
+                href={boardHref({ q: tp.topic })}
                 className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
               >
                 <div className="min-w-0">

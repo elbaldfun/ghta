@@ -24,14 +24,11 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'site' });
-  const languages = Object.fromEntries(
-    routing.locales.map((l) => [l, `${SITE_URL}/${l}`]),
-  );
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: `${t('name')} — ${t('tagline')}`, template: `%s · ${t('name')}` },
     description: t('tagline'),
-    alternates: { canonical: `/${locale}`, languages: { ...languages, 'x-default': SITE_URL } },
+    // No alternates here: each page declares its own canonical (lib/seo).
     openGraph: { title: t('name'), description: t('tagline'), type: 'website', locale },
     twitter: { card: 'summary_large_image', title: t('name'), description: t('tagline') },
   };

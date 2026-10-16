@@ -5,6 +5,7 @@ import { getModels, type ModelSort, type ModelTask } from '@/lib/data';
 import { ModelRow } from '@/components/rank/ModelRow';
 import { PageShell } from '@/components/rank/PageShell';
 import { Pagination } from '@/components/rank/Pagination';
+import { alternatesFor } from '@/lib/seo';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
 // build where the backend is unreachable.
@@ -23,7 +24,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('modelsTitle'), description: t('modelsSubtitle') };
+  return { alternates: alternatesFor(locale, '/models'), title: t('modelsTitle'), description: t('modelsSubtitle') };
 }
 
 export default async function ModelsPage({

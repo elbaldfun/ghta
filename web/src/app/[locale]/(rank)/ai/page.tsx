@@ -16,6 +16,8 @@ import { Carousel } from '@/components/rank/Carousel';
 import { DeveloperCard } from '@/components/rank/DeveloperCard';
 import { RankTable } from '@/components/rank/RankTable';
 import { PageShell } from '@/components/rank/PageShell';
+import { boardHref } from '@/lib/board-url';
+import { alternatesFor } from '@/lib/seo';
 
 // Rendered per request (backend caches upstream). Without this the hub is
 // prerendered at build time and bakes an empty page whenever the backend is
@@ -29,7 +31,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('aiHubTitle'), description: t('aiHubSubtitle') };
+  return { alternates: alternatesFor(locale, '/ai'), title: t('aiHubTitle'), description: t('aiHubSubtitle') };
 }
 
 /** Section header with a "see all" link to the dedicated page. */
@@ -76,14 +78,14 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
           <SectionHead
             title={t('aiAreasTitle')}
             sub={t('aiAreasSubtitle')}
-            href="/?category=ai"
+            href={boardHref({ category: 'ai' })}
             more={t('seeAll')}
           />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2.5">
             {subdomains.map((node) => (
               <Link
                 key={node.path}
-                href={`/?category=${encodeURIComponent(node.path)}`}
+                href={boardHref({ category: node.path })}
                 className="rounded-card border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
               >
                 <div className="truncate text-sm font-bold">{categoryLabel(node, locale)}</div>
@@ -150,7 +152,7 @@ export default async function AiHub({ params: { locale } }: { params: { locale: 
             {topics.map((tp) => (
               <Link
                 key={tp.topic}
-                href={`/?q=${encodeURIComponent(tp.topic)}`}
+                href={boardHref({ q: tp.topic })}
                 className="flex w-[190px] shrink-0 flex-col gap-1 rounded-card border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
               >
                 <span className="truncate text-sm font-bold">{tp.topic}</span>

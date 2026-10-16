@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { useSearchParams } from 'next/navigation';
 import { FILTER_LANGS, FILTER_LICENSES, SORT_OPTIONS } from '@/lib/rank-data';
+import { boardHref, type BoardFilters } from '@/lib/board-url';
 import type { TypeFacet } from '@/lib/data';
 import { track } from '@/lib/analytics';
 
@@ -37,20 +37,14 @@ function LabeledSelect({
 }
 
 /** Form-type chips + fine-grained language / license / sort selects. */
-export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
+export function FilterBar({ types = [], filters }: { types?: TypeFacet[]; filters: BoardFilters }) {
   const t = useTranslations('rank');
   const router = useRouter();
-  const params = useSearchParams();
-  const activeType = params.get('type');
+  const activeType = filters.type;
 
-  function setParam(key: string, value: string) {
+  function setParam(key: 'type' | 'lang' | 'license' | 'sort', value: string) {
     track('filter_change', { filter: key, value });
-    const next = new URLSearchParams(params.toString());
-    next.delete('page');
-    if (value === 'all') next.delete(key);
-    else next.set(key, value);
-    const qs = next.toString();
-    router.push(qs ? `/?${qs}` : '/');
+    router.push(boardHref({ ...filters, [key]: value === 'all' ? undefined : value, page: undefined }));
   }
 
   const all = { value: 'all', label: t('all') };
@@ -63,9 +57,9 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
     updated: t('sortUpdated'),
   };
   // Relevance only exists for a search; when browsing, hide it.
-  const hasQuery = Boolean(params.get('q'));
+  const hasQuery = Boolean(filters.q);
   const sortOptions = hasQuery ? SORT_OPTIONS : SORT_OPTIONS.filter((s) => s !== 'relevance');
-  const currentSort = params.get('sort') ?? (hasQuery ? 'relevance' : 'stars');
+  const currentSort = filters.sort ?? (hasQuery ? 'relevance' : 'stars');
 
   return (
     <div className="flex flex-wrap items-center gap-3.5">
@@ -96,13 +90,13 @@ export function FilterBar({ types = [] }: { types?: TypeFacet[] }) {
       )}
       <LabeledSelect
         label={t('filterFine')}
-        value={params.get('lang') ?? 'all'}
+        value={filters.lang ?? 'all'}
         options={[all, ...FILTER_LANGS.map((l) => ({ value: l, label: l }))]}
         onChange={(v) => setParam('lang', v)}
       />
       <LabeledSelect
         label={t('filterLicense')}
-        value={params.get('license') ?? 'all'}
+        value={filters.license ?? 'all'}
         options={[all, ...FILTER_LICENSES.map((l) => ({ value: l, label: l.toUpperCase() }))]}
         onChange={(v) => setParam('license', v)}
       />

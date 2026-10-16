@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { getAltTargets } from '@/lib/data';
 import { PageTabs } from '@/components/rank/PageTabs';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('altIndexTitle'), description: t('altIndexSubtitle') };
+  return { alternates: alternatesFor(locale, '/alternatives'), title: t('altIndexTitle'), description: t('altIndexSubtitle') };
 }
 
 export default async function AlternativesIndexPage({ params: { locale } }: { params: { locale: string } }) {

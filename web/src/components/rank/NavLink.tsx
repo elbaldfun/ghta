@@ -6,11 +6,12 @@ import { Link, usePathname } from '@/i18n/navigation';
  * A nav item that highlights when it points at the current page. usePathname
  * returns the locale-stripped path (e.g. "/apps"), so active state survives
  * client-side navigation — the header stops showing "排行榜" as selected on every
- * page.
+ * page. `alsoOn` lists other paths the item stands for.
  */
-export function NavLink({ href, label }: { href: string; label: string }) {
+export function NavLink({ href, label, alsoOn = [] }: { href: string; label: string; alsoOn?: string[] }) {
   const pathname = usePathname();
-  const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
+  const on = (h: string) => (h === '/' ? pathname === '/' : pathname === h || pathname.startsWith(h + '/'));
+  const active = on(href) || alsoOn.some(on);
 
   return (
     <Link

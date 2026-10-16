@@ -296,11 +296,13 @@
       "app": "Apps",
       "library": "Bibliotecas",
       "software": "Software"
-    }
+    },
+    "boardTitle": "{name}: los mejores proyectos de código abierto",
+    "boardDescription": "Los proyectos de código abierto de {name} más populares y de mayor crecimiento en GitHub, clasificados por estrellas y crecimiento semanal. Actualizado a diario."
   },
   "site": {
-    "name": "GHTA",
-    "tagline": "Tendencias de desarrollo y software de múltiples fuentes"
+    "name": "StarRank",
+    "tagline": "Proyectos de código abierto clasificados por estrellas y crecimiento"
   },
   "blog": {
     "title": "Análisis",

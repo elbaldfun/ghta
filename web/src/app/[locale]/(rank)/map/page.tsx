@@ -7,6 +7,7 @@ import { EcosystemMap } from '@/components/rank/EcosystemMap';
 import { RankTable } from '@/components/rank/RankTable';
 import { PageTabs } from '@/components/rank/PageTabs';
 import { PageShell } from '@/components/rank/PageShell';
+import { alternatesFor } from '@/lib/seo';
 
 // Render per request rather than at build time: the map's data comes from the
 // backend, and a build that can't reach it (e.g. a preview deploy without
@@ -19,7 +20,7 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'rank' });
-  return { title: t('mapTitle'), description: t('mapSubtitle') };
+  return { alternates: alternatesFor(locale, '/map'), title: t('mapTitle'), description: t('mapSubtitle') };
 }
 
 export default async function MapPage({
@@ -48,7 +49,7 @@ export default async function MapPage({
 
   return (
     <PageShell className="py-[22px]">
-      <PageTabs items={[{ href: '/', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
+      <PageTabs items={[{ href: '/github', label: t('tabList') }, { href: '/map', label: t('navMap') }]} />
       <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-display text-xl font-extrabold">{t('mapTitle')}</h1>
         <span className="font-mono text-[11.5px] tabular-nums text-muted">
