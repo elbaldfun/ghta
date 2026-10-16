@@ -5,18 +5,11 @@
 package taxonomy
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/yaml.v3"
-
-	"github.com/elbaldfun/ghta/internal/domain"
-	"github.com/elbaldfun/ghta/internal/repository"
 )
 
 // Node is one category in taxonomy.yaml. Est/From are human-facing notes
@@ -147,73 +140,6 @@ func Load(path string) ([]Node, error) {
 		return nil, err
 	}
 	return t.Nodes, nil
-}
-
-// Sync upserts the taxonomy into the categories collection (matched by path,
-// createdBy=taxonomy). It is idempotent and safe to run at every startup.
-func Sync(ctx context.Context, store *repository.Store, nodes []Node) error {
-	now := time.Now().UTC()
-	idByPath := map[string]interface{}{}
-
-	for _, n := range nodes { // parents come first, so parent ids resolve
-		level := len(strings.Split(n.Path, "/"))
-		var parentID interface{}
-		if i := strings.LastIndex(n.Path, "/"); i > 0 {
-			parentID = idByPath[n.Path[:i]]
-		}
-		res := store.Categories().FindOneAndUpdate(ctx,
-			bson.M{"path": n.Path},
-			bson.M{
-				"$set": bson.M{
-					"name": n.Name, "nameEn": n.NameEn, "description": n.Desc, "level": level,
-					"parentId": parentID, "createdBy": "taxonomy", "updatedAt": now,
-				},
-				"$setOnInsert": bson.M{"createdAt": now},
-			},
-			options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
-		)
-		var cat domain.Category
-		if err := res.Decode(&cat); err != nil {
-			return fmt.Errorf("sync category %s: %w", n.Path, err)
-		}
-		idByPath[n.Path] = cat.ID
-	}
-
-	// Prune taxonomy categories no longer in the tree — but only once nothing
-	// references them. During a tree migration the old leaves keep serving
-	// (items carry the old path until re-classified, GET /category still lists
-	// it); deleting them at the first restart would leave dangling categoryIds
-	// and empty navigation. A stale node with zero live items is gone for good.
-	// Only prunes createdBy=taxonomy — human/legacy-ai categories are never touched.
-	current := make([]string, 0, len(nodes))
-	for _, n := range nodes {
-		current = append(current, n.Path)
-	}
-	cur, err := store.Categories().Find(ctx, bson.M{
-		"createdBy": "taxonomy",
-		"path":      bson.M{"$nin": current},
-	})
-	if err != nil {
-		return fmt.Errorf("list stale categories: %w", err)
-	}
-	var stale []domain.Category
-	if err := cur.All(ctx, &stale); err != nil {
-		return fmt.Errorf("decode stale categories: %w", err)
-	}
-	for _, c := range stale {
-		// Answered from the categoryPath index; no document scan.
-		n, err := store.Items().CountDocuments(ctx, bson.M{"categoryPath": c.Path}, options.Count().SetLimit(1))
-		if err != nil {
-			return fmt.Errorf("count refs of %s: %w", c.Path, err)
-		}
-		if n > 0 {
-			continue // still referenced: keep until the migration drains it
-		}
-		if _, err := store.Categories().DeleteOne(ctx, bson.M{"_id": c.ID}); err != nil {
-			return fmt.Errorf("prune %s: %w", c.Path, err)
-		}
-	}
-	return nil
 }
 
 // Rules is the topic/language → category-path mapping from topic-map.yaml.

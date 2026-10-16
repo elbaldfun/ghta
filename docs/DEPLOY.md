@@ -40,9 +40,6 @@
 |---|---|
 | `GET /health` | 公开。进程在就返回 200；正文 `fetch` 是新 worker 上次成功抓取的时间，超过 36 小时 `status` 为 `degraded`。加 `?strict=1` 时过期返回 503，给外部监控用 |
 | `GET /v1/*` | 公开（重构后的只读接口，含 `/v1/badge/{owner}/{name}.svg`） |
-| `GET /trending`、`/trending/rising`、`/trending/item` | 公开（前端唯一使用的接口） |
-| `/category` 全部 CRUD | **需 token**（含删除） |
-| `POST /internal/*` | **需 token**（触发抓取/归类等昂贵任务） |
 | `GET /internal/jobs` | **需 token**：新 worker 每个任务的最近一次运行，和最近的运行记录（`?job=&limit=`） |
 
 鉴权：`Authorization: Bearer <ADMIN_API_TOKEN>`。
@@ -74,16 +71,14 @@ scripts/release.sh all             # 两个都发，后端先行
 scripts/release.sh compose         # 同步 deploy/docker-compose.yml 并重建有变化的服务
 scripts/release.sh site            # 发布 deploy/starrank.caddy 到共享 Caddy
 scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
-scripts/release.sh worker          # 发任务进程（重构切换之后才用，见下）
+scripts/release.sh worker          # 只发任务进程
 ```
 
 `worker` 是重构后跑全部定时任务的进程（`docs/REBUILD.md`）。它和 `api` 是同一个镜像的
 两个入口，所以：
 
-- compose 里 `worker` 服务挂在 `worker` profile 后面，`docker compose up -d` 不会启动它。
-  **切换之前不要启动**：旧 `api` 还在跑旧任务，两边会把全量抓取各做一遍。
-- 第一次启动和之后的更新都用 `scripts/release.sh worker`。`all` 在 worker 已经上线后会
-  顺带重启它（顺序 api → worker → web）。
+- `api` 只读，所有定时任务都在 `worker` 里；`docker compose up -d` 会把两个都拉起来。
+- `all` 的顺序是 api → worker → web；只改了任务代码时用 `scripts/release.sh worker`。
 - 回滚 `api` 会把 worker 一起带回上一个镜像；没有单独的 `rollback worker`。
 - worker 不对外提供服务，发布后的检查是"启动 10 秒后仍在运行且没有被 docker 重启过"。
   看日志：`docker logs --tail 50 ghta-worker-1`。每次任务运行在 `job_runs` 集合里有一条记录。
@@ -148,8 +143,7 @@ scripts/release.sh worker          # 发任务进程（重构切换之后才用�
 ### 手动触发任务
 
 ```bash
-TOKEN=$(ssh 24.199.88.38 'grep ^ADMIN_API_TOKEN= /opt/ghta/.env | cut -d= -f2')
-curl -X POST -H "Authorization: Bearer $TOKEN" https://api.starrank.dev/internal/metrics
+ssh 24.199.88.38 'cd /opt/ghta && docker compose run --rm worker -run fetch,rank'
 ```
 
 ### 备份
@@ -241,6 +235,6 @@ Caddy 是这台机器上所有站点共用的入口，由 `droplet-edge` 仓库�
 - [ ] `/zh` 与 `/en` 均可访问，语言与明暗主题切换正常
 - [ ] 详情页统计、增长图、README 正常
 - [ ] `curl https://api.starrank.dev/health` → 200
-- [ ] `curl https://api.starrank.dev/category -X POST` → 401
+- [ ] `curl https://api.starrank.dev/internal/jobs` → 401
 - [ ] DevTools → Sources 全局搜 `24.199.88.38`，**搜不到**（后端地址未泄漏）
 - [ ] `nmap -p 27017 24.199.88.38` 显示 filtered/closed（数据库未暴露）

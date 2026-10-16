@@ -41,30 +41,3 @@ type Registry struct {
 	fetchers map[domain.Source]Fetcher
 	order    []domain.Source
 }
-
-func NewRegistry() *Registry {
-	return &Registry{fetchers: make(map[domain.Source]Fetcher)}
-}
-
-// Register adds a fetcher. The last registration for a source wins.
-func (r *Registry) Register(f Fetcher) {
-	if _, exists := r.fetchers[f.Source()]; !exists {
-		r.order = append(r.order, f.Source())
-	}
-	r.fetchers[f.Source()] = f
-}
-
-// Get returns the fetcher for a source, if registered.
-func (r *Registry) Get(s domain.Source) (Fetcher, bool) {
-	f, ok := r.fetchers[s]
-	return f, ok
-}
-
-// All returns fetchers in registration order.
-func (r *Registry) All() []Fetcher {
-	out := make([]Fetcher, 0, len(r.order))
-	for _, s := range r.order {
-		out = append(out, r.fetchers[s])
-	}
-	return out
-}

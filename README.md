@@ -17,19 +17,18 @@ and change proposals. This backend implements change `1-rewrite-backend-golang`.
   the fetch job drives them, so new sources plug in without touching the core.
 
 ```
-cmd/api            entrypoint (config, mongo, jobs, HTTP)
+cmd/api            read-only HTTP server (/v1, /health, /internal/jobs)
+cmd/worker         every scheduled job (fetch, judge, rank, …)
+cmd/import         one-off import of the old collections into the new ones
 internal/
-  config           env loading + startup validation
-  domain           TrackedItem, Category, User, FetchRun, MetricSnapshot
-  repository       mongo store, indexes, bulk upsert, snapshots
-  source           Fetcher contract + registry
-    github         GitHub GraphQL adapter (rate-limit aware, resumable shards)
-  service          trend query, category/user CRUD, AI categorization
-  handler          HTTP handlers
-  provider         AI provider (OpenAI / LM Studio) abstraction
-  job              fetcher + categorizer cron jobs
+  api              HTTP handlers of /v1
+  store            reads and writes of the new collections
+  pipeline         the worker's jobs
+  judge            LLM classification
+  boards           ranking boards
+  source           GitHub / Hugging Face adapters
+  taxonomy         the category tree (taxonomy/*.yaml)
 pkg/query          range-expression parsing
-api/openapi.yaml   frozen REST contract (for the frontend)
 ```
 
 ## Run locally
@@ -49,16 +48,15 @@ PAT at https://github.com/settings/tokens with the `public_repo` scope.
 
 ## Endpoints
 
-- `GET /health`
-- `GET /trending` — filter by `source`, `stars`/`issues` ranges (`a..b`, `>n`, `<n`, `n`), `language`, `category`; `sort=field:order`; `limit≤50`
-- `GET/POST/PATCH/DELETE /category`, `/category/:id` — CRUD + tree
-- `GET/POST/PATCH/DELETE /user`, `/user/:id`
-- `POST /internal/fetch[?source=&shard=]`, `POST /internal/categorize` — manual job triggers
+- `GET /health` — `?strict=1` answers 503 when the last fetch is stale
+- `GET /v1/*` — the read-only interface the website uses (`internal/api`)
+- `GET /internal/jobs` — the worker's latest runs (bearer `ADMIN_API_TOKEN`)
 
 ## Jobs
 
-- **Fetcher** (`FETCH_CRON`) — shards each source, resumable via `fetch_runs`, bulk-upserts items and appends daily snapshots.
-- **Categorizer** (`CATEGORIZE_CRON`) — AI-categorizes pending items, creating categories as needed; escalates repeated failures to `failed`.
+All scheduled work runs in `cmd/worker` on `PIPELINE_CRON` (fetch → … → rank);
+`go run ./cmd/worker -list` prints the pipeline, `-run fetch,rank` runs jobs
+once. The api only reads.
 
 ## Test
 
