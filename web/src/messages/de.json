@@ -300,7 +300,13 @@
     "boardTitle": "{name} – die besten Open-Source-Projekte",
     "boardDescription": "Die beliebtesten und am schnellsten wachsenden {name}-Open-Source-Projekte auf GitHub, sortiert nach Stars und Wochenwachstum. Täglich aktualisiert.",
     "sparkLabel": "Stars in den letzten {days} Tagen: {gain}",
-    "navToday": "Heute"
+    "navToday": "Heute",
+    "badgeTitle": "README-Badge",
+    "badgeHint": "Zeige die beste Platzierung dieses Repositorys im README. Wird täglich aktualisiert.",
+    "copyMarkdown": "Markdown kopieren",
+    "copied": "Kopiert",
+    "ownerRepos": "Mehr von {owner}",
+    "domainPeers": "Im Aufwind in {name}"
   },
   "site": {
     "name": "StarRank",

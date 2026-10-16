@@ -300,7 +300,13 @@
     "boardTitle": "{name} 开源项目排行",
     "boardDescription": "GitHub 上最受欢迎、涨得最快的 {name} 开源项目，按 star 和周增长排名，每日更新。",
     "sparkLabel": "近 {days} 天 star 变化：{gain}",
-    "navToday": "今天"
+    "navToday": "今天",
+    "badgeTitle": "README 徽章",
+    "badgeHint": "在 README 里展示这个仓库的最好名次，每天更新。",
+    "copyMarkdown": "复制 Markdown",
+    "copied": "已复制",
+    "ownerRepos": "{owner} 的其他仓库",
+    "domainPeers": "{name} 本周在涨"
   },
   "site": {
     "name": "StarRank",

@@ -2,20 +2,61 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { categoryLabel, getCategoryTree, getReadme, getRelatedRepos, getRepo, getStarHistory } from '@/lib/data';
+import {
+  categoryLabel,
+  getCategoryTree,
+  getDomainPeers,
+  getOwnerRepos,
+  getReadme,
+  getRelatedRepos,
+  getRepo,
+  getStarHistory,
+  type RepoSummary,
+} from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
-import { Carousel } from '@/components/rank/Carousel';
 import { GrowthChart } from '@/components/rank/GrowthChart';
 import { ReadmeBlock } from '@/components/rank/ReadmeBlock';
-import { RepoCard } from '@/components/rank/RepoCard';
 import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
 import { BackLink } from '@/components/rank/BackLink';
 import { PlatformBadges } from '@/components/rank/PlatformBadges';
 import { Downloads } from '@/components/rank/Downloads';
 import { PageShell } from '@/components/rank/PageShell';
 import { CopyCommand } from '@/components/rank/CopyCommand';
+import { BadgeCopy } from '@/components/rank/BadgeCopy';
 import { boardHref } from '@/lib/board-url';
-import { alternatesFor } from '@/lib/seo';
+import { PUBLIC_API_URL, SITE_URL, alternatesFor } from '@/lib/seo';
+
+/** A short list in the sidebar: name, stars gained this week or in all. */
+function SideList({ title, href, all, repos }: { title: string; href?: string; all: string; repos: RepoSummary[] }) {
+  return (
+    <section className="rounded-card border border-border bg-surface p-4">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h2 className="min-w-0 truncate text-[12.5px] font-bold text-muted">{title}</h2>
+        {href && (
+          <Link href={href} className="shrink-0 text-[11.5px] font-bold text-muted hover:text-fg">
+            {all} →
+          </Link>
+        )}
+      </div>
+      <ul className="-mx-2 flex flex-col">
+        {repos.map((r) => (
+          <li key={r.fullName}>
+            <Link
+              href={`/repo/${r.owner}/${r.name}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 rounded-lg px-2 py-[6px] hover:bg-surface2"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-semibold">{r.name}</span>
+                {r.description && <span className="block truncate text-[11.5px] text-muted">{r.description}</span>}
+              </span>
+              <span className="font-mono text-[11.5px] font-bold tabular-nums text-muted">★ {formatCompact(r.stars)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 interface Params {
   locale: string;
@@ -35,12 +76,16 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   if (repoRes.error !== null) notFound();
   const repo = repoRes.data;
 
-  const [history, readme, related, tree] = await Promise.all([
+  const [history, readme, ownerRepos, peers, tree] = await Promise.all([
     getStarHistory(repo.owner, repo.name),
     getReadme(repo.owner, repo.name),
-    getRelatedRepos(repo),
+    getOwnerRepos(repo),
+    getDomainPeers(repo),
     getCategoryTree(),
   ]);
+  // Without a domain, the repos sharing its leading topic stand in.
+  const related = peers.length === 0 ? await getRelatedRepos(repo, 6) : [];
+  const domain = repo.categoryPath[0];
 
   // path -> localized label, for the classification breadcrumb + rank chips.
   const pathLabel = new Map<string, string>();
@@ -219,18 +264,28 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
         </div>
       )}
 
-      {readme && <ReadmeBlock html={readme.html} toc={readme.toc} />}
-
-      {related.length > 0 && (
-        <div className="mt-[26px]">
-          <div className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t('relatedRepos')}</div>
-          <Carousel ariaLabel={t('relatedRepos')}>
-            {related.map((r) => (
-              <RepoCard key={r.fullName} repo={r} fixedWidth />
-            ))}
-          </Carousel>
-        </div>
-      )}
+      <div className="grid gap-x-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0">{readme && <ReadmeBlock html={readme.html} toc={readme.toc} />}</div>
+        <aside className="mt-6 flex min-w-0 flex-col gap-4">
+          <BadgeCopy
+            src={`${PUBLIC_API_URL}/v1/badge/${repo.owner}/${repo.name}.svg${params.locale === 'zh' ? '?lang=zh' : ''}`}
+            href={`${SITE_URL}/${params.locale}/repo/${repo.owner}/${repo.name}`}
+            repo={repo.fullName}
+          />
+          {ownerRepos.length > 0 && (
+            <SideList title={t('ownerRepos', { owner: repo.owner })} all={t('seeAll')} repos={ownerRepos} />
+          )}
+          {peers.length > 0 && domain && (
+            <SideList
+              title={t('domainPeers', { name: labelFor(domain) })}
+              href={boardHref({ category: domain, sort: 'weekly' })}
+              all={t('seeAll')}
+              repos={peers}
+            />
+          )}
+          {related.length > 0 && <SideList title={t('relatedRepos')} all={t('seeAll')} repos={related} />}
+        </aside>
+      </div>
     </PageShell>
   );
 }
