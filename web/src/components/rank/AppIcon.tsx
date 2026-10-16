@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 /**
  * An app's icon with graceful fallback: the app's own brand icon (extracted from
- * its homepage), then the repo owner's GitHub avatar, then a lettered tile — so a
+ * its homepage), then the repo owner's GitHub avatar, then a colored letter tile — so a
  * broken or missing icon never leaves an empty box. Client-side because it reacts
  * to <img> load errors.
  */
@@ -25,13 +25,17 @@ export function AppIcon({
   const [failed, setFailed] = useState(false);
 
   if (failed) {
+    // A hue picked from the name, so each app keeps the same color everywhere
+    // and a row of fallbacks does not read as one grey block.
+    let hash = 0;
+    for (const ch of title) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
     return (
       <span
-        className="flex shrink-0 items-center justify-center rounded-[10px] border border-border bg-surface2 font-bold text-muted"
-        style={{ width: size, height: size, fontSize: size * 0.42 }}
+        className="flex shrink-0 items-center justify-center rounded-[10px] font-display font-extrabold text-white"
+        style={{ width: size, height: size, fontSize: size * 0.44, backgroundColor: `hsl(${hash % 360} 55% 42%)` }}
         aria-hidden="true"
       >
-        {title.charAt(0).toUpperCase()}
+        {(title.match(/[\p{L}\p{N}]/u)?.[0] ?? '?').toUpperCase()}
       </span>
     );
   }
