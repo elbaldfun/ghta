@@ -40,3 +40,4 @@ lerna-debug.log*
 deploy/.env
 .vercel
 .env*
+/_trial

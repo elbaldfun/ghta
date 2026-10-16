@@ -113,8 +113,7 @@ scripts/release.sh worker          # 只发任务进程
   或改动了 `.github/workflows` 的 PR 不会被自动合并。
 - 同步：GitHub → Actions → "Sync develop to main" → Run workflow。仓库变量 `AUTO_SYNC_MAIN` 设为 `true` 后，
   每次 `develop` 有推送都会自动同步。
-- 重构期间（`docs/REBUILD.md`）不设这个变量：`develop` 带着切换前不能上生产的代码。切换当天手动同步一次，
-  之后再打开自动同步。
+- 重构切换已在 2026-10-17 完成（`main` 上切换前的版本是标签 `v1-final`）。确认切换稳定后打开自动同步。
 - 生产热修：从 `main` 拉分支，PR 进 `main`，发版，然后开一个 `main` → `develop` 的 PR 把修复合回去。
 - 同步内容里包含 `.github/workflows` 的改动时，GitHub 会拒绝机器人的推送，那一次需要手动把 `develop` 合进 `main`。
 
@@ -224,10 +223,12 @@ Caddy 是这台机器上所有站点共用的入口，由 `droplet-edge` 仓库�
 
 ## 已知问题
 
-- **AI 归类在生产不可用**：`AI_PROVIDER=deepseek` 指向局域网的 LM Studio
-  (`192.168.50.74:1234`)，droplet 访问不到。服务器上暂设为 `openai` + 空 key，
-  归类定时任务会每天失败一次，不影响抓取与展示。需要归类的话改用云端 LLM 的 key。
-- **`githubtrends` 集合未迁移**：643 MB 的 NestJS 遗留数据，Go 代码完全不引用。
+- **生产上没有判定模型**：droplet 的 worker 没有 `JUDGE_BASE_URL`，流水线里没有 `judge`，
+  新收录的条目停在待判定（领域为空，不进分类榜和货架）。切换时用的是本机演练库判好的结果，
+  按 `source + externalId` 回填。
+- **旧集合保留到 2026-11-16**：`tracked_items`（约 1 GB）、`users`、`categories`、`category_suggestions`、
+  `fetch_runs`，代码已不读写。回滚窗口过后删除。
+  切换前的全库备份在服务器 `/opt/ghta/backups/cutover/pre-cutover-20261017.archive.gz`。
 
 ## 上线检查清单
 

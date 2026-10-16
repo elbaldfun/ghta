@@ -1,6 +1,6 @@
 // Static presentation data for the ranking UI: language colors, license
 // names, sort options, and package-registry heuristics. The category taxonomy
-// now comes from the backend GET /category tree (see lib/data.ts).
+// comes from the backend GET /v1/categories (see lib/api/boards.ts).
 
 
 /** Canonical GitHub language colors (subset + fallback). */
