@@ -298,7 +298,8 @@
       "software": "Software"
     },
     "boardTitle": "{name}: los mejores proyectos de código abierto",
-    "boardDescription": "Los proyectos de código abierto de {name} más populares y de mayor crecimiento en GitHub, clasificados por estrellas y crecimiento semanal. Actualizado a diario."
+    "boardDescription": "Los proyectos de código abierto de {name} más populares y de mayor crecimiento en GitHub, clasificados por estrellas y crecimiento semanal. Actualizado a diario.",
+    "sparkLabel": "Estrellas en los últimos {days} días: {gain}"
   },
   "site": {
     "name": "StarRank",

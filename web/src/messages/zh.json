@@ -298,7 +298,8 @@
       "software": "软件项目"
     },
     "boardTitle": "{name} 开源项目排行",
-    "boardDescription": "GitHub 上最受欢迎、涨得最快的 {name} 开源项目，按 star 和周增长排名，每日更新。"
+    "boardDescription": "GitHub 上最受欢迎、涨得最快的 {name} 开源项目，按 star 和周增长排名，每日更新。",
+    "sparkLabel": "近 {days} 天 star 变化：{gain}"
   },
   "site": {
     "name": "StarRank",

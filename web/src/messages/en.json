@@ -298,7 +298,8 @@
       "software": "Software"
     },
     "boardTitle": "{name} — top open-source projects",
-    "boardDescription": "The most popular and fastest-growing {name} open-source projects on GitHub, ranked by stars and weekly growth. Updated daily."
+    "boardDescription": "The most popular and fastest-growing {name} open-source projects on GitHub, ranked by stars and weekly growth. Updated daily.",
+    "sparkLabel": "Stars over the last {days} days: {gain}"
   },
   "site": {
     "name": "StarRank",
