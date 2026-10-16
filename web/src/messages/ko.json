@@ -298,7 +298,8 @@
       "software": "소프트웨어"
     },
     "boardTitle": "{name} 오픈소스 프로젝트 순위",
-    "boardDescription": "GitHub에서 가장 인기 있고 빠르게 성장하는 {name} 오픈소스 프로젝트를 스타와 주간 성장으로 순위를 매깁니다. 매일 업데이트."
+    "boardDescription": "GitHub에서 가장 인기 있고 빠르게 성장하는 {name} 오픈소스 프로젝트를 스타와 주간 성장으로 순위를 매깁니다. 매일 업데이트.",
+    "sparkLabel": "최근 {days}일 스타 변화: {gain}"
   },
   "site": {
     "name": "StarRank",

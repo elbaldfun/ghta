@@ -298,7 +298,8 @@
       "software": "ソフトウェア"
     },
     "boardTitle": "{name} のオープンソースプロジェクト ランキング",
-    "boardDescription": "GitHub で人気・急上昇中の {name} オープンソースプロジェクトを、スター数と週間の伸びでランキング。毎日更新。"
+    "boardDescription": "GitHub で人気・急上昇中の {name} オープンソースプロジェクトを、スター数と週間の伸びでランキング。毎日更新。",
+    "sparkLabel": "過去 {days} 日間のスター増減：{gain}"
   },
   "site": {
     "name": "StarRank",

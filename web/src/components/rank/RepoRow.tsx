@@ -1,8 +1,9 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { RepoSummary } from '@/lib/data';
+import type { RepoSummary, TrendPoint } from '@/lib/data';
 import { artifactOf, formatCompact, langColor } from '@/lib/rank-data';
 import { ForkIcon, StarIcon } from './icons';
+import { Sparkline } from './Sparkline';
 
 function heatColor(pct: number): string {
   if (pct >= 4) return 'rgb(var(--heat4))';
@@ -26,15 +27,19 @@ function updatedLabel(pushedAt: string, locale: string): string {
  * classification chips, and stars/forks — with the daily star gain shown as a
  * heat-coloured figure when we have it, so the home page speaks the same
  * velocity language as the boards while keeping the filters and browse flow.
+ * With `trend`, a sparkline of the last days sits before the figures.
  */
 export function RepoRow({
   repo,
   rank,
   showUpdated = false,
   growthWindow = 'daily',
+  trend,
 }: {
   repo: RepoSummary;
   rank: number;
+  /** Daily star points of the last days, oldest first. */
+  trend?: TrendPoint[];
   showUpdated?: boolean;
   /** Which growth figure the row highlights; follows the active sort. */
   growthWindow?: 'daily' | 'weekly';
@@ -49,6 +54,7 @@ export function RepoRow({
   const perDay = weekly ? growth / 7 : growth;
   const pct = perDay > 0 && repo.stars > 0 ? (perDay / repo.stars) * 100 : 0;
   const color = heatColor(pct);
+  const trendGain = trend && trend.length > 1 ? trend[trend.length - 1].v - trend[0].v : 0;
 
   return (
     <Link
@@ -101,6 +107,16 @@ export function RepoRow({
       </span>
 
       <span className="flex items-center gap-4 pl-2 text-right">
+        {trend && (
+          <Sparkline
+            points={trend}
+            className="hidden md:block"
+            label={t('sparkLabel', {
+              days: trend.length - 1,
+              gain: `${trendGain >= 0 ? '+' : ''}${formatCompact(trendGain)}`,
+            })}
+          />
+        )}
         {growth > 0 && (
           <span className="hidden font-mono text-[12px] font-bold tabular-nums sm:block" style={{ color }}>
             +{formatCompact(growth)}

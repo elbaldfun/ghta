@@ -8,6 +8,7 @@ import {
   getCategoryTree,
   getFacets,
   getHot,
+  getTrends,
   getTotalCount,
   formatTotal,
   searchRepos,
@@ -108,6 +109,9 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
     isLanding ? getHot('monthly', 12) : Promise.resolve([] as HotRepo[]),
   ]);
 
+  // The rows' sparklines: seven days of change (eight daily points).
+  const trends = searchRes.data ? await getTrends(searchRes.data.items.map((r) => r.fullName), 7) : {};
+
   const heading = subject(t, locale, tree, facets, f) ?? t('homeTitle');
   // Breadcrumb: for a leaf ("a/b"), link its parent.
   const parentPath = f.category?.includes('/') ? f.category.split('/')[0] : null;
@@ -166,6 +170,7 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
                     rank={(page - 1) * PER_PAGE + i + 1}
                     showUpdated={sort === 'updated'}
                     growthWindow={sort === 'weekly' ? 'weekly' : 'daily'}
+                    trend={trends[repo.fullName]}
                   />
                 ))}
               </div>
