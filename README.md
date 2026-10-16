@@ -1,20 +1,19 @@
 # GHTA — Trend Aggregation Platform (Go backend)
 
-Multi-source developer/software trend aggregator. Fetches ranking/trend data from
-multiple sources (GitHub today; App Store, Chrome Web Store, Microsoft Store next),
-accumulates metric history, categorizes items with AI, and serves trend insights
-over a REST API.
-
-Spec-driven: see [`openspec/`](openspec/) for the project context, capability specs,
-and change proposals. This backend implements change `1-rewrite-backend-golang`.
+The backend of [starrank.dev](https://starrank.dev): ranks open-source projects
+(GitHub repositories, Hugging Face models) by stars and growth, labels them with
+an LLM, and serves the boards over a read-only REST API. The frontend is in
+[`web/`](web/).
 
 ## Architecture
 
-- **Go** (Gin, mongo-driver, robfig/cron, slog) — replaces the retired NestJS backend in `src/`.
-- **MongoDB** — `tracked_items` (source-agnostic main docs), `metric_snapshots`
-  (time-series), `categories`, `users`, `fetch_runs`.
-- **Source adapters** implement one `Fetcher` contract and register in a registry;
-  the fetch job drives them, so new sources plug in without touching the core.
+- **Go** (Gin, mongo-driver, robfig/cron, slog). Two processes from one image:
+  `cmd/api` only reads; `cmd/worker` runs every scheduled job.
+- **MongoDB** — `items` (one document per project), `item_blobs` (README and
+  releases), `boards` and `boards_history` (precomputed boards), `apps`,
+  `metric_snapshots` (daily points), `star_history`, `developers`, `job_runs`.
+- Design and history: [`docs/REBUILD.md`](docs/REBUILD.md); operations:
+  [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ```
 cmd/api            read-only HTTP server (/v1, /health, /internal/jobs)
@@ -36,12 +35,12 @@ pkg/query          range-expression parsing
 ```bash
 cp .env.example .env      # then fill GITHUB_API_TOKEN etc.
 docker run -d -p 27017:27017 --name mongo mongo:7
-make run                  # or: go run ./cmd/api
+go run ./cmd/api          # read-only API on :3000
+go run ./cmd/worker -run fetch,rank,boards   # fill it
 ```
 
-Required env: `MONGODB_URI`, `GITHUB_API_TOKEN`. `AI_PROVIDER` is `openai` or
-`deepseek` (LM Studio). Missing/invalid required config fails startup and names
-the offending field. See [`.env.example`](.env.example).
+The api needs `MONGODB_URI`; the worker also `GITHUB_API_TOKEN` for fetching.
+See [`.env.example`](.env.example).
 
 A GitHub token: `gh auth token` (if you use the GitHub CLI) or create a classic
 PAT at https://github.com/settings/tokens with the `public_repo` scope.

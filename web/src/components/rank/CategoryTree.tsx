@@ -10,8 +10,8 @@ import { GridIcon } from './icons';
 import { track } from '@/lib/analytics';
 
 /**
- * Two-level domain tree (2a sidebar), rendered from the backend GET /category
- * tree. Selecting a node sets the `category` param (leaf path or parent segment),
+ * Two-level domain tree (2a sidebar), rendered from the backend GET
+ * /v1/categories. Selecting a node sets the `category` param (leaf path or parent segment),
  * resets to page 1; other filters (language/license/sort/type) are preserved.
  */
 export function CategoryTree({ tree, total }: { tree: CategoryNode[]; total: number | null }) {
