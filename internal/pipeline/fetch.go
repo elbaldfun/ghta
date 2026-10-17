@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/elbaldfun/ghta/internal/item"
@@ -57,6 +58,7 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 	var rep worker.Report
 	date := item.DayOf(j.now())
 	attempted, lastErr := 0, error(nil)
+	var down []string // sources every attempted shard of which failed
 
 	for _, src := range j.sources {
 		name := string(src.Source())
@@ -131,6 +133,15 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		tally.Failed += len(failed)
 		rep.Failed += len(failed)
 
+		// A source that saw nothing (a bad token, the source down) says nothing
+		// about growth: aging would mark every item of it as not growing.
+		if run := len(shards) - tally.Skipped; run > 0 && tally.Failed == run {
+			down = append(down, name)
+			rep.Note(name, tally)
+			j.log.Error("fetch: source down, growth left as it was", "source", name, "shards", run, "err", lastErr)
+			continue
+		}
+
 		// Items this run did not see count as not growing today. One that a
 		// failed shard holds is re-measured when the retry fetches it.
 		aged, err := j.st.AgeGrowth(ctx, name, date)
@@ -144,10 +155,11 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "retried", tally.Retried, "failed", tally.Failed, "aged", tally.Aged)
 	}
 
-	// Shards still failing are retried by the next run. Every shard
-	// failing is a broken token or an unreachable source: fail the run.
-	if attempted > 0 && rep.Failed == attempted {
-		return rep, fmt.Errorf("all %d shards failed; last: %w", attempted, lastErr)
+	// Shards still failing are retried by the next run. A source with every
+	// shard failing is a broken token or an unreachable source: fail the run,
+	// even when the other sources were fetched.
+	if len(down) > 0 {
+		return rep, fmt.Errorf("every shard of %s failed; last: %w", strings.Join(down, ", "), lastErr)
 	}
 	return rep, nil
 }
