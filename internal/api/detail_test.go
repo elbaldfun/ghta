@@ -73,6 +73,23 @@ func TestRepoDetail(t *testing.T) {
 	if get(t, r, "/v1/repos/o/lib/readme", nil, &rd); rd.Data.Markdown != "" {
 		t.Fatalf("no blob = %+v", rd)
 	}
+	// Renamed onto a tracked repository: detail and badge follow it; gone: 404.
+	moved := ghRepo("old/app", "Go", 4000, 0)
+	moved.Stale, moved.StaleReason = true, "renamed:o/app"
+	gone := ghRepo("o/gone", "Go", 10, 0)
+	gone.Stale, gone.StaleReason = true, "gone"
+	seed(t, st, moved, gone)
+	for url, loc := range map[string]string{
+		"/v1/repos/old/app":             "/v1/repos/o/app",
+		"/v1/badge/old/app.svg?lang=zh": "/v1/badge/o/app.svg?lang=zh",
+	} {
+		if w := get(t, r, url, nil, nil); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != loc {
+			t.Errorf("%s = %d %q; want 301 to %s", url, w.Code, w.Header().Get("Location"), loc)
+		}
+	}
+	if w := get(t, r, "/v1/repos/o/gone", nil, nil); w.Code != http.StatusNotFound {
+		t.Errorf("gone = %d; want 404", w.Code)
+	}
 	for _, url := range []string{"/v1/repos/o/none", "/v1/repos/o/none/readme", "/v1/repos/o/none/history"} {
 		if w := get(t, r, url, nil, nil); w.Code != http.StatusNotFound {
 			t.Errorf("%s = %d; want 404", url, w.Code)

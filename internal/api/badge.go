@@ -42,6 +42,17 @@ func (a *API) badge(c *gin.Context) {
 	}
 	notRanked := map[string]string{"en": "not ranked", "zh": "未上榜"}[lang]
 	it, err := a.st.Item(c.Request.Context(), item.SourceGitHub, c.Param("owner")+"/"+name)
+	// Badges already pasted into READMEs follow the repository to its new name.
+	if err == nil {
+		if to := movedTo(&it); to != "" {
+			target := "/v1/badge/" + to + ".svg"
+			if q := c.Request.URL.RawQuery; q != "" {
+				target += "?" + q
+			}
+			c.Redirect(http.StatusMovedPermanently, target)
+			return
+		}
+	}
 	if err != nil || it.Stale || it.Ranks == nil || it.Ranks.Overall == 0 {
 		if err != nil && !errors.Is(err, store.ErrNoItem) {
 			a.fail(c, err)
