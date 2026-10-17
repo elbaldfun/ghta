@@ -17,6 +17,7 @@ import (
 
 // fakeSource serves canned shards and records which were asked for.
 type fakeSource struct {
+	src      domain.Source // GitHub when empty
 	shards   []string
 	fail     map[string]bool
 	failOnce map[string]bool // fails the first time it is asked for only
@@ -25,8 +26,13 @@ type fakeSource struct {
 	hook     func(shard string)
 }
 
-func (f *fakeSource) Source() domain.Source { return domain.SourceGitHub }
-func (f *fakeSource) Shards() []string      { return f.shards }
+func (f *fakeSource) Source() domain.Source {
+	if f.src == "" {
+		return domain.SourceGitHub
+	}
+	return f.src
+}
+func (f *fakeSource) Shards() []string { return f.shards }
 func (f *fakeSource) FetchItems(ctx context.Context, shard string) ([]item.Fetched, error) {
 	f.calls = append(f.calls, shard)
 	if f.hook != nil {
@@ -127,6 +133,38 @@ func TestFetchFailsWhenEverythingFails(t *testing.T) {
 	}
 	if err == nil || !strings.Contains(err.Error(), "rate limited") || rep.Failed != 2 {
 		t.Fatalf("report %+v, err %v; a run where every shard fails must fail", rep, err)
+	}
+}
+
+// A source that fetched nothing must not age its items' growth, and fails the
+// run even when another source was fetched.
+func TestFetchLeavesGrowthWhenASourceIsDown(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	known := gh("o/known", "Go", 120)
+	known.History = []item.Point{{D: "2026-10-15", V: 100}, {D: "2026-10-16", V: 120}}
+	known.Growth = item.ComputeGrowth(known.History, 120, "2026-10-16")
+	if _, err := st.Items().InsertOne(ctx, known); err != nil {
+		t.Fatal(err)
+	}
+	down := &fakeSource{shards: []string{"a", "b"}, fail: map[string]bool{"a": true, "b": true}}
+	up := &fakeSource{src: domain.SourceHuggingFace, shards: []string{"m"}, stars: 5}
+	job := NewFetch(st, nil, down, up)
+	job.now = func() time.Time { return time.Date(2026, 10, 17, 3, 30, 0, 0, time.UTC) }
+
+	rep, err := job.Run(ctx)
+	if err == nil || !strings.Contains(err.Error(), "github") || rep.Processed != 2 {
+		t.Fatalf("report %+v, err %v; the other source is fetched, the run still fails", rep, err)
+	}
+	if got := rep.Notes["github"].(sourceTally); got.Aged != 0 || got.Failed != 2 {
+		t.Fatalf("github tally = %+v", got)
+	}
+	var after item.Item
+	if err := st.Items().FindOne(ctx, bson.M{"externalId": "o/known"}).Decode(&after); err != nil {
+		t.Fatal(err)
+	}
+	if !after.Growth.Equal(known.Growth) {
+		t.Fatalf("growth = %+v; want it left at %+v", after.Growth, known.Growth)
 	}
 }
 
