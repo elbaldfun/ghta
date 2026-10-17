@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import {
@@ -75,6 +75,10 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   const repoRes = await getRepo(params.owner, params.name);
   if (repoRes.error !== null) notFound();
   const repo = repoRes.data;
+  // A renamed repository: the API followed it to its new name, so does the page.
+  if (repo.fullName !== `${params.owner}/${params.name}`) {
+    permanentRedirect(`/${params.locale}/repo/${repo.fullName}`);
+  }
 
   const [history, readme, ownerRepos, peers, tree] = await Promise.all([
     getStarHistory(repo.owner, repo.name),

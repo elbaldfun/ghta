@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -76,11 +77,32 @@ type LatestRelease struct {
 // repoID is the external id a repo route names.
 func repoID(c *gin.Context) string { return c.Param("owner") + "/" + c.Param("name") }
 
-// GET /v1/repos/{owner}/{name}
+// movedTo is the name a stale repository goes by now, when reconcile found it
+// renamed onto one already tracked; "" for any other repository.
+func movedTo(it *item.Item) string {
+	if !it.Stale {
+		return ""
+	}
+	if to, ok := strings.CutPrefix(it.StaleReason, "renamed:"); ok && strings.Contains(to, "/") {
+		return to
+	}
+	return ""
+}
+
+// GET /v1/repos/{owner}/{name} — a renamed repository answers with a
+// permanent redirect to its new name; one gone from GitHub with 404.
 func (a *API) repo(c *gin.Context) {
 	it, err := a.st.Item(c.Request.Context(), item.SourceGitHub, repoID(c))
 	if err != nil {
 		a.fail(c, notFound(err))
+		return
+	}
+	if to := movedTo(&it); to != "" {
+		c.Redirect(http.StatusMovedPermanently, "/v1/repos/"+to)
+		return
+	}
+	if it.Stale {
+		a.fail(c, errNotFound)
 		return
 	}
 	d := RepoDetail{
