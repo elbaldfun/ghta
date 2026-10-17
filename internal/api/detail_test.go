@@ -19,7 +19,8 @@ func TestRepoDetail(t *testing.T) {
 	ctx := context.Background()
 	gui := true
 	it := ghRepo("o/app", "Go", 5000, 10, "apps/productivity/notes", "devtools/terminal")
-	it.Ranks = &item.Ranks{Overall: 40, Language: 7, Domain: map[string]int{"devtools/terminal": 3, "apps/productivity/notes": 1}}
+	it.Ranks = &item.Ranks{Overall: 40, Language: 7, Domain: map[string]int{"devtools/terminal": 3, "apps/productivity/notes": 1},
+		Prev: &item.RankPositions{Overall: 43, Language: 7, Domain: map[string]int{"devtools/terminal": 2}}}
 	it.Labels.Shelf, it.Labels.HasGui = "productivity/notes", &gui
 	it.Labels.Alternatives = []item.Alternative{{Name: "Notion", Slug: "notion"}}
 	it.Gh.Platforms = []string{"macos"}
@@ -38,7 +39,9 @@ func TestRepoDetail(t *testing.T) {
 		Data RepoDetail `json:"data"`
 	}
 	w := get(t, r, "/v1/repos/o/app", nil, &d)
-	want := []Rank{{"overall", "", 40}, {"language", "Go", 7}, {"domain", "apps/productivity/notes", 1}, {"domain", "devtools/terminal", 3}}
+	up3, same, down1 := 3, 0, -1
+	// No earlier position in a domain it has just joined: no change.
+	want := []Rank{{"overall", "", 40, &up3}, {"language", "Go", 7, &same}, {"domain", "apps/productivity/notes", 1, nil}, {"domain", "devtools/terminal", 3, &down1}}
 	if w.Code != http.StatusOK || !reflect.DeepEqual(d.Data.Ranks, want) {
 		t.Fatalf("ranks = %d %+v", w.Code, d.Data.Ranks)
 	}

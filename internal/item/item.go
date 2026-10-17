@@ -149,6 +149,18 @@ type Ranks struct {
 	Language int            `bson:"language,omitempty"`
 	Domain   map[string]int `bson:"domain,omitempty"`
 	At       time.Time      `bson:"at"`
+	// Prev holds the positions as of the last ranking run on an earlier day
+	// (UTC), the baseline for "moved up three"; nil for an item new to the
+	// rankings. Day is the date of the run that wrote them.
+	Prev *RankPositions `bson:"prev,omitempty"`
+	Day  string         `bson:"day,omitempty"`
+}
+
+// RankPositions is a set of positions without the bookkeeping.
+type RankPositions struct {
+	Overall  int            `bson:"overall"`
+	Language int            `bson:"language,omitempty"`
+	Domain   map[string]int `bson:"domain,omitempty"`
 }
 
 // JobState is one job's progress on one item. Every job uses the same shape.

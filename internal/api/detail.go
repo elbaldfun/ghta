@@ -51,6 +51,9 @@ type Rank struct {
 	Scope string `json:"scope"`
 	Key   string `json:"key,omitempty"`
 	Rank  int    `json:"rank"`
+	// Change is the places gained since the last ranking on an earlier day,
+	// negative for places lost; absent when there is nothing to compare.
+	Change *int `json:"change,omitempty"`
 }
 
 type RepoDetail struct {
@@ -114,15 +117,19 @@ func (a *API) repo(c *gin.Context) {
 	if it.Labels.Shelf != item.ShelfExcluded {
 		d.Shelf = it.Labels.Shelf
 	}
-	if it.Ranks != nil {
-		d.Ranks = append(d.Ranks, Rank{Scope: "overall", Rank: it.Ranks.Overall})
-		if it.Ranks.Language > 0 {
-			d.Ranks = append(d.Ranks, Rank{Scope: "language", Key: it.Language, Rank: it.Ranks.Language})
+	if r := it.Ranks; r != nil {
+		prev := r.Prev
+		if prev == nil {
+			prev = &item.RankPositions{}
+		}
+		d.Ranks = append(d.Ranks, Rank{Scope: "overall", Rank: r.Overall, Change: rankChange(prev.Overall, r.Overall)})
+		if r.Language > 0 {
+			d.Ranks = append(d.Ranks, Rank{Scope: "language", Key: it.Language, Rank: r.Language, Change: rankChange(prev.Language, r.Language)})
 		}
 		// In the item's own order of domains: the first is its main one.
 		for _, p := range it.Labels.Domain {
-			if n := it.Ranks.Domain[p]; n > 0 {
-				d.Ranks = append(d.Ranks, Rank{Scope: "domain", Key: p, Rank: n})
+			if n := r.Domain[p]; n > 0 {
+				d.Ranks = append(d.Ranks, Rank{Scope: "domain", Key: p, Rank: n, Change: rankChange(prev.Domain[p], n)})
 			}
 		}
 	}
@@ -145,6 +152,16 @@ func (a *API) repo(c *gin.Context) {
 		d.Tags = []string{}
 	}
 	a.cached(c, maxAgeDetail, gin.H{"data": d})
+}
+
+// rankChange is the places gained from was to now; nil when there was no
+// earlier position to compare with.
+func rankChange(was, now int) *int {
+	if was == 0 {
+		return nil
+	}
+	d := was - now
+	return &d
 }
 
 func notFound(err error) error {
