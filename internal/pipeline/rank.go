@@ -29,7 +29,7 @@ const (
 // and within each of its domain leaves, all by the primary metric.
 //
 // The whole corpus is ranked in memory from a narrow projection (a few MB for
-// 130k items) and only items whose positions moved are written.
+// 130k items) and only items whose positions or baseline moved are written.
 type Rank struct {
 	st  *store.Store
 	now func() time.Time
@@ -136,6 +136,7 @@ func (j *Rank) Run(ctx context.Context) (worker.Report, error) {
 	seen := map[group]int{}
 	place := func(g group) int { seen[g]++; return seen[g] }
 	at := j.now().UTC().Truncate(time.Millisecond)
+	day := at.Format(time.DateOnly)
 	for i := range ranked {
 		row := &ranked[i]
 		next := item.Ranks{Overall: place(group{row.Source, "all", ""}), At: at}
@@ -153,7 +154,13 @@ func (j *Rank) Run(ctx context.Context) (worker.Report, error) {
 				next.Domain[p] = place(group{row.Source, "domain", p})
 			}
 		}
-		if !sameRanks(row.Ranks, next) {
+		old := row.Ranks
+		next.Day, next.Prev = day, baseline(old, day)
+		moved := !sameRanks(old, next)
+		if !moved {
+			next.At = old.At
+		}
+		if moved || !samePositions(old.Prev, next.Prev) {
 			if err := queue(row.ID, bson.M{"$set": bson.M{"ranks": next}}); err != nil {
 				return rep, err
 			}
@@ -167,6 +174,27 @@ func (j *Rank) Run(ctx context.Context) (worker.Report, error) {
 	rep.Note("written", written)
 	rep.Note("cleared", cleared)
 	return rep, nil
+}
+
+// baseline is what a run on day compares positions against: the positions
+// stored by a run on an earlier day, or, on a rerun the same day, the
+// baseline that run used.
+func baseline(old *item.Ranks, day string) *item.RankPositions {
+	switch {
+	case old == nil:
+		return nil
+	case old.Day == day:
+		return old.Prev
+	default:
+		return &item.RankPositions{Overall: old.Overall, Language: old.Language, Domain: old.Domain}
+	}
+}
+
+func samePositions(a, b *item.RankPositions) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Overall == b.Overall && a.Language == b.Language && len(a.Domain) == len(b.Domain) && maps.Equal(a.Domain, b.Domain)
 }
 
 // sameRanks reports whether the stored positions already equal the new ones;

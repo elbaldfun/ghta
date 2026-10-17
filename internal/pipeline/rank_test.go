@@ -116,12 +116,18 @@ func TestRank(t *testing.T) {
 		t.Errorf("stale or metric-less items keep ranks: %+v %+v", got["o/gone"], got["o/empty"])
 	}
 
-	// A rerun with nothing moved writes nothing; one item overtaking another
-	// rewrites only the items whose positions changed.
-	job.now = func() time.Time { return t1.Add(24 * time.Hour) }
-	if rep, err = job.Run(ctx); err != nil || rep.Notes["written"] != 0 || rep.Notes["cleared"] != 0 {
+	// The next day every ranked item takes its first positions as the
+	// baseline; a rerun the same day with nothing moved writes nothing.
+	t2 := t1.Add(24 * time.Hour)
+	job.now = func() time.Time { return t2 }
+	if rep, err = job.Run(ctx); err != nil || rep.Notes["written"] != 5 || rep.Notes["cleared"] != 0 {
+		t.Fatalf("next day = %+v, %v; want every baseline written", rep, err)
+	}
+	if rep, err = job.Run(ctx); err != nil || rep.Notes["written"] != 0 {
 		t.Fatalf("idle rerun = %+v, %v", rep, err)
 	}
+	// One item overtaking another rewrites only the items whose positions
+	// changed, against the same baseline.
 	if _, err := st.Items().UpdateOne(ctx, bson.M{"externalId": "o/c"}, bson.M{"$set": bson.M{"metrics.stars": 400}}); err != nil {
 		t.Fatal(err)
 	}
@@ -129,10 +135,22 @@ func TestRank(t *testing.T) {
 		t.Fatalf("after o/c overtakes = %+v, %v; want a, c, d rewritten", rep, err)
 	}
 	got = ranksOf(t, st)
-	if got["o/c"].Overall != 2 || got["o/c"].Language != 1 || got["o/a"].Domain["web/frontend"] != 2 {
-		t.Errorf("after overtaking: c=%+v a=%+v", got["o/c"], got["o/a"])
+	if c := got["o/c"]; c.Overall != 2 || c.Language != 1 || c.Prev == nil || c.Prev.Overall != 4 || c.Prev.Language != 2 || !c.At.Equal(t2) {
+		t.Errorf("after overtaking: c=%+v prev=%+v", c, c.Prev)
 	}
-	if !got["o/b"].At.Equal(t1) {
-		t.Errorf("o/b did not move but was rewritten at %v", got["o/b"].At)
+	if a := got["o/a"]; a.Domain["web/frontend"] != 2 || a.Prev.Domain["web/frontend"] != 1 {
+		t.Errorf("after overtaking: a=%+v prev=%+v", a, a.Prev)
+	}
+	if b := got["o/b"]; !b.At.Equal(t1) || b.Prev.Overall != 1 {
+		t.Errorf("o/b did not move: at %v prev %+v", b.At, b.Prev)
+	}
+
+	// The day after, the moves become the baseline: only the movers rewrite.
+	job.now = func() time.Time { return t2.Add(24 * time.Hour) }
+	if rep, err = job.Run(ctx); err != nil || rep.Notes["written"] != 3 {
+		t.Fatalf("third day = %+v, %v; want a, c, d rebased", rep, err)
+	}
+	if c := ranksOf(t, st)["o/c"]; c.Prev.Overall != 2 || !c.At.Equal(t2) {
+		t.Errorf("third day c=%+v prev=%+v", c, c.Prev)
 	}
 }
