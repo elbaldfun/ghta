@@ -30,6 +30,22 @@ func (s *Store) Item(ctx context.Context, source, externalID string) (item.Item,
 	return it, nil
 }
 
+// DerivativesIndex is the index Derivatives counts through.
+const DerivativesIndex = "hf_base_models"
+
+// Derivatives counts the live models that name the given model as a base.
+// The count goes through the index by name, so a database still without it
+// errs rather than scanning every item.
+func (s *Store) Derivatives(ctx context.Context, externalID string) (int, error) {
+	n, err := s.Items().CountDocuments(ctx,
+		bson.M{"hf.baseModels": externalID, "source": item.SourceHuggingFace, "stale": bson.M{"$ne": true}},
+		options.Count().SetHint(DerivativesIndex))
+	if err != nil {
+		return 0, fmt.Errorf("derivatives %s: %w", externalID, err)
+	}
+	return int(n), nil
+}
+
 // Histories returns the history ring of each of the given items that has
 // one: the last 35 daily closing values.
 func (s *Store) Histories(ctx context.Context, source string, ids []string) (map[string][]item.Point, error) {

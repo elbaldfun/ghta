@@ -183,6 +183,9 @@ func mapModelItem(m Model) item.Fetched {
 	}
 	refs := ParseTagRefs(m.Tags)
 	hf.BaseModels, hf.Datasets = nonEmpty(refs.BaseModels), nonEmpty(refs.Datasets)
+	if hf.BaseModels != nil {
+		hf.BaseRelation = refs.BaseRelation
+	}
 	hf.Arxiv, hf.Languages = nonEmpty(refs.Arxiv), nonEmpty(refs.Languages)
 	if t := parseTime(m.CreatedAt); t != nil {
 		hf.CreatedAt = t.UTC()

@@ -47,6 +47,7 @@ func (a *API) Register(r gin.IRouter) {
 	a.registerBoards(v1)
 	a.registerRepos(v1)
 	a.registerDetail(v1)
+	a.registerModels(v1)
 	a.registerApps(v1)
 	a.registerBadge(v1)
 }

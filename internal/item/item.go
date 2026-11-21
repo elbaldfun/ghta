@@ -218,6 +218,7 @@ type HuggingFace struct {
 	Params        int64     `bson:"params,omitempty"`
 	Tags          []string  `bson:"tags,omitempty"`
 	BaseModels    []string  `bson:"baseModels,omitempty"`
+	BaseRelation  string    `bson:"baseRelation,omitempty"`
 	Datasets      []string  `bson:"datasets,omitempty"`
 	Arxiv         []string  `bson:"arxiv,omitempty"`
 	Languages     []string  `bson:"languages,omitempty"`
