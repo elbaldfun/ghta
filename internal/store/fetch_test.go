@@ -322,3 +322,83 @@ func TestAgeGrowthLeavesRestingItems(t *testing.T) {
 		t.Fatalf("o/out d1 = %v; an item missing from a due shard is aged", *got.Growth.D1)
 	}
 }
+
+// lightOf is the light-search reading of f: no blob, gh with owner and pushedAt.
+func lightOf(f item.Fetched) item.Fetched {
+	it := f.Item
+	it.Gh = &item.GitHub{Owner: f.Item.Gh.Owner, PushedAt: f.Item.Gh.PushedAt}
+	return item.Fetched{Item: it, Light: true}
+}
+
+func TestWriteFetchedLightKeepsDetail(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	day := func(d int) time.Time { return time.Date(2026, 11, d, 3, 30, 0, 0, time.UTC) }
+	pushed := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
+
+	full := func(id string, stars float64) item.Fetched {
+		f := repo(id, stars, "# readme")
+		f.Item.Gh.PushedAt = pushed
+		f.Item.Gh.LatestRelease = &item.ReleaseRef{Tag: "v1"}
+		f.Item.Gh.ReleaseAssets = []item.ReleaseAsset{{Name: "a.dmg", Platform: "macos"}}
+		f.Item.Gh.DetailedOn = "2026-11-01"
+		return f
+	}
+	// Day 1 both are read in full; days 2 and 3 o/light gets light readings
+	// and o/full full ones, with the same metrics.
+	if _, err := st.WriteFetched(ctx, []item.Fetched{full("o/light", 1000), full("o/full", 1000)}, day(1)); err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range []struct {
+		d     int
+		stars float64
+	}{{2, 1010}, {3, 1030}} {
+		l := lightOf(full("o/light", step.stars))
+		l.Item.Description = "edited"
+		stats, err := st.WriteFetched(ctx, []item.Fetched{l, full("o/full", step.stars)}, day(step.d))
+		if err != nil || stats.Light != 1 || stats.Blobs != 0 {
+			t.Fatalf("day %d: %+v, %v", step.d, stats, err)
+		}
+	}
+
+	light, ref := getItem(t, st, "o/light"), getItem(t, st, "o/full")
+	if light.Gh.LatestRelease == nil || light.Gh.LatestRelease.Tag != "v1" || len(light.Gh.ReleaseAssets) != 1 ||
+		len(light.Gh.Platforms) != 1 || light.Gh.DetailedOn != "2026-11-01" || !light.Gh.PushedAt.Equal(pushed) {
+		t.Fatalf("a light reading must keep the detail: gh=%+v", light.Gh)
+	}
+	if light.Description != "edited" {
+		t.Errorf("descriptive fields come with the light reading: %q", light.Description)
+	}
+	// Stars, history and growth are the same whichever way it was read.
+	if light.Metrics["stars"] != ref.Metrics["stars"] || !light.Growth.Equal(ref.Growth) ||
+		len(light.History) != len(ref.History) || light.History[2] != ref.History[2] {
+		t.Fatalf("light %v %+v %v vs full %v %+v %v", light.Metrics, light.Growth, light.History, ref.Metrics, ref.Growth, ref.History)
+	}
+	if n := count(t, st, CollSnapshots, bson.M{"meta.externalId": "o/light"}); n != 3 {
+		t.Errorf("%d snapshots; a light reading appends the day's snapshot like any", n)
+	}
+	if n := count(t, st, item.CollBlobs, bson.M{"externalId": "o/light", "readme": "# readme"}); n != 1 {
+		t.Errorf("the blob must be kept")
+	}
+
+	states, err := st.DetailStates(ctx, []string{"o/light", "o/nope"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s, ok := states["o/light"]; !ok || s.DetailedOn != "2026-11-01" || !s.PushedAt.Equal(pushed) ||
+		s.Language != "Go" || s.Homepage != "https://example.com" || len(s.Topics) != 1 {
+		t.Errorf("state = %+v", s)
+	}
+	if _, ok := states["o/nope"]; ok {
+		t.Error("an unknown item has no state")
+	}
+
+	// An item stored before detailedOn existed: its fetchedAt day stands in.
+	if _, err := st.Items().UpdateOne(ctx, bson.M{"externalId": "o/full"}, bson.M{"$unset": bson.M{"gh.detailedOn": ""}}); err != nil {
+		t.Fatal(err)
+	}
+	states, _ = st.DetailStates(ctx, []string{"o/full"})
+	if s := states["o/full"]; s.DetailedOn != "2026-11-03" {
+		t.Errorf("fallback detailedOn = %q; want the fetchedAt day", s.DetailedOn)
+	}
+}
