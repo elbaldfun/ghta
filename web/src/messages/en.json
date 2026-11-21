@@ -366,5 +366,25 @@
     "statUpdatedValue": "daily, 03:30 UTC",
     "allTime": "All-time ranking",
     "empty": "Nothing yet"
+  },
+  "mcp": {
+    "title": "StarRank MCP server",
+    "metaDescription": "Query StarRank's open-source rankings from Claude Code, Cursor and other AI coding agents with a free, read-only MCP server.",
+    "intro": "Ask your coding agent about open-source projects and get StarRank's rankings back: what is trending today, the top projects of a domain or language, or how one repository ranks. Read-only, free, no API key.",
+    "installH": "Install",
+    "claudeCode": "Claude Code",
+    "otherClients": "Cursor, VS Code, Windsurf and other clients: add a remote (HTTP) MCP server with this URL.",
+    "toolsH": "Tools",
+    "tools": {
+      "search_repos": "Search repositories by keyword, most relevant first.",
+      "top_repos": "A ranking, optionally within a domain and/or language, by total stars or by stars gained per day, week or month.",
+      "trending_today": "The repositories that gained the most stars in the last day.",
+      "get_repo": "One repository: stars, growth, and its overall, language and domain ranks with the change since the previous day.",
+      "list_domains": "The domain taxonomy with repository counts."
+    },
+    "examplesH": "Try asking",
+    "examples": "Which Rust projects gained the most stars this week?\nWhat is trending in AI agents today?\nHow does ollama/ollama rank, and is it moving up?",
+    "limits": "Every result links to its page on starrank.dev. Up to 25 rows per call; calls are rate-limited per client. Data refreshes once a day.",
+    "footerLink": "MCP"
   }
 }
