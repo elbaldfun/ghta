@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/elbaldfun/ghta/internal/domain"
@@ -48,6 +50,21 @@ var starRanges = []struct{ start, end, step int }{
 	{1000, 2000, 10},
 }
 
+// Repositories below altStars are fetched every other day, in two halves of
+// about the same size that take turns: [1000, altSplit) one day, [altSplit,
+// altStars) the next. Fetch time is linear in the number of repositories
+// (about 0.2 s each whatever the star count), and 1000–3000 stars hold 61% of
+// them, so this takes a third off the nightly fetch.
+//
+// The halves are contiguous rather than interleaved shard by shard: with
+// alternating 10-star shards a repo gaining about 10 stars a day would move
+// in step with the rota and could be skipped indefinitely. With two blocks
+// only a repo crossing altSplit can miss up to two runs in a row.
+const (
+	altStars = 3000
+	altSplit = 1500
+)
+
 // Shards returns star-range query fragments like "1000..2000", high to low.
 func (a *Adapter) Shards() []string {
 	var shards []string
@@ -57,6 +74,41 @@ func (a *Adapter) Shards() []string {
 		}
 	}
 	return shards
+}
+
+// Span is the star range of a shard ("1000..1010" → stars, 1000, 1010).
+func (a *Adapter) Span(shard string) (metric string, lo, hi float64, ok bool) {
+	l, h, ok := parseShard(shard)
+	return "stars", float64(l), float64(h), ok
+}
+
+func parseShard(shard string) (lo, hi int, ok bool) {
+	ls, hs, found := strings.Cut(shard, "..")
+	if !found {
+		return 0, 0, false
+	}
+	l, err1 := strconv.Atoi(ls)
+	h, err2 := strconv.Atoi(hs)
+	if err1 != nil || err2 != nil || l > h {
+		return 0, 0, false
+	}
+	return l, h, true
+}
+
+// Due reports whether shard is fetched on date: every shard from altStars up
+// daily, the lower half below altSplit on even days since the epoch and the
+// upper half on odd days. A shard or date it cannot read is due.
+func (a *Adapter) Due(shard, date string) bool {
+	lo, _, ok := parseShard(shard)
+	if !ok || lo >= altStars {
+		return true
+	}
+	day, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return true
+	}
+	even := (day.Unix()/86400)%2 == 0
+	return even == (lo < altSplit)
 }
 
 // Fetch pages through one star range and normalizes every repository.

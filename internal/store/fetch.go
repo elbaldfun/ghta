@@ -1,9 +1,12 @@
 package store
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -123,6 +126,33 @@ func observe(history []item.Point, value float64, today string) (next []item.Poi
 
 const ageBatch = 500
 
+// MetricSpan is a closed range of one metric: the items a shard covers.
+type MetricSpan struct {
+	Metric string
+	Lo, Hi float64
+}
+
+// MergeSpans joins overlapping or touching spans of the same metric, so a run
+// of adjacent shards ("1000..1010", "1010..1020") becomes one range.
+func MergeSpans(spans []MetricSpan) []MetricSpan {
+	sorted := slices.Clone(spans)
+	slices.SortFunc(sorted, func(a, b MetricSpan) int {
+		if c := strings.Compare(a.Metric, b.Metric); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.Lo, b.Lo)
+	})
+	var out []MetricSpan
+	for _, sp := range sorted {
+		if n := len(out); n > 0 && out[n-1].Metric == sp.Metric && sp.Lo <= out[n-1].Hi {
+			out[n-1].Hi = max(out[n-1].Hi, sp.Hi)
+			continue
+		}
+		out = append(out, sp)
+	}
+	return out
+}
+
 // AgeGrowth re-measures the growth of the live items of one source that no
 // fetch observed today, taking their last observed value as today's: an item
 // out of the fetch range is counted as not growing, as the old metrics job
@@ -130,10 +160,19 @@ const ageBatch = 500
 // was seen, and an item that fell out of range would keep its place in the
 // growth rankings until reconcile looks at it a week later. No history point
 // is added — only an observation does that. Returns how many items changed.
-func (s *Store) AgeGrowth(ctx context.Context, source, today string) (int, error) {
-	cur, err := s.Items().Find(ctx,
-		bson.M{"source": source, "stale": bson.M{"$ne": true}, "history.0": bson.M{"$exists": true}, "history.d": bson.M{"$ne": today}},
-		options.Find().SetProjection(bson.M{"history": 1, "growth": 1}))
+//
+// Items inside a resting span belong to a shard that was not due today: they
+// were not looked for, so they keep the growth of their last fetch.
+func (s *Store) AgeGrowth(ctx context.Context, source, today string, resting ...MetricSpan) (int, error) {
+	filter := bson.M{"source": source, "stale": bson.M{"$ne": true}, "history.0": bson.M{"$exists": true}, "history.d": bson.M{"$ne": today}}
+	if len(resting) > 0 {
+		var skip []bson.M
+		for _, r := range resting {
+			skip = append(skip, bson.M{"metrics." + r.Metric: bson.M{"$gte": r.Lo, "$lte": r.Hi}})
+		}
+		filter["$nor"] = skip
+	}
+	cur, err := s.Items().Find(ctx, filter, options.Find().SetProjection(bson.M{"history": 1, "growth": 1}))
 	if err != nil {
 		return 0, fmt.Errorf("age growth: %w", err)
 	}
