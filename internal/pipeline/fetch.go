@@ -23,6 +23,10 @@ const fetchWriteBatch = 500
 // repeated the same day picks up the shards that are not done yet. Shards that
 // fail are tried once more at the end of their source's pass, after a pause:
 // the next run is a day away, and an item missing from the day has no growth.
+//
+// A source that implements source.Cadenced fetches some shards only on some
+// days; a shard that is not due is skipped, and the items it covers keep the
+// growth of their last fetch (prorated to the window, see item.ComputeGrowth).
 type Fetch struct {
 	st         *store.Store
 	sources    []source.ItemFetcher
@@ -48,6 +52,7 @@ func (*Fetch) Name() string { return "fetch" }
 type sourceTally struct {
 	Shards           int `bson:"shards" json:"shards"`
 	Skipped          int `bson:"skipped" json:"skipped"` // already done today
+	Resting          int `bson:"resting" json:"resting"` // not due today (source.Cadenced)
 	Failed           int `bson:"failed" json:"failed"`   // failed twice
 	Retried          int `bson:"retried" json:"retried"` // failed once, then fetched
 	Aged             int `bson:"aged" json:"aged"`       // not seen today, growth re-measured
@@ -66,11 +71,20 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		tally := sourceTally{Shards: len(shards)}
 		j.log.Info("fetch: source starting", "source", name, "shards", len(shards))
 
+		cad, _ := src.(source.Cadenced)
 		var failed []string
+		var resting []store.MetricSpan
 		for _, shard := range shards {
 			if err := ctx.Err(); err != nil {
 				rep.Note(name, tally)
 				return rep, err
+			}
+			if cad != nil && !cad.Due(shard, date) {
+				tally.Resting++
+				if metric, lo, hi, ok := cad.Span(shard); ok {
+					resting = append(resting, store.MetricSpan{Metric: metric, Lo: lo, Hi: hi})
+				}
+				continue
 			}
 			status, err := j.st.ShardStatus(ctx, name, date, shard)
 			if err != nil {
@@ -100,7 +114,7 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		// One more try for the failed shards. When every shard of the source
 		// failed the cause is not transient (a bad token, the source down):
 		// leave them to the next run instead of repeating the whole pass.
-		if len(failed) > 0 && len(failed) < len(shards)-tally.Skipped {
+		if len(failed) > 0 && len(failed) < len(shards)-tally.Skipped-tally.Resting {
 			j.log.Info("fetch: retrying failed shards", "source", name, "shards", len(failed), "after", j.retryPause.String())
 			if sleepCtx(ctx, j.retryPause); ctx.Err() != nil {
 				tally.Failed += len(failed)
@@ -135,7 +149,7 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 
 		// A source that saw nothing (a bad token, the source down) says nothing
 		// about growth: aging would mark every item of it as not growing.
-		if run := len(shards) - tally.Skipped; run > 0 && tally.Failed == run {
+		if run := len(shards) - tally.Skipped - tally.Resting; run > 0 && tally.Failed == run {
 			down = append(down, name)
 			rep.Note(name, tally)
 			j.log.Error("fetch: source down, growth left as it was", "source", name, "shards", run, "err", lastErr)
@@ -143,8 +157,9 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		}
 
 		// Items this run did not see count as not growing today. One that a
-		// failed shard holds is re-measured when the retry fetches it.
-		aged, err := j.st.AgeGrowth(ctx, name, date)
+		// failed shard holds is re-measured when the retry fetches it; one
+		// that a resting shard holds was not looked for and keeps its growth.
+		aged, err := j.st.AgeGrowth(ctx, name, date, store.MergeSpans(resting)...)
 		if err != nil {
 			rep.Note(name, tally)
 			return rep, err
@@ -152,7 +167,7 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		tally.Aged = aged
 		rep.Note(name, tally)
 		j.log.Info("fetch: source done", "source", name, "items", tally.Items, "new", tally.New,
-			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "retried", tally.Retried, "failed", tally.Failed, "aged", tally.Aged)
+			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "resting", tally.Resting, "retried", tally.Retried, "failed", tally.Failed, "aged", tally.Aged)
 	}
 
 	// Shards still failing are retried by the next run. A source with every

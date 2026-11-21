@@ -36,6 +36,17 @@ type ItemFetcher interface {
 	FetchItems(ctx context.Context, shard string) ([]item.Fetched, error)
 }
 
+// Cadenced is implemented by a source that fetches some of its shards only on
+// some days, to keep the nightly run short. The fetch job skips a shard that
+// is not due and leaves the growth of the items it covers as it was.
+type Cadenced interface {
+	// Due reports whether shard is fetched on date (a UTC day, 2006-01-02).
+	Due(shard, date string) bool
+	// Span is the metric and the range of it a shard covers, inclusive at
+	// both ends, so the fetch job can tell which items a skipped shard holds.
+	Span(shard string) (metric string, lo, hi float64, ok bool)
+}
+
 // Registry holds the registered source adapters.
 type Registry struct {
 	fetchers map[domain.Source]Fetcher

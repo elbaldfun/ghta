@@ -23,6 +23,7 @@ type fakeSource struct {
 	failOnce map[string]bool // fails the first time it is asked for only
 	calls    []string
 	stars    float64
+	starsBy  map[string]float64 // per shard, overriding stars
 	hook     func(shard string)
 }
 
@@ -50,7 +51,11 @@ func (f *fakeSource) FetchItems(ctx context.Context, shard string) ([]item.Fetch
 	}
 	out := make([]item.Fetched, 2)
 	for i := range out {
-		it := gh(fmt.Sprintf("%s/r%d", shard, i), "Go", f.stars)
+		stars := f.stars
+		if v, ok := f.starsBy[shard]; ok {
+			stars = v
+		}
+		it := gh(fmt.Sprintf("%s/r%d", shard, i), "Go", stars)
 		out[i] = item.Fetched{Item: it}
 	}
 	return out, nil
@@ -189,5 +194,88 @@ func TestFetchStopsOnCancel(t *testing.T) {
 	}
 	if rep.Failed != 0 {
 		t.Fatalf("an interrupted shard is not a failed one: %+v", rep)
+	}
+}
+
+// cadencedSource is a fakeSource whose shards are due on some days only.
+type cadencedSource struct {
+	*fakeSource
+	resting map[string]bool // shards not due, whatever the date
+	spans   map[string][2]float64
+}
+
+func (c *cadencedSource) Due(shard, _ string) bool { return !c.resting[shard] }
+func (c *cadencedSource) Span(shard string) (string, float64, float64, bool) {
+	sp, ok := c.spans[shard]
+	return "stars", sp[0], sp[1], ok
+}
+
+func TestFetchSkipsShardsNotDue(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	day := func(d int) time.Time { return time.Date(2026, 11, d, 3, 30, 0, 0, time.UTC) }
+	src := &cadencedSource{
+		fakeSource: &fakeSource{shards: []string{"hi", "lo"}},
+		spans:      map[string][2]float64{"hi": {3000, 4000}, "lo": {1000, 1500}},
+	}
+	job := NewFetch(st, nil, src)
+	job.retryPause = 0
+	run := func(d int, hi, lo float64) (sourceTally, error) {
+		src.calls, src.starsBy = nil, map[string]float64{"hi": hi, "lo": lo}
+		job.now = func() time.Time { return day(d) }
+		rep, err := job.Run(ctx)
+		if rep.Notes["github"] == nil {
+			return sourceTally{}, err
+		}
+		return rep.Notes["github"].(sourceTally), err
+	}
+	growth := func(id string) float64 {
+		t.Helper()
+		var it item.Item
+		if err := st.Items().FindOne(ctx, bson.M{"externalId": id}).Decode(&it); err != nil {
+			t.Fatal(err)
+		}
+		if it.Growth.D1 == nil {
+			t.Fatalf("%s has no d1", id)
+		}
+		return *it.Growth.D1
+	}
+
+	// Days 1 and 2: both due; lo gains 20.
+	if _, err := run(1, 3000, 1200); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run(2, 3010, 1220); err != nil {
+		t.Fatal(err)
+	}
+	// Day 3: lo rests. It is not fetched and its items are not aged.
+	src.resting = map[string]bool{"lo": true}
+	tally, err := run(3, 3020, 0)
+	if err != nil || strings.Join(src.calls, ",") != "hi" {
+		t.Fatalf("day 3 fetched %v, %v; the resting shard must be skipped", src.calls, err)
+	}
+	if tally.Resting != 1 || tally.Shards != 2 || tally.Aged != 0 {
+		t.Fatalf("day 3 tally = %+v", tally)
+	}
+	if g := growth("lo/r0"); g != 20 {
+		t.Fatalf("lo/r0 d1 = %v on its resting day; want its last growth, 20", g)
+	}
+	// Day 4: lo is due again, 30 up over two days: d1 is the gain halved.
+	src.resting = nil
+	if _, err := run(4, 3030, 1250); err != nil {
+		t.Fatal(err)
+	}
+	if g := growth("lo/r0"); g != 15 {
+		t.Fatalf("lo/r0 d1 = %v after a two-day gap; want 30/2", g)
+	}
+	if g := growth("hi/r0"); g != 10 {
+		t.Fatalf("hi/r0 d1 = %v", g)
+	}
+
+	// Day 5: every due shard fails. Resting shards do not hide the outage:
+	// the source is down, there is no retry pass and the run fails.
+	src.resting, src.fail = map[string]bool{"lo": true}, map[string]bool{"hi": true}
+	if tally, err := run(5, 0, 0); err == nil || tally.Failed != 1 || strings.Join(src.calls, ",") != "hi" {
+		t.Fatalf("day 5 tally %+v, calls %v, err %v; want the run to fail", tally, src.calls, err)
 	}
 }

@@ -274,3 +274,51 @@ func TestAgeGrowth(t *testing.T) {
 		t.Fatalf("second run aged %d; want 0", n)
 	}
 }
+
+func TestMergeSpans(t *testing.T) {
+	got := MergeSpans([]MetricSpan{
+		{"stars", 1010, 1020}, {"stars", 1000, 1010}, {"stars", 1040, 1050}, {"likes", 1, 2},
+	})
+	want := []MetricSpan{{"likes", 1, 2}, {"stars", 1000, 1020}, {"stars", 1040, 1050}}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+	if MergeSpans(nil) != nil {
+		t.Fatal("no spans merge to none")
+	}
+}
+
+func TestAgeGrowthLeavesRestingItems(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	day := func(d int) time.Time { return time.Date(2026, 10, d, 3, 30, 0, 0, time.UTC) }
+
+	// o/rest sits at ~1200 stars, o/out at ~2500; both seen on the 1st and the
+	// 3rd. On the 4th neither is fetched: o/rest's shard is resting, o/out's was due.
+	for _, d := range []int{1, 3} {
+		batch := []item.Fetched{repo("o/rest", float64(1200+10*d), ""), repo("o/out", float64(2500+10*d), "")}
+		if _, err := st.WriteFetched(ctx, batch, day(d)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rest := getItem(t, st, "o/rest")
+	if *rest.Growth.D1 != 10 {
+		t.Fatalf("o/rest d1 after a two-day gap = %v; want the 20-star gain halved", *rest.Growth.D1)
+	}
+
+	n, err := st.AgeGrowth(ctx, item.SourceGitHub, "2026-10-04", MetricSpan{"stars", 1000, 1500})
+	if err != nil || n != 1 {
+		t.Fatalf("aged = %d, %v; want only o/out", n, err)
+	}
+	if got := getItem(t, st, "o/rest"); *got.Growth.D1 != 10 {
+		t.Fatalf("o/rest d1 = %v; a resting item keeps its growth", *got.Growth.D1)
+	}
+	if got := getItem(t, st, "o/out"); *got.Growth.D1 != 0 {
+		t.Fatalf("o/out d1 = %v; an item missing from a due shard is aged", *got.Growth.D1)
+	}
+}

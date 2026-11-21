@@ -123,9 +123,10 @@ func TestReconcile(t *testing.T) {
 		t.Errorf("the record already under the new name was touched: %+v", it)
 	}
 	// A refresh is an observation: metrics, a history point, growth, a snapshot.
+	// The baseline is ten days back: 40 stars over ten days is 28 over seven.
 	alive, _ := find(t, st, "o/alive")
 	if alive.Metrics["stars"] != 940 || !alive.FetchedAt.Equal(now) || len(alive.History) != 2 ||
-		alive.Growth.D7 == nil || *alive.Growth.D7 != 40 {
+		alive.Growth.D7 == nil || *alive.Growth.D7 != 28 {
 		t.Errorf("alive: metrics=%v history=%v growth=%+v", alive.Metrics, alive.History, alive.Growth)
 	}
 	if n, _ := st.Snapshots().CountDocuments(ctx, bson.M{"meta.externalId": "o/alive"}); n != 1 {
