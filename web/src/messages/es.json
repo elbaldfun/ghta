@@ -283,7 +283,6 @@
     "shelf_dev_agents_coding": "Agentes de código",
     "appsAllShelves": "Todos",
     "bestTitle": "Mejores apps open source: {label}",
-    "bestMethodology": "Ranking = estrellas + impulso reciente + release en 90 días + builds descargables; actualizado a diario; {count} apps.",
     "bestSeeShelf": "Ver todo: {label}",
     "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
     "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
@@ -370,5 +369,27 @@
     "statUpdatedValue": "diaria, 03:30 UTC",
     "allTime": "Clasificación histórica",
     "empty": "Aún nada"
+  },
+  "verdict": {
+    "label": "Recomendado",
+    "pickLine": "<b>{name}</b>: {facts}.",
+    "sep": ", ",
+    "posStars": "n.º {pos} por estrellas en esta lista ({stars} estrellas)",
+    "posBest": "n.º {pos} en esta página, {stars} estrellas",
+    "gain": "+{n} estrellas en 30 días",
+    "pushed": "{days, plural, =0 {con commits hoy} one {último commit hace # día} other {último commit hace # días}}",
+    "release": "{days, plural, =0 {publicado hoy} one {última release hace # día} other {última release hace # días}}",
+    "noRelease": "sin releases en GitHub",
+    "downloads": "instaladores para {platforms}",
+    "rankUp": "sube al n.º {now} por estrellas (antes {prev})",
+    "rankDown": "baja al n.º {now} por estrellas (antes {prev})",
+    "skipLine": "No elegidos pese a tener más estrellas: {items}.",
+    "skipReading": "{name} (lista o tutorial, no un proyecto)",
+    "skipStale": "{name} (sin commits en {days} días)",
+    "skipUnknown": "{name} (último commit desconocido)",
+    "skipNoBuild": "{name} (nada que descargar)",
+    "riserLine": "El que más crece: <b>{name}</b>, +{n} estrellas en 30 días (n.º {pos} aquí).",
+    "ruleDomain": "Cómo se ordena: por estrellas de GitHub, de más a menos. La recomendación es el proyecto con más estrellas del top {pool} que tuvo un commit en los últimos {fresh} días y no es una lista ni un tutorial; sus razones citan solo estrellas, crecimiento, commits, releases y posición, todo verificable en GitHub. Se actualiza a diario; última vez el {date}.",
+    "ruleShelf": "Cómo se ordena: de las 60 apps con más estrellas del estante, por ln(estrellas) + 2×ln(ganancia diaria) + 2 por una release en 90 días + 1 por instaladores; se muestran las {count} primeras. La recomendación no usa esa puntuación: es la app de esta página con más estrellas, un commit en los últimos {fresh} días y un instalador. Se actualiza a diario; última vez el {date}."
   }
 }

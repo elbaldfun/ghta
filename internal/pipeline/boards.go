@@ -135,7 +135,16 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 	}
 
 	for _, shelf := range boards.Shelves(j.tree) {
-		if err := put(boards.BestOfKey(shelf), boards.BestOf(apps, shelf, now)); err != nil {
+		best := boards.BestOf(apps, shelf, now)
+		if err := put(boards.BestOfKey(shelf), best); err != nil {
+			return rep, err
+		}
+		if err := put(boards.ShelfVerdictKey(shelf), boards.ShelfVerdict(best, shelf, now)); err != nil {
+			return rep, err
+		}
+	}
+	for path, v := range corpus.DomainVerdicts(j.tree, now) {
+		if err := put(boards.DomainVerdictKey(path), v); err != nil {
 			return rep, err
 		}
 	}

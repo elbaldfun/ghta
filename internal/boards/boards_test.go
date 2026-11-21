@@ -16,10 +16,7 @@ func repo(id, owner string, stars, d1 float64, domain []string, topics ...string
 	r := Row{Source: item.SourceGitHub, ExternalID: id, Name: id, Topics: topics,
 		Metrics: map[string]float64{"stars": stars}, Growth: item.Growth{D1: f(d1)}}
 	r.Labels.Domain = domain
-	r.Gh = &struct {
-		Owner    string    `bson:"owner"`
-		PushedAt time.Time `bson:"pushedAt"`
-	}{Owner: owner}
+	r.Gh = &RowGitHub{Owner: owner}
 	return r
 }
 

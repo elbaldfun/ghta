@@ -91,6 +91,38 @@ func TestAppEndpoints(t *testing.T) {
 	if w := get(t, r, "/v1/apps/best/system/nope", nil, nil); w.Code != http.StatusNotFound {
 		t.Fatalf("unknown shelf = %d", w.Code)
 	}
+	// No verdict board yet: the collection still answers, without a pick.
+	var raw map[string]any
+	if w := get(t, r, "/v1/apps/best/system/files", nil, &raw); w.Code != http.StatusOK || raw["verdict"] != nil {
+		t.Fatalf("best without verdict = %d %+v", w.Code, raw["verdict"])
+	}
+	pick := boards.Verdict{Scope: boards.VerdictShelf, Key: "system/files", Pick: boards.Evidence{ExternalID: "b/b", Position: 1}}
+	must(t, st.PutBoard(ctx, boards.ShelfVerdictKey("system/files"), []boards.Verdict{pick}, at))
+	var withPick struct {
+		Verdict *boards.Verdict `json:"verdict"`
+	}
+	if w := get(t, r, "/v1/apps/best/system/files", nil, &withPick); w.Code != http.StatusOK || withPick.Verdict == nil || withPick.Verdict.Pick.ExternalID != "b/b" {
+		t.Fatalf("best verdict = %d %+v", w.Code, withPick.Verdict)
+	}
+
+	must(t, st.PutBoard(ctx, boards.DomainVerdictKey("apps/system/files"), []boards.Verdict{pick}, at))
+	must(t, st.PutBoard(ctx, boards.DomainVerdictKey("ai"), []boards.Verdict{}, at))
+	var dv struct {
+		Data *boards.Verdict `json:"data"`
+	}
+	if w := get(t, r, "/v1/verdict?domain=apps/system/files", nil, &dv); w.Code != http.StatusOK || dv.Data == nil || dv.Data.Pick.ExternalID != "b/b" {
+		t.Fatalf("domain verdict = %d %+v", w.Code, dv.Data)
+	}
+	dv.Data = nil
+	if w := get(t, r, "/v1/verdict?domain=ai", nil, &dv); w.Code != http.StatusOK || dv.Data != nil {
+		t.Fatalf("no pick = %d %+v", w.Code, dv.Data)
+	}
+	if w := get(t, r, "/v1/verdict?domain=web", nil, nil); w.Code != http.StatusNotFound {
+		t.Fatalf("unknown domain = %d", w.Code)
+	}
+	if w := get(t, r, "/v1/verdict?domain=../x", nil, nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("bad domain = %d", w.Code)
+	}
 	var targets struct {
 		Data []boards.AltTarget `json:"data"`
 	}

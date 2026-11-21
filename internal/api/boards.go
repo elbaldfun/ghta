@@ -1,11 +1,14 @@
 package api
 
 import (
+	"errors"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/elbaldfun/ghta/internal/boards"
+	"github.com/elbaldfun/ghta/internal/store"
 )
 
 // The aggregated rankings, read whole from the boards the nightly job writes.
@@ -22,6 +25,7 @@ func (a *API) registerBoards(r gin.IRouter) {
 	r.GET("/stats/staleness", a.staleness)
 	r.GET("/models", a.models)
 	r.GET("/hot", a.hot)
+	r.GET("/verdict", a.domainVerdict)
 }
 
 // GET /v1/developers?board=rising|merit&domain=all&limit=24&page=1
@@ -211,4 +215,43 @@ func (a *API) hot(c *gin.Context) {
 		return
 	}
 	a.cached(c, maxAgeBoard, gin.H{"data": page(rows, limit, 1), "since": since, "computedAt": at})
+}
+
+// domainPath is a taxonomy path: up to three segments (the apps branch).
+var domainPath = regexp.MustCompile(`^[a-z0-9-]+(/[a-z0-9-]+){0,2}$`)
+
+// verdict reads a page's verdict: nil when there is no pick, or the boards
+// job has not written one yet.
+func (a *API) verdict(c *gin.Context, key string) (*boards.Verdict, error) {
+	var rows []boards.Verdict
+	if _, err := a.st.Board(c.Request.Context(), key, &rows); errors.Is(err, store.ErrNoBoard) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return &rows[0], nil
+}
+
+// GET /v1/verdict?domain=<path> — a domain board's pick, for its default
+// order (most stars first). data is null when no project qualifies.
+func (a *API) domainVerdict(c *gin.Context) {
+	path := c.Query("domain")
+	if !domainPath.MatchString(path) {
+		a.fail(c, errBadInput("domain must be a domain path"))
+		return
+	}
+	var rows []boards.Verdict
+	at, err := a.st.Board(c.Request.Context(), boards.DomainVerdictKey(path), &rows)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	var v *boards.Verdict
+	if len(rows) > 0 {
+		v = &rows[0]
+	}
+	a.cached(c, maxAgeBoard, gin.H{"data": v, "computedAt": at})
 }

@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getBestOf } from '@/lib/data';
+import { getBestOfPage } from '@/lib/data';
 import { AppCard } from '@/components/rank/AppCard';
 import { PageShell } from '@/components/rank/PageShell';
+import { RankingRule, VerdictBlock } from '@/components/rank/Verdict';
 import { alternatesFor } from '@/lib/seo';
 
 // v2c pilot (change 15 review): FIVE hand-picked collections only — prove
@@ -50,7 +51,7 @@ export default async function BestOfPage({
   setRequestLocale(params.locale);
   const t = await getTranslations('rank');
 
-  const items = await getBestOf(shelf);
+  const { items, verdict, computedAt } = await getBestOfPage(shelf);
   if (items.length === 0) notFound();
 
   const key = shelf.replace(/[/-]/g, '_');
@@ -63,12 +64,13 @@ export default async function BestOfPage({
       </div>
       {/* Hand-written intro: the first-party framing Google's thin-content
           policies want to see, not templated filler. */}
-      <p className="mb-2 max-w-[75ch] text-[13px] leading-relaxed text-muted">
+      <p className="mb-3 max-w-[75ch] text-[13px] leading-relaxed text-muted">
         {t(`bestIntro_${key}` as never) as string}
       </p>
-      <p className="mb-5 text-[11.5px] text-muted">
-        {t('bestMethodology', { count: items.length })}
-      </p>
+      {/* The pick and the rule are computed by the boards job; the page only
+          words them, so every claim can be checked against the list below. */}
+      <VerdictBlock verdict={verdict} />
+      <RankingRule scope="shelf" computedAt={computedAt} freshDays={verdict?.freshDays} count={items.length} />
 
       <div className="overflow-hidden rounded-card border border-border bg-surface">
         {items.map((a, i) => (
