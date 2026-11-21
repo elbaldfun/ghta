@@ -14,6 +14,7 @@ import {
   type RepoSummary,
 } from '@/lib/data';
 import { artifactOf, formatCompact, homepageHost, installCmd, langColor } from '@/lib/rank-data';
+import { RankMove } from '@/components/rank/RankMove';
 import { GrowthChart } from '@/components/rank/GrowthChart';
 import { ReadmeBlock } from '@/components/rank/ReadmeBlock';
 import { BoxIcon, GlobeIcon } from '@/components/rank/icons';
@@ -102,24 +103,30 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
   // The rank line: "Overall #16 · JavaScript #3 · 前端框架 #1". Category chips
   // link into the filtered leaderboard; fall back to plain category links when
   // the API predates ranks.
-  const rankChips: { key: string; label: string; href?: string }[] = repo.ranks.length
-    ? repo.ranks.map((r) => ({
-        key: `${r.scope}:${r.key ?? ''}`,
-        label: `${
-          r.scope === 'overall' ? t('rankOverall') : r.scope === 'language' ? r.key! : labelFor(r.key!)
-        } #${r.rank.toLocaleString()}`,
-        href:
-          r.scope === 'category'
-            ? boardHref({ category: r.key! })
-            : r.scope === 'language'
-              ? boardHref({ lang: r.key! })
-              : '/github',
-      }))
-    : repo.categoryPath.slice(0, 2).map((p) => ({
-        key: `path:${p}`,
-        label: labelFor(p),
-        href: boardHref({ category: p }),
-      }));
+  const rankChips: { key: string; label: string; scope?: string; change?: number; isNew?: boolean; href?: string }[] =
+    repo.ranks.length
+      ? repo.ranks.map((r) => {
+          const scope =
+            r.scope === 'overall' ? t('rankOverall') : r.scope === 'language' ? r.key! : labelFor(r.key!);
+          return {
+            key: `${r.scope}:${r.key ?? ''}`,
+            label: `${scope} #${r.rank.toLocaleString()}`,
+            scope,
+            change: r.change,
+            isNew: r.isNew,
+            href:
+              r.scope === 'category'
+                ? boardHref({ category: r.key! })
+                : r.scope === 'language'
+                  ? boardHref({ lang: r.key! })
+                  : '/github',
+          };
+        })
+      : repo.categoryPath.slice(0, 2).map((p) => ({
+          key: `path:${p}`,
+          label: labelFor(p),
+          href: boardHref({ category: p }),
+        }));
 
   const dot = langColor(repo.language);
   const artifact = artifactOf(repo.language);
@@ -177,16 +184,18 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
               <Link
                 key={c.key}
                 href={c.href}
-                className="rounded-full border border-accent/40 bg-accent/5 px-2.5 py-[3px] font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent/15"
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/5 px-2.5 py-[3px] font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 {c.label}
+                {c.scope && <RankMove change={c.change} isNew={c.isNew} scope={c.scope} />}
               </Link>
             ) : (
               <span
                 key={c.key}
-                className="rounded-full border border-accent/40 bg-accent/5 px-2.5 py-[3px] font-mono text-[11px] font-bold text-accent"
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/5 px-2.5 py-[3px] font-mono text-[11px] font-bold text-accent"
               >
                 {c.label}
+                {c.scope && <RankMove change={c.change} isNew={c.isNew} scope={c.scope} />}
               </span>
             ),
           )}

@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation';
 import type { RepoSummary, TrendPoint } from '@/lib/data';
 import { artifactOf, formatCompact, langColor } from '@/lib/rank-data';
 import { ForkIcon, StarIcon } from './icons';
+import { RankMove } from './RankMove';
 import { Sparkline } from './Sparkline';
 
 function heatColor(pct: number): string {
@@ -35,6 +36,7 @@ export function RepoRow({
   showUpdated = false,
   growthWindow = 'daily',
   trend,
+  moveScope,
 }: {
   repo: RepoSummary;
   rank: number;
@@ -43,6 +45,9 @@ export function RepoRow({
   showUpdated?: boolean;
   /** Which growth figure the row highlights; follows the active sort. */
   growthWindow?: 'daily' | 'weekly';
+  /** The ranking the row's number counts in ("Overall", a language, a
+   * domain); when given, the row shows its move since yesterday under it. */
+  moveScope?: string;
 }) {
   const t = useTranslations('rank');
   const locale = useLocale();
@@ -61,11 +66,14 @@ export function RepoRow({
       href={`/repo/${repo.owner}/${repo.name}`}
       className="grid grid-cols-[36px_1fr_auto] items-center gap-2.5 border-b border-border px-3 py-2.5 transition-colors last:border-b-0 hover:bg-surface2 sm:gap-3.5 sm:px-4"
     >
-      <span
-        className="font-mono text-[15px] font-bold tabular-nums tracking-tight"
-        style={{ color: rank <= 3 ? 'rgb(var(--accent))' : undefined }}
-      >
-        {rank}
+      <span className="flex flex-col items-start gap-1">
+        <span
+          className="font-mono text-[15px] font-bold tabular-nums tracking-tight"
+          style={{ color: rank <= 3 ? 'rgb(var(--accent))' : undefined }}
+        >
+          {rank}
+        </span>
+        {moveScope && <RankMove change={repo.rankChange} isNew={repo.rankNew} scope={moveScope} />}
       </span>
 
       <span className="min-w-0">

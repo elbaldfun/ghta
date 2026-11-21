@@ -54,6 +54,9 @@ type Rank struct {
 	// Change is the places gained since the last ranking on an earlier day,
 	// negative for places lost; absent when there is nothing to compare.
 	Change *int `json:"change,omitempty"`
+	// New marks a position the item did not hold at the last ranking on an
+	// earlier day: new to the rankings, or to this language or domain.
+	New bool `json:"new,omitempty"`
 }
 
 type RepoDetail struct {
@@ -118,18 +121,14 @@ func (a *API) repo(c *gin.Context) {
 		d.Shelf = it.Labels.Shelf
 	}
 	if r := it.Ranks; r != nil {
-		prev := r.Prev
-		if prev == nil {
-			prev = &item.RankPositions{}
-		}
-		d.Ranks = append(d.Ranks, Rank{Scope: "overall", Rank: r.Overall, Change: rankChange(prev.Overall, r.Overall)})
+		d.Ranks = append(d.Ranks, scopeRank(r, "overall", "", r.Overall))
 		if r.Language > 0 {
-			d.Ranks = append(d.Ranks, Rank{Scope: "language", Key: it.Language, Rank: r.Language, Change: rankChange(prev.Language, r.Language)})
+			d.Ranks = append(d.Ranks, scopeRank(r, "language", it.Language, r.Language))
 		}
 		// In the item's own order of domains: the first is its main one.
 		for _, p := range it.Labels.Domain {
 			if n := r.Domain[p]; n > 0 {
-				d.Ranks = append(d.Ranks, Rank{Scope: "domain", Key: p, Rank: n, Change: rankChange(prev.Domain[p], n)})
+				d.Ranks = append(d.Ranks, scopeRank(r, "domain", p, n))
 			}
 		}
 	}
@@ -154,14 +153,37 @@ func (a *API) repo(c *gin.Context) {
 	a.cached(c, maxAgeDetail, gin.H{"data": d})
 }
 
-// rankChange is the places gained from was to now; nil when there was no
-// earlier position to compare with.
-func rankChange(was, now int) *int {
+// scopeRank is position now in one scope of r, with its move since the
+// baseline.
+func scopeRank(r *item.Ranks, scope, key string, now int) Rank {
+	change, isNew := rankMove(r, scope, key, now)
+	return Rank{Scope: scope, Key: key, Rank: now, Change: change, New: isNew}
+}
+
+// rankMove is the places gained in one scope since the last ranking on an
+// earlier day, or isNew when the item held no place there then; neither for
+// a scope it is not ranked in.
+func rankMove(r *item.Ranks, scope, key string, now int) (change *int, isNew bool) {
+	if r == nil || now == 0 {
+		return nil, false
+	}
+	if r.Prev == nil {
+		return nil, true
+	}
+	var was int
+	switch scope {
+	case "overall":
+		was = r.Prev.Overall
+	case "language":
+		was = r.Prev.Language
+	case "domain":
+		was = r.Prev.Domain[key]
+	}
 	if was == 0 {
-		return nil
+		return nil, true
 	}
 	d := was - now
-	return &d
+	return &d, false
 }
 
 func notFound(err error) error {
