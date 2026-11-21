@@ -3,14 +3,20 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { Sora, Manrope, IBM_Plex_Mono } from 'next/font/google';
+import { Sora, Manrope, IBM_Plex_Mono, Inter, Newsreader, JetBrains_Mono } from 'next/font/google';
 import { routing } from '@/i18n/routing';
 import { GoogleAnalytics } from '@/components/Analytics';
 import '../globals.css';
+import '@/styles/tokens.css';
 
 const sora = Sora({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-sora' });
 const manrope = Manrope({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-manrope' });
 const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '600', '700'], variable: '--font-plex-mono' });
+// Design tokens v1 faces (src/styles/tokens.css). Not preloaded: no page uses
+// them yet, and browsers fetch a face only once text actually renders in it.
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', preload: false, display: 'swap' });
+const newsreader = Newsreader({ subsets: ['latin'], axes: ['opsz'], variable: '--font-newsreader', preload: false, display: 'swap' });
+const jbMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jbmono', preload: false, display: 'swap' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
 
@@ -52,7 +58,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${sora.variable} ${manrope.variable} ${plexMono.variable}`}
+      className={`${sora.variable} ${manrope.variable} ${plexMono.variable} ${inter.variable} ${newsreader.variable} ${jbMono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashTheme }} />
