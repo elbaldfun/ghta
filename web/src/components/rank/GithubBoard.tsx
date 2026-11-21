@@ -105,6 +105,18 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
   const trends = searchRes.data ? await getTrends(searchRes.data.items.map((r) => r.fullName), 7) : {};
 
   const heading = subject(t, locale, tree, facets, f) ?? t('homeTitle');
+  // The move since yesterday is in the star ranking the filters name, as the
+  // API picks it: a domain leaf, else the language, else overall. It only
+  // reads as a move of the row's own number when the list is in star order.
+  const leaf = f.category?.includes('/') ? findCategory(tree, f.category) : undefined;
+  const moveScope =
+    sort !== 'stars'
+      ? undefined
+      : leaf
+        ? categoryLabel(leaf, locale)
+        : f.lang
+          ? f.lang
+          : t('rankOverall');
   // Breadcrumb: for a leaf ("a/b"), link its parent.
   const parentPath = f.category?.includes('/') ? f.category.split('/')[0] : null;
   const parentNode = parentPath ? findCategory(tree, parentPath) : undefined;
@@ -162,6 +174,7 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
                     showUpdated={sort === 'updated'}
                     growthWindow={sort === 'weekly' ? 'weekly' : 'daily'}
                     trend={trends[repo.fullName]}
+                    moveScope={moveScope}
                   />
                 ))}
               </div>

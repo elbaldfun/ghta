@@ -87,7 +87,7 @@ var ListFields = bson.M{
 	"source": 1, "externalId": 1, "name": 1, "description": 1, "language": 1, "license": 1, "homepage": 1,
 	"topics": 1, "metrics": 1, "growth": 1, "labels.domain": 1, "labels.type": 1, "labels.tags": 1,
 	"labels.taglineZh": 1, "labels.taglineEn": 1, "assets.iconUrl": 1, "gh.owner": 1, "gh.pushedAt": 1,
-	"ranks.overall": 1, "fetchedAt": 1,
+	"ranks.overall": 1, "ranks.language": 1, "ranks.domain": 1, "ranks.prev": 1, "fetchedAt": 1,
 }
 
 // ContainsCJK reports Chinese, Japanese or Korean script in s.

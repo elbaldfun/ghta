@@ -18,25 +18,30 @@ func (a *API) registerRepos(r gin.IRouter) {
 
 // RepoCard is one row of a repository list.
 type RepoCard struct {
-	FullName    string    `json:"fullName"`
-	Owner       string    `json:"owner"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	TaglineZh   string    `json:"taglineZh,omitempty"`
-	TaglineEn   string    `json:"taglineEn,omitempty"`
-	Language    string    `json:"language,omitempty"`
-	License     string    `json:"license,omitempty"`
-	Homepage    string    `json:"homepage,omitempty"`
-	IconURL     string    `json:"iconUrl,omitempty"`
-	Topics      []string  `json:"topics"`
-	Type        string    `json:"type,omitempty"`
-	Domain      []string  `json:"domain"`
-	Stars       int       `json:"stars"`
-	Forks       int       `json:"forks"`
-	OpenIssues  int       `json:"openIssues"`
-	Growth      Growth    `json:"growth"`
-	Rank        int       `json:"rank,omitempty"`
-	PushedAt    time.Time `json:"pushedAt,omitzero"`
+	FullName    string   `json:"fullName"`
+	Owner       string   `json:"owner"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	TaglineZh   string   `json:"taglineZh,omitempty"`
+	TaglineEn   string   `json:"taglineEn,omitempty"`
+	Language    string   `json:"language,omitempty"`
+	License     string   `json:"license,omitempty"`
+	Homepage    string   `json:"homepage,omitempty"`
+	IconURL     string   `json:"iconUrl,omitempty"`
+	Topics      []string `json:"topics"`
+	Type        string   `json:"type,omitempty"`
+	Domain      []string `json:"domain"`
+	Stars       int      `json:"stars"`
+	Forks       int      `json:"forks"`
+	OpenIssues  int      `json:"openIssues"`
+	Growth      Growth   `json:"growth"`
+	Rank        int      `json:"rank,omitempty"`
+	// RankChange and RankNew are the move since yesterday in the ranking the
+	// list is filtered to (see listMove); only the list sets them, and
+	// "unchanged" is left out to keep the page small.
+	RankChange int       `json:"rankChange,omitempty"`
+	RankNew    bool      `json:"rankNew,omitempty"`
+	PushedAt   time.Time `json:"pushedAt,omitzero"`
 }
 
 // Growth is the star gain over 1, 7 and 30 days; null means the repo is
@@ -179,9 +184,34 @@ func (a *API) listRepos(c *gin.Context) {
 	rows := make([]RepoCard, len(items))
 	for i := range items {
 		rows[i] = card(&items[i])
+		rows[i].RankChange, rows[i].RankNew = listMove(&items[i], q)
 	}
 	// total stops at store.MaxListTotal: "10,000+" is all a pager needs.
 	a.cached(c, maxAgeList, gin.H{"data": rows, "total": total, "page": pg})
+}
+
+// listMove is a list row's move in the ranking its filters name: the domain
+// leaf when the list is filtered to one, else the language, else overall.
+// A top-level domain has no ranking of its own.
+func listMove(it *item.Item, q store.ListQuery) (int, bool) {
+	r := it.Ranks
+	if r == nil {
+		return 0, false
+	}
+	var change *int
+	var isNew bool
+	switch {
+	case q.Domain != "" && r.Domain[q.Domain] > 0:
+		change, isNew = rankMove(r, "domain", q.Domain, r.Domain[q.Domain])
+	case q.Language != "":
+		change, isNew = rankMove(r, "language", q.Language, r.Language)
+	default:
+		change, isNew = rankMove(r, "overall", "", r.Overall)
+	}
+	if change == nil {
+		return 0, isNew
+	}
+	return *change, isNew
 }
 
 // Suggestion is one autocomplete entry.
