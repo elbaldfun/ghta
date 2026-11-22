@@ -28,6 +28,8 @@ export interface RepoSummary {
   htmlUrl: string;
   dailyIncrease: number | null;
   weeklyIncrease: number | null;
+  /** Overall position by stars (1-based); list endpoints only. */
+  rank?: number;
   /** Places moved since yesterday in the ranking the list is filtered to
    * (leaf domain, else language, else overall); lists only. */
   rankChange?: number;
@@ -82,6 +84,7 @@ interface Card {
   forks: number;
   openIssues: number;
   growth?: { d1: number | null; d7: number | null; d30: number | null };
+  rank?: number;
   pushedAt?: string;
   rankChange?: number;
   rankNew?: boolean;
@@ -107,6 +110,7 @@ function mapCard(c: Card): RepoSummary {
     htmlUrl: `https://github.com/${c.fullName}`,
     dailyIncrease: c.growth?.d1 ?? null,
     weeklyIncrease: c.growth?.d7 ?? null,
+    ...(c.rank ? { rank: c.rank } : {}),
     ...(c.rankChange ? { rankChange: c.rankChange } : {}),
     ...(c.rankNew ? { rankNew: true } : {}),
   };

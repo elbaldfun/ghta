@@ -19,7 +19,8 @@ export function DailyBars({
   values: number[];
   days?: number;
   highlightLast?: boolean;
-  height?: number;
+  /** Pixels, or any CSS length ("100%" to fill a sized parent). */
+  height?: number | string;
   /** Spoken description, e.g. "Daily new stars over 31 days, falling". */
   label: string;
   className?: string;
