@@ -72,7 +72,11 @@ scripts/release.sh compose         # 同步 deploy/docker-compose.yml 并重建�
 scripts/release.sh site            # 发布 deploy/starrank.caddy 到共享 Caddy
 scripts/release.sh rollback api    # 回滚到上一个镜像（web 同理）
 scripts/release.sh worker          # 只发任务进程
+scripts/release.sh promote         # 开（或刷新）develop → main 发版 PR；--dry-run 只打印
+scripts/release.sh tag api,web     # 打标签失败时补打；正常发版会自己打
 ```
+
+分支、版本号、标签和发布说明的规则见 [BRANCHING_AND_RELEASE.md](BRANCHING_AND_RELEASE.md)。
 
 `worker` 是重构后跑全部定时任务的进程（`docs/REBUILD.md`）。它和 `api` 是同一个镜像的
 两个入口，所以：
@@ -98,24 +102,24 @@ scripts/release.sh worker          # 只发任务进程
    （没有镜像仓库）。
 5. 确认服务器上的 compose 与仓库一致，然后 `docker compose up -d <服务>`。
 6. 等健康检查返回 200，并确认容器跑的确实是新镜像。
-7. 往服务器 `/opt/ghta/releases.log` 追加一行发布记录。
+7. 往服务器 `/opt/ghta/releases.log` 追加一行发布记录（时间、服务、标签、提交号、提交标题）。
+8. 所有服务都健康以后，给发出去的 `main` 提交打日期标签 `vYYYY.MM.DD.N`，推送，并建 GitHub Release。
+   同一个提交已经有标签时不再打。回滚不动标签。
+
+`worker` 和 `all` 在 UTC 03:30–08:30（夜间流水线运行中）会被拒绝，没有绕过开关。
 
 **顺序：后端先行。** 前端可能发送新参数（如新的 `sort` 值），老 API 会返回 400。
 
 ### 分支与发布
 
-| 分支 | 用途 | 怎么进去 |
-|---|---|---|
-| `develop` | 集成分支，所有 PR 的目标 | PR，CI 通过后自动合并 |
-| `main` | 生产分支，`release.sh` 只发它包含的提交 | `sync-main.yml` 从 `develop` 同步；热修 PR |
+规则见 [BRANCHING_AND_RELEASE.md](BRANCHING_AND_RELEASE.md)。简要：
 
-- 自动合并：CI 的 `build-test` 与 `web` 都通过后，工作流用合并提交合入 PR。草稿、带 `hold` 标签、来自 fork、
-  或改动了 `.github/workflows` 的 PR 不会被自动合并。
-- 同步：GitHub → Actions → "Sync develop to main" → Run workflow。仓库变量 `AUTO_SYNC_MAIN` 设为 `true` 后，
-  每次 `develop` 有推送都会自动同步。
-- 重构切换已在 2026-10-17 完成（`main` 上切换前的版本是标签 `v1-final`）。确认切换稳定后打开自动同步。
-- 生产热修：从 `main` 拉分支，PR 进 `main`，发版，然后开一个 `main` → `develop` 的 PR 把修复合回去。
-- 同步内容里包含 `.github/workflows` 的改动时，GitHub 会拒绝机器人的推送，那一次需要手动把 `develop` 合进 `main`。
+- 工作 PR 进 `develop`，`build-test` 和 `web` 通过后自动合并。草稿、带 `hold` 标签、来自 fork、改动了
+  `.github/workflows` 的 PR 不会自动合并。
+- `main` 只通过 `scripts/release.sh promote` 开的 `develop → main` 发版 PR 更新。CI 的 `release-source`
+  作业会让其他来源的 PR 失败。发版 PR 不自动合并，由 master 用 merge commit 合并。
+- 热修也走 `develop` → 发版 PR，不再从 `main` 拉分支，也不用合回 `develop`。
+- `sync-main.yml` 已删除，`AUTO_SYNC_MAIN` 已经用不上了。重构切换前的最后一版是标签 `v1-final`。
 
 ### 判定任务（judge）
 
