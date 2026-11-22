@@ -495,7 +495,16 @@
     "rules_daily": "Sortiert nach heute gewonnenen Stars.",
     "rules_weekly": "Sortiert nach in 7 Tagen gewonnenen Stars.",
     "rules_updated": "Sortiert nach dem letzten Commit.",
-    "rulesCommon": "„Heute“ ist der letzte Messwert minus der des Vortags; „7 Tage“ ist der letzte Messwert minus der von vor 7 Tagen. Die Änderung vergleicht mit dem Ranking nach Gesamt-Stars von gestern und wird ausgeblendet, wenn sie gleich bleibt. Die Balken zeigen neue Stars pro Tag; der rechte ist der jüngste Tag. Täglich um 03:30 UTC erfasst."
+    "rulesCommon": "„Heute“ ist der letzte Messwert minus der des Vortags; „7 Tage“ ist der letzte Messwert minus der von vor 7 Tagen. Die Änderung vergleicht mit dem Ranking nach Gesamt-Stars von gestern und wird ausgeblendet, wenn sie gleich bleibt. Die Balken zeigen neue Stars pro Tag; der rechte ist der jüngste Tag. Täglich um 03:30 UTC erfasst.",
+    "bestOf": "Die besten Open-Source-{name}",
+    "crumbLabel": "Brotkrümelnavigation",
+    "allLeaves": "Alle Teilbereiche",
+    "domainIntro": "Sortiert nach GitHub-Sternen insgesamt, täglich aktualisiert. Die Empfehlung oben wird nach einer festen Regel aus den Spitzenreitern gewählt; jede Begründung lässt sich auf GitHub prüfen.",
+    "statRepos": "Projekte",
+    "statToday": "Neue Sterne heute",
+    "badgePick": "Tipp",
+    "badgeRiser": "Top-Aufsteiger 30 T.",
+    "related": "Verwandt"
   },
   "repoPage": {
     "crumbs": "Brotkrümelnavigation",
@@ -721,6 +730,23 @@
     "altsNote": "Suchst du eine Open-Source-Alternative zu einer kostenpflichtigen App?",
     "altsLink": "Nach Produkt suchen →",
     "open": "Öffnen",
-    "details": "Details"
+    "details": "Details",
+    "pick": "Tipp",
+    "crumbLabel": "Brotkrümelnavigation",
+    "crumbApps": "Apps"
+  },
+  "pick": {
+    "headDomain": "Wenn nur eines, dann {name}",
+    "headShelf": "{subject}: Einstieg mit {name}",
+    "profile": "Profil ansehen",
+    "downloadOs": "Für {os} laden",
+    "osOnly": "{os}",
+    "whyNot": "Warum nicht #{pos}",
+    "riser": "Schnellster Aufsteiger",
+    "riserVal": "{name}: +{n} Sterne in 30 Tagen (#{pos})",
+    "rank": "Rang",
+    "emptyHead": "Heute noch keine Empfehlung",
+    "emptyDomain": "Die Empfehlung wird täglich nach einer festen Regel berechnet: das Projekt mit den meisten Sternen unter den Top {pool}, das in den letzten {fresh} Tagen einen Commit hatte und weder Liste noch Tutorial ist. Entweder ist der heutige Lauf noch nicht fertig, oder keines der Top {pool} erfüllt alle Bedingungen. Das Sterne-Ranking unten wird wie gewohnt aktualisiert.",
+    "emptyShelf": "Die Empfehlung wird täglich nach einer festen Regel berechnet: die App mit den meisten Sternen auf dieser Seite, die in den letzten {fresh} Tagen einen Commit hatte und einen Installer bietet. Entweder ist der heutige Lauf noch nicht fertig, oder keine App erfüllt alle Bedingungen. Die Liste unten wird wie gewohnt aktualisiert."
   }
 }

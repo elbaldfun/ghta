@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import type { OS, Verdict, VerdictEvidence, VerdictSkip } from '@/lib/data';
-import { formatCompact } from '@/lib/rank-data';
+import type { AppItem, OS, Verdict, VerdictEvidence, VerdictSkip } from '@/lib/data';
+import { fmtTotal, srButton } from '@/components/ui';
 import { appName } from './AppCard';
 
 const OS_LABEL: Record<OS, string> = {
@@ -22,69 +21,148 @@ function displayName(scope: Scope, e: { externalId: string; name: string }): str
 }
 
 /**
- * The page's pick and its evidence, one sentence each, worded from the
- * fields the boards job chose it by (internal/boards/verdict.go). Nothing
- * here decides anything: no verdict, no block.
+ * The page's pick and its evidence, worded from the fields the boards job
+ * chose it by (internal/boards/verdict.go). Nothing here decides anything.
+ * Without a verdict the block stays and says why there is none yet, so the
+ * page's shape does not depend on whether tonight's run has finished.
+ *
+ * `subject` names the page in the heading ("Local LLM"); `apps` (shelves)
+ * supplies the pick's per-platform download links.
  */
-export async function VerdictBlock({ verdict }: { verdict: Verdict | null }) {
-  if (!verdict) return null;
+export async function PickBlock({
+  verdict,
+  scope,
+  subject,
+  apps = [],
+  pool,
+  freshDays,
+}: {
+  verdict: Verdict | null;
+  scope: Scope;
+  subject: string;
+  apps?: AppItem[];
+  pool?: number;
+  freshDays?: number;
+}) {
   const t = await getTranslations('verdict');
+  const p = await getTranslations('pick');
   const locale = await getLocale();
   const num = new Intl.NumberFormat(locale);
   const list = new Intl.ListFormat(locale, { type: 'conjunction' });
-  const { scope, pick, riser, skipped } = verdict;
 
-  const strong = (e: VerdictEvidence) => {
-    const Tag = (chunks: ReactNode) => (
-      <Link href={`/repo/${e.externalId}`} title={e.externalId} className="font-extrabold text-fg hover:text-accent">
-        {chunks}
-      </Link>
+  if (!verdict) {
+    return (
+      <section aria-labelledby="pick" className="flex flex-col gap-2 border-y-2 border-ink py-5 md:py-6">
+        <p className="text-sr-caption font-semibold tracking-[0.06em] text-ink-3">{t('label')}</p>
+        <h2 id="pick" className="font-news text-[24px] font-medium leading-tight md:text-[30px]">
+          {p('emptyHead')}
+        </h2>
+        <p className="max-w-[720px] text-sr-small text-ink-2 md:text-sr-body">
+          {scope === 'shelf'
+            ? p('emptyShelf', { fresh: freshDays ?? 90 })
+            : p('emptyDomain', { pool: pool ?? 10, fresh: freshDays ?? 90 })}
+        </p>
+      </section>
     );
-    return Tag;
-  };
+  }
+
+  const { pick, riser, skipped } = verdict;
+  const name = displayName(scope, pick);
 
   const facts: string[] = [
     verdict.basis === 'stars'
-      ? t('posStars', { pos: pick.position, stars: formatCompact(pick.stars) })
-      : t('posBest', { pos: pick.position, stars: formatCompact(pick.stars) }),
+      ? t('posStars', { pos: pick.position, stars: fmtTotal(pick.stars) })
+      : t('posBest', { pos: pick.position, stars: fmtTotal(pick.stars) }),
   ];
   if (pick.d30 != null && pick.d30 > 0) facts.push(t('gain', { n: num.format(pick.d30) }));
-  facts.push(t('pushed', { days: pick.pushedDaysAgo }));
+  if (pick.pushedDaysAgo >= 0) facts.push(t('pushed', { days: pick.pushedDaysAgo }));
   facts.push(pick.releaseDaysAgo >= 0 ? t('release', { days: pick.releaseDaysAgo }) : t('noRelease'));
   if (pick.downloads && pick.downloads.length > 0) {
     facts.push(t('downloads', { platforms: list.format(pick.downloads.map((os) => OS_LABEL[os] ?? os)) }));
   }
-  if (pick.rankNow && pick.rankPrev && pick.rankNow !== pick.rankPrev) {
-    facts.push(t(pick.rankNow < pick.rankPrev ? 'rankUp' : 'rankDown', { now: pick.rankNow, prev: pick.rankPrev }));
-  }
 
-  const skip = (s: VerdictSkip) => {
-    const name = displayName(scope, s);
-    if (s.reason === 'reading') return t('skipReading', { name });
-    if (s.reason === 'no-build') return t('skipNoBuild', { name });
-    return s.pushedDaysAgo < 0 ? t('skipUnknown', { name }) : t('skipStale', { name, days: s.pushedDaysAgo });
+  const skipReason = (s: VerdictSkip) => {
+    const n = displayName(scope, s);
+    if (s.reason === 'reading') return t('skipReading', { name: n });
+    if (s.reason === 'no-build') return t('skipNoBuild', { name: n });
+    return s.pushedDaysAgo < 0 ? t('skipUnknown', { name: n }) : t('skipStale', { name: n, days: s.pushedDaysAgo });
   };
 
+  // The side list: why the projects above the pick are not it, who rose
+  // fastest, and the pick's move in its ranking.
+  const why: { k: string; v: string; href?: string }[] = skipped.map((s) => ({
+    k: p('whyNot', { pos: s.position }),
+    v: skipReason(s),
+  }));
+  if (riser && riser.d30 != null && riser.externalId !== pick.externalId) {
+    why.push({
+      k: p('riser'),
+      v: p('riserVal', { name: displayName(scope, riser), n: num.format(riser.d30), pos: riser.position }),
+      href: `/repo/${riser.externalId}`,
+    });
+  }
+  if (pick.rankNow && pick.rankPrev && pick.rankNow !== pick.rankPrev) {
+    why.push({
+      k: p('rank'),
+      v: t(pick.rankNow < pick.rankPrev ? 'rankUp' : 'rankDown', { now: pick.rankNow, prev: pick.rankPrev }),
+    });
+  }
+
+  // Shelves lead with downloads for the platforms the pick ships; domains
+  // with the profile and the repository.
+  const app = scope === 'shelf' ? apps.find((a) => a.externalId === pick.externalId) : undefined;
+  const builds = (app?.downloads ?? []).filter((d) => /^https?:\/\//.test(d.url)).slice(0, 2);
+
   return (
-    <section className="mb-3 max-w-[85ch] rounded-card border border-border bg-surface px-4 py-3">
-      <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-accent">{t('label')}</div>
-      <p className="text-[13.5px] leading-relaxed text-fg">
-        {t.rich('pickLine', { name: displayName(scope, pick), facts: facts.join(t('sep')), b: strong(pick) })}
-      </p>
-      {skipped.length > 0 && (
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
-          {t('skipLine', { items: skipped.map(skip).join(t('sep')) })}
-        </p>
-      )}
-      {riser && riser.d30 != null && (
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
-          {t.rich('riserLine', {
-            name: displayName(scope, riser),
-            n: num.format(riser.d30),
-            pos: riser.position,
-            b: strong(riser),
-          })}
-        </p>
+    <section
+      aria-labelledby="pick"
+      className="grid gap-5 border-y-2 border-ink py-5 md:py-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-12"
+    >
+      <div className="flex min-w-0 flex-col gap-3">
+        <p className="text-sr-caption font-semibold tracking-[0.06em] text-signal">{t('label')}</p>
+        <h2 id="pick" className="break-words font-news text-[26px] font-medium leading-[1.15] [overflow-wrap:anywhere] md:text-[34px]">
+          {scope === 'shelf' ? p('headShelf', { subject, name }) : p('headDomain', { name })}
+        </h2>
+        <p className="max-w-[720px] text-sr-body text-ink-2">{facts.join(t('sep'))}</p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {builds.length > 0 ? (
+            builds.map((d, i) => (
+              <a
+                key={d.os}
+                href={d.url}
+                rel="nofollow noopener"
+                className={srButton(i === 0 ? 'solid' : 'outline')}
+              >
+                {i === 0 ? p('downloadOs', { os: OS_LABEL[d.os] }) : p('osOnly', { os: OS_LABEL[d.os] })}
+              </a>
+            ))
+          ) : (
+            <Link href={`/repo/${pick.externalId}`} className={srButton('solid')}>
+              {p('profile')}
+            </Link>
+          )}
+          <a href={`https://github.com/${pick.externalId}`} target="_blank" rel="noopener noreferrer" className={srButton('outline')}>
+            GitHub ↗
+          </a>
+        </div>
+      </div>
+      {why.length > 0 && (
+        <dl className="flex min-w-0 flex-col self-start border-t border-rule lg:border-t-0">
+          {why.map((x, i) => (
+            <div key={i} className="flex flex-col gap-0.5 border-b border-rule py-2.5">
+              <dt className="text-sr-caption text-ink-3">{x.k}</dt>
+              <dd className="break-words text-sr-small text-ink [overflow-wrap:anywhere]">
+                {x.href ? (
+                  <Link href={x.href} className="hover:underline">
+                    {x.v}
+                  </Link>
+                ) : (
+                  x.v
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
       )}
     </section>
   );
@@ -113,10 +191,12 @@ export async function RankingRule({
       : '—';
   const fresh = freshDays ?? 90;
   return (
-    <p className="mb-4 max-w-[85ch] text-[11.5px] leading-relaxed text-muted">
+    <p className="max-w-[900px] text-[13px] leading-relaxed text-ink-2">
       {scope === 'shelf'
         ? t('ruleShelf', { count: count ?? 0, fresh, date })
         : t('ruleDomain', { pool: pool ?? 10, fresh, date })}
     </p>
   );
 }
+
+export type { VerdictEvidence };

@@ -495,7 +495,16 @@
     "rules_daily": "Ordenado pelas estrelas ganhas hoje.",
     "rules_weekly": "Ordenado pelas estrelas ganhas em 7 dias.",
     "rules_updated": "Ordenado pelo último commit.",
-    "rulesCommon": "“Hoje” é a última leitura menos a do dia anterior; “7 dias” é a última leitura menos a de 7 dias antes. A variação compara com o ranking de estrelas totais de ontem e fica oculta quando não muda. As barras mostram novas estrelas por dia; a da direita é o dia mais recente. Leitura diária às 03:30 UTC."
+    "rulesCommon": "“Hoje” é a última leitura menos a do dia anterior; “7 dias” é a última leitura menos a de 7 dias antes. A variação compara com o ranking de estrelas totais de ontem e fica oculta quando não muda. As barras mostram novas estrelas por dia; a da direita é o dia mais recente. Leitura diária às 03:30 UTC.",
+    "bestOf": "Os melhores {name} de código aberto",
+    "crumbLabel": "Trilha de navegação",
+    "allLeaves": "Todos os subcampos",
+    "domainIntro": "Classificados pelo total de estrelas no GitHub, atualizado diariamente. A escolha no topo sai dos primeiros colocados por uma regra fixa, e cada motivo pode ser conferido no GitHub.",
+    "statRepos": "Projetos",
+    "statToday": "Novas estrelas hoje",
+    "badgePick": "Escolha",
+    "badgeRiser": "Mais rápido em 30 dias",
+    "related": "Relacionados"
   },
   "repoPage": {
     "crumbs": "Trilha de navegação",
@@ -721,6 +730,23 @@
     "altsNote": "Procurando uma alternativa de código aberto a um app pago?",
     "altsLink": "Buscar por produto →",
     "open": "Abrir",
-    "details": "Detalhes"
+    "details": "Detalhes",
+    "pick": "Escolha",
+    "crumbLabel": "Trilha de navegação",
+    "crumbApps": "Apps"
+  },
+  "pick": {
+    "headDomain": "Se for escolher um, comece por {name}",
+    "headShelf": "{subject}: comece por {name}",
+    "profile": "Ver perfil",
+    "downloadOs": "Baixar para {os}",
+    "osOnly": "{os}",
+    "whyNot": "Por que não o #{pos}",
+    "riser": "Maior alta",
+    "riserVal": "{name}: +{n} estrelas em 30 dias (#{pos})",
+    "rank": "Posição",
+    "emptyHead": "Ainda não há escolha hoje",
+    "emptyDomain": "A escolha é calculada diariamente por uma regra fixa: o projeto com mais estrelas entre os {pool} primeiros que teve commit nos últimos {fresh} dias e não é uma lista nem um tutorial. Ou o cálculo de hoje ainda não terminou, ou nenhum dos {pool} primeiros atende a tudo isso. O ranking por estrelas abaixo é atualizado normalmente.",
+    "emptyShelf": "A escolha é calculada diariamente por uma regra fixa: o app com mais estrelas desta página que teve commit nos últimos {fresh} dias e tem instalador. Ou o cálculo de hoje ainda não terminou, ou nenhum app atende a tudo isso. A lista abaixo é atualizada normalmente."
   }
 }

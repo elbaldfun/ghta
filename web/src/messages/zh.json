@@ -495,7 +495,16 @@
     "rules_daily": "按今日新增 star 排序。",
     "rules_weekly": "按 7 日新增 star 排序。",
     "rules_updated": "按最近一次提交时间排序。",
-    "rulesCommon": "「今日」是最近一次抓取与前一天的差值，「7 日」是 7 天前到最近一次的差值。名次变化与昨天的 star 总量排名比，不变不显示。柱状图是每日新增 star，最右一根是最近一天。每天 UTC 03:30 抓取。"
+    "rulesCommon": "「今日」是最近一次抓取与前一天的差值，「7 日」是 7 天前到最近一次的差值。名次变化与昨天的 star 总量排名比，不变不显示。柱状图是每日新增 star，最右一根是最近一天。每天 UTC 03:30 抓取。",
+    "bestOf": "最好的开源{name}",
+    "crumbLabel": "位置",
+    "allLeaves": "全部子领域",
+    "domainIntro": "按 GitHub 星标总数排名，每天更新。顶部的首选按固定规则从前几名里选出，理由都能在 GitHub 上核对。",
+    "statRepos": "项目",
+    "statToday": "今日新增 star",
+    "badgePick": "首选",
+    "badgeRiser": "30 天涨得最快",
+    "related": "相关领域"
   },
   "repoPage": {
     "crumbs": "所在位置",
@@ -721,6 +730,23 @@
     "altsNote": "想找某款商业软件的开源替代品？",
     "altsLink": "按商业软件找替代 →",
     "open": "打开",
-    "details": "详情"
+    "details": "详情",
+    "pick": "首选",
+    "crumbLabel": "位置",
+    "crumbApps": "应用"
+  },
+  "pick": {
+    "headDomain": "要选一个，先看 {name}",
+    "headShelf": "{subject}，先装 {name}",
+    "profile": "看档案",
+    "downloadOs": "下载 {os} 版",
+    "osOnly": "{os} 版",
+    "whyNot": "为什么不是第 {pos}",
+    "riser": "增长最快",
+    "riserVal": "{name}：近 30 天 +{n} 星（第 {pos}）",
+    "rank": "名次",
+    "emptyHead": "今天还没有首选",
+    "emptyDomain": "首选每天按固定规则计算：前 {pool} 名里星标最多、{fresh} 天内有提交、且不是清单或教程的项目。本次还没算出结果，或者前 {pool} 名里没有同时满足这些条件的项目。下面按星标排的榜单照常更新。",
+    "emptyShelf": "首选每天按固定规则计算：本页星标最多、{fresh} 天内有提交、且有安装包的应用。本次还没算出结果，或者没有同时满足这些条件的应用。下面的榜单照常更新。"
   }
 }

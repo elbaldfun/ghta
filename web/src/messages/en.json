@@ -495,7 +495,16 @@
     "rules_daily": "Sorted by stars gained today.",
     "rules_weekly": "Sorted by stars gained in 7 days.",
     "rules_updated": "Sorted by the latest commit.",
-    "rulesCommon": "“Today” is the latest reading minus the day before; “7 days” is the latest reading minus the one 7 days earlier. The move compares with yesterday’s total-star ranking and is hidden when unchanged. Bars are new stars per day; the rightmost is the latest day. Read daily at 03:30 UTC."
+    "rulesCommon": "“Today” is the latest reading minus the day before; “7 days” is the latest reading minus the one 7 days earlier. The move compares with yesterday’s total-star ranking and is hidden when unchanged. Bars are new stars per day; the rightmost is the latest day. Read daily at 03:30 UTC.",
+    "bestOf": "The best open-source {name}",
+    "crumbLabel": "Breadcrumb",
+    "allLeaves": "All subfields",
+    "domainIntro": "Ranked by total GitHub stars, refreshed daily. The pick at the top comes from the leaders by a fixed rule, and every reason can be checked on GitHub.",
+    "statRepos": "Projects",
+    "statToday": "New stars today",
+    "badgePick": "Pick",
+    "badgeRiser": "Fastest in 30 days",
+    "related": "Related"
   },
   "repoPage": {
     "crumbs": "Breadcrumb",
@@ -721,6 +730,23 @@
     "altsNote": "Looking for an open-source replacement for a paid app?",
     "altsLink": "Browse by product →",
     "open": "Open",
-    "details": "Details"
+    "details": "Details",
+    "pick": "Pick",
+    "crumbLabel": "Breadcrumb",
+    "crumbApps": "Apps"
+  },
+  "pick": {
+    "headDomain": "If you pick one, start with {name}",
+    "headShelf": "{subject}: start with {name}",
+    "profile": "View profile",
+    "downloadOs": "Download for {os}",
+    "osOnly": "{os}",
+    "whyNot": "Why not #{pos}",
+    "riser": "Fastest riser",
+    "riserVal": "{name}: +{n} stars in 30 days (#{pos})",
+    "rank": "Rank",
+    "emptyHead": "No pick yet today",
+    "emptyDomain": "The pick is computed daily by a fixed rule: the most-starred of the top {pool} with a commit in the last {fresh} days that is not a list or tutorial. Either today’s run has not finished, or none of the top {pool} meets all of that. The star ranking below updates as usual.",
+    "emptyShelf": "The pick is computed daily by a fixed rule: the most-starred app on this page with a commit in the last {fresh} days and an installer. Either today’s run has not finished, or no app meets all of that. The list below updates as usual."
   }
 }
