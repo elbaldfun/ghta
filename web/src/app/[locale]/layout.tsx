@@ -12,9 +12,11 @@ import '@/styles/tokens.css';
 const sora = Sora({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-sora' });
 const manrope = Manrope({ subsets: ['latin'], weight: ['400', '600', '700', '800'], variable: '--font-manrope' });
 const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '600', '700'], variable: '--font-plex-mono' });
-// Design tokens v1 faces (src/styles/tokens.css). Not preloaded: no page uses
-// them yet, and browsers fetch a face only once text actually renders in it.
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', preload: false, display: 'swap' });
+// Design tokens v1 faces (src/styles/tokens.css). Inter is preloaded because
+// the site header uses it on every page; the other two render only on pages
+// already moved to the new design, and browsers fetch a face only once text
+// actually renders in it.
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const newsreader = Newsreader({ subsets: ['latin'], axes: ['opsz'], variable: '--font-newsreader', preload: false, display: 'swap' });
 const jbMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jbmono', preload: false, display: 'swap' });
 

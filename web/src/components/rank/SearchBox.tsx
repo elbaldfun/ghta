@@ -105,23 +105,23 @@ export function SearchBox() {
   }
 
   return (
-    <div ref={ref} className="relative flex max-w-[460px] flex-1">
-      <div className="flex w-full items-center gap-2.5 rounded-full border border-border bg-surface2 px-4 py-[9px]">
-        <SearchIcon size={15} className="shrink-0 text-muted" />
+    <div ref={ref} className="relative flex w-full flex-1">
+      <div className="flex h-11 w-full items-center gap-2.5 rounded border border-rule bg-sunk px-3 focus-within:border-ink-3 md:h-9">
+        <SearchIcon size={15} className="shrink-0 text-ink-3" />
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={() => items.length > 0 && setOpen(true)}
           placeholder={t('searchPlaceholder')}
-          className="w-full bg-transparent text-[13px] text-fg outline-none placeholder:text-muted"
+          className="w-full bg-transparent text-sr-small text-ink outline-none placeholder:text-ink-3"
           aria-label={t('searchPlaceholder')}
           autoComplete="off"
         />
       </div>
 
       {open && items.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-border bg-surface shadow-card-hover">
+        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-lg border border-rule bg-sr-surface shadow-sr-pop">
           {items.map((s, i) => {
             const [owner = '', name = ''] = s.externalId.split('/');
             return (
@@ -130,7 +130,7 @@ export function SearchBox() {
                 type="button"
                 onMouseEnter={() => setActive(i)}
                 onClick={() => goto(s)}
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-left ${i === active ? 'bg-surface2' : ''}`}
+                className={`flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left ${i === active ? 'bg-sunk' : ''}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -139,17 +139,17 @@ export function SearchBox() {
                   loading="lazy"
                   width={22}
                   height={22}
-                  className="h-[22px] w-[22px] shrink-0 rounded-[5px] border border-border bg-surface2 object-cover"
+                  className="h-[22px] w-[22px] shrink-0 rounded border border-rule bg-sunk object-cover"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-semibold">
-                    <span className="text-muted">{owner}/</span>
+                  <span className="block truncate text-sr-small font-semibold text-ink">
+                    <span className="font-normal text-ink-3">{owner}/</span>
                     {name}
                   </span>
                 </span>
-                {s.language && <span className="shrink-0 text-[10.5px] text-muted">{s.language}</span>}
-                <span className="flex shrink-0 items-center gap-0.5 font-mono text-[11px] tabular-nums text-muted">
-                  <StarIcon size={11} className="text-accent2" />
+                {s.language && <span className="shrink-0 text-sr-caption text-ink-3">{s.language}</span>}
+                <span className="flex shrink-0 items-center gap-0.5 text-sr-caption tabular-nums text-ink-3">
+                  <StarIcon size={11} />
                   {formatCompact(s.stars)}
                 </span>
               </button>
@@ -158,7 +158,7 @@ export function SearchBox() {
           <button
             type="button"
             onClick={fullSearch}
-            className="block w-full border-t border-border px-3 py-2 text-left text-[11.5px] font-semibold text-accent hover:bg-surface2"
+            className="block min-h-11 w-full border-t border-rule px-3 py-2 text-left text-sr-small font-semibold text-ink hover:bg-sunk"
           >
             {t('searchSeeAll', { q: value.trim() })}
           </button>
