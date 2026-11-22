@@ -84,7 +84,19 @@ function shortDate(iso: string | null | undefined, now: Date): string | null {
  * platforms its release files cover, and a download link to the latest
  * release.
  */
-export function AppTile({ app, now }: { app: AppItem; now: Date }) {
+export function AppTile({
+  app,
+  now,
+  rank,
+  pick = false,
+}: {
+  app: AppItem;
+  now: Date;
+  /** Position on a ranked page (best-of shelves). */
+  rank?: number;
+  /** This is the page's pick. */
+  pick?: boolean;
+}) {
   const t = useTranslations('appsPage');
   const locale = useLocale();
   const [owner = '', repo = ''] = app.externalId.split('/');
@@ -105,9 +117,19 @@ export function AppTile({ app, now }: { app: AppItem; now: Date }) {
 
   return (
     <article className="flex min-w-0 flex-col gap-3.5">
-      <Link href={`/repo/${owner}/${repo}`} tabIndex={-1} aria-hidden="true">
-        <AppShot src={app.screenshotUrl} alt="" missing={t('noShot')} />
-      </Link>
+      <div className="relative">
+        <Link href={`/repo/${owner}/${repo}`} tabIndex={-1} aria-hidden="true">
+          <AppShot src={app.screenshotUrl} alt="" missing={t('noShot')} />
+        </Link>
+        {(rank != null || pick) && (
+          <span className="pointer-events-none absolute left-3 top-3 flex gap-1.5">
+            {rank != null && (
+              <span className="rounded bg-ink px-2 py-0.5 text-[13px] font-semibold tabular-nums text-paper">{rank}</span>
+            )}
+            {pick && <span className="rounded bg-signal px-2 py-0.5 text-[13px] font-semibold text-paper">{t('pick')}</span>}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3">
         <AppIcon iconUrl={app.iconUrl} owner={owner} title={title} />
         <span className="flex min-w-0 flex-col gap-px">

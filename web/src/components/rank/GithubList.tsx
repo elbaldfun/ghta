@@ -5,7 +5,9 @@ import {
   findCategory,
   formatTotal,
   getCategoryTree,
+  getDomainVerdict,
   getFacets,
+  getHeatmap,
   getTrends,
   searchRepos,
   type CategoryNode,
@@ -20,6 +22,7 @@ import { ErrorState } from './ErrorState';
 import { Pagination } from './Pagination';
 import { PageShell } from './PageShell';
 import { RankMove } from './RankMove';
+import { PickBlock, RankingRule } from './Verdict';
 
 const PER_PAGE = 24;
 // The sorts the segmented control offers. Forks stays reachable by URL.
@@ -40,9 +43,9 @@ function daysAgo(iso: string, now: number): number | null {
 }
 
 /**
- * The GitHub ranking without a domain: every repository, or one language or
- * form. Design tokens v1. A domain (/github/c/…) still renders GithubBoard
- * with its category tree until the domain page is redesigned.
+ * The GitHub ranking: every repository, one language or form, or one domain
+ * (/github/c/…). Design tokens v1. A domain leads with its pick, computed for
+ * the default view only (most stars, first page, no other filter).
  */
 export async function GithubList({ locale, filters: f }: { locale: string; filters: BoardFilters }) {
   const t = await getTranslations('rank');
@@ -58,22 +61,39 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
   if (sort === 'relevance' && !f.q) sort = 'stars';
   const page = f.page ?? 1;
 
-  const [tree, facets, res] = await Promise.all([
+  const domainView = !!f.category && sort === 'stars' && page === 1 && !f.q && !f.type && !f.lang && !f.license;
+  const [tree, facets, res, heat, picked] = await Promise.all([
     getCategoryTree(),
     getFacets(),
-    searchRepos({ type: f.type, q: f.q, language: f.lang, license: f.license, sort, page, perPage: PER_PAGE }),
+    searchRepos({ category: f.category, type: f.type, q: f.q, language: f.lang, license: f.license, sort, page, perPage: PER_PAGE }),
+    f.category ? getHeatmap() : Promise.resolve([]),
+    domainView && f.category ? getDomainVerdict(f.category) : Promise.resolve(null),
   ]);
+  // The domain and its group, for the breadcrumb, the heading and the menus.
+  const node = f.category ? findCategory(tree, f.category) : undefined;
+  const groupPath = f.category?.split('/')[0];
+  const group = groupPath ? tree.find((g) => g.path === groupPath) : undefined;
+  const isLeaf = !!f.category?.includes('/');
+  const heatCell = (() => {
+    const g = heat.find((h) => h.path === groupPath);
+    return isLeaf ? g?.children?.find((c) => c.path === f.category) : g;
+  })();
+  const verdict = picked?.verdict ?? null;
   const items = res.data?.items ?? [];
   // 31 days of readings for the daily bars (the endpoint takes up to 60 ids).
   const trends = items.length ? await getTrends(items.map((r) => r.fullName), 31) : {};
 
-  const subject = f.lang ? f.lang : f.type ? facetLabel(t, facets, f.type) : null;
-  const heading = subject ? b('titleFor', { name: subject }) : b('title');
+  const domainName = node ? categoryLabel(node, locale) : null;
+  const subject = domainName ?? (f.lang ? f.lang : f.type ? facetLabel(t, facets, f.type) : null);
+  const heading = domainName ? b('bestOf', { name: domainName }) : subject ? b('titleFor', { name: subject }) : b('title');
   // The move since yesterday is in the ranking the filters name, as the API
   // picks it (the language, else overall). It is the row's own number only in
   // star order and without a search.
-  const moveScope = sort === 'stars' && !f.q ? (f.lang ?? t('rankOverall')) : undefined;
+  const moveScope =
+    sort === 'stars' && !f.q ? (isLeaf && domainName ? domainName : (f.lang ?? t('rankOverall'))) : undefined;
   const filtered = Boolean(f.lang || f.type || f.license || f.q);
+  // "Clear" keeps the domain: it is where the reader is, not a filter.
+  const clearHref = boardHref({ category: f.category });
 
   // A repo's domain leaf, for the meta line ("TypeScript · 逆向与分析").
   const leafLabel = (r: RepoSummary): string | null => {
@@ -91,17 +111,36 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
   const dropdowns = [
     {
       key: 'category',
-      label: b('filterCategory', { value: all }),
-      active: false,
+      label: b('filterCategory', { value: group ? categoryLabel(group, locale) : all }),
+      active: !!group,
       items: [
-        { key: 'all', label: all, href: boardHref({ ...f, category: undefined, page: undefined }), active: true },
+        { key: 'all', label: all, href: boardHref({ ...f, category: undefined, page: undefined }), active: !group },
         ...groups.map((g) => ({
           key: g.path,
           label: categoryLabel(g, locale),
           href: boardHref({ ...f, category: g.path, page: undefined }),
+          active: g.path === groupPath,
         })),
       ],
     },
+    ...(group?.children?.length
+      ? [
+          {
+            key: 'leaf',
+            label: isLeaf && node ? categoryLabel(node, locale) : b('allLeaves'),
+            active: isLeaf,
+            items: [
+              { key: 'all', label: b('allLeaves'), href: boardHref({ ...f, category: group.path, page: undefined }), active: !isLeaf },
+              ...group.children.map((c) => ({
+                key: c.path,
+                label: categoryLabel(c, locale),
+                href: boardHref({ ...f, category: c.path, page: undefined }),
+                active: c.path === f.category,
+              })),
+            ],
+          },
+        ]
+      : []),
     {
       key: 'lang',
       label: f.lang ? b('filterLang', { value: f.lang }) : b('filterLangAll'),
@@ -163,6 +202,8 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
     active: sort === s,
   }));
 
+  // Other domains in the same group (or the group's own leaves), for the footer.
+  const related: CategoryNode[] = (group?.children ?? []).filter((c) => c.path !== f.category).slice(0, 8);
   const updatedView = sort === 'updated';
   const rulesKey = sort === 'daily' || sort === 'weekly' || sort === 'updated' ? `rules_${sort}` : 'rules_stars';
   const cols =
@@ -171,9 +212,29 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
   return (
     <PageShell className="pb-12">
       <section className="flex flex-col gap-2 pb-4 pt-6 md:pb-6 md:pt-10">
-        <p className="text-sr-caption text-ink-3">
-          GitHub · {subject ?? b('allCategories')}
-        </p>
+        {node ? (
+          <nav aria-label={b('crumbLabel')} className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sr-caption text-ink-3">
+            <Link href="/github" className="hover:text-ink hover:underline">
+              GitHub
+            </Link>
+            {isLeaf && group && (
+              <>
+                <span aria-hidden="true">›</span>
+                <Link href={boardHref({ category: group.path })} className="hover:text-ink hover:underline">
+                  {categoryLabel(group, locale)}
+                </Link>
+              </>
+            )}
+            <span aria-hidden="true">›</span>
+            <span aria-current="page" className="text-ink-2">
+              {domainName}
+            </span>
+          </nav>
+        ) : (
+          <p className="text-sr-caption text-ink-3">
+            GitHub · {subject ?? b('allCategories')}
+          </p>
+        )}
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
           <h1 className="break-words font-news text-[30px] font-medium leading-[1.1] tracking-[-0.015em] [overflow-wrap:anywhere] md:text-sr-h1">
             {heading}
@@ -184,11 +245,30 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
                 {b('searchFor', { q: f.q })} ·{' '}
               </>
             )}
-            {res.data ? b('count', { n: formatTotal(res.data.totalCount) }) : ''}
-            {' · '}
+            {/* An unfiltered domain shows its count in the stats below; a filtered one its own hits. */}
+            {res.data && !(node && heatCell && !filtered) ? `${b('count', { n: formatTotal(res.data.totalCount) })} · ` : ''}
             {b('updated')}
           </span>
         </div>
+        {node && res.data && (
+          <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-10">
+            <p className="max-w-[720px] text-sr-body text-ink-2">{b('domainIntro')}</p>
+            {heatCell && (
+              <dl className="flex shrink-0 gap-8">
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-sr-caption text-ink-3">{b('statRepos')}</dt>
+                  <dd className="text-[22px] font-semibold tabular-nums">{formatTotal(heatCell.repos)}</dd>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-sr-caption text-ink-3">{b('statToday')}</dt>
+                  <dd className="text-[22px] font-semibold tabular-nums">
+                    <Delta value={heatCell.growth} hot={false} />
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </div>
+        )}
       </section>
 
       <div className="flex flex-col gap-3 border-y border-rule py-3 md:flex-row md:items-center md:gap-2">
@@ -197,7 +277,7 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
             <Dropdown key={d.key} label={d.label} active={d.active} items={d.items} />
           ))}
           {filtered && (
-            <Link href="/github" className="px-1 text-sr-small text-ink-2 underline underline-offset-4 hover:text-ink">
+            <Link href={clearHref} className="px-1 text-sr-small text-ink-2 underline underline-offset-4 hover:text-ink">
               {b('clear')}
             </Link>
           )}
@@ -209,12 +289,28 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
         </div>
       </div>
 
+      {domainView && items.length > 0 && (
+        <div className="flex flex-col gap-3 pt-6">
+          <PickBlock
+            verdict={verdict}
+            scope="domain"
+            subject={domainName ?? ''}
+            pool={verdict?.pool}
+            freshDays={verdict?.freshDays}
+          />
+          {/* Without a run there is no date to cite; the empty pick already states the rule. */}
+          {picked?.computedAt && (
+            <RankingRule scope="domain" computedAt={picked.computedAt} pool={verdict?.pool} freshDays={verdict?.freshDays} />
+          )}
+        </div>
+      )}
+
       {res.error !== null ? (
         <ErrorState />
       ) : items.length === 0 ? (
         <div className="flex flex-col items-start gap-3 py-10">
           <p className="text-sr-body text-ink-2">{t('noResults')}</p>
-          <Link href="/github" className={srButton('outline')}>
+          <Link href={clearHref} className={srButton('outline')}>
             {t('clearFilters')}
           </Link>
         </div>
@@ -273,6 +369,12 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
                       {moveScope && (
                         <RankMove change={r.rankChange} isNew={r.rankNew} scope={moveScope} className="shrink-0 md:hidden" />
                       )}
+                      {domainView && verdict?.pick.externalId === r.fullName && (
+                        <span className="shrink-0 rounded border border-signal px-1.5 text-[11px] font-semibold text-signal">{b('badgePick')}</span>
+                      )}
+                      {domainView && verdict?.riser?.externalId === r.fullName && verdict.riser.externalId !== verdict.pick.externalId && (
+                        <span className="hidden shrink-0 rounded border border-rule px-1.5 text-[11px] text-ink-2 sm:inline">{b('badgeRiser')}</span>
+                      )}
                     </span>
                     <span className="flex min-w-0 items-baseline gap-2.5 text-[13px] text-ink-2">
                       {m && <span className="min-w-0 truncate text-ink-3 md:shrink-0">{m}</span>}
@@ -317,9 +419,23 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
         </>
       )}
 
-      <footer className="border-t-2 border-ink pt-4 text-[13px] leading-relaxed text-ink-2">
-        <span className="font-semibold text-ink">{b('rulesLabel')}</span> {b(rulesKey)}{' '}
-        {b('rulesCommon')}
+      <footer className="flex flex-col gap-2 border-t-2 border-ink pt-4 text-[13px] leading-relaxed text-ink-2">
+        <span>
+          <span className="font-semibold text-ink">{b('rulesLabel')}</span> {b(rulesKey)} {b('rulesCommon')}
+        </span>
+        {related.length > 0 && (
+          <span>
+            <span className="font-semibold text-ink">{b('related')}</span>{' '}
+            {related.map((c, i) => (
+              <span key={c.path}>
+                {i > 0 && ' · '}
+                <Link href={boardHref({ category: c.path })} className="underline decoration-rule underline-offset-4 hover:text-ink">
+                  {categoryLabel(c, locale)}
+                </Link>
+              </span>
+            ))}
+          </span>
+        )}
       </footer>
     </PageShell>
   );

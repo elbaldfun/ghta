@@ -495,7 +495,16 @@
     "rules_daily": "Trié par stars gagnées aujourd’hui.",
     "rules_weekly": "Trié par stars gagnées en 7 jours.",
     "rules_updated": "Trié par dernier commit.",
-    "rulesCommon": "« Aujourd’hui » est la dernière mesure moins celle de la veille ; « 7 jours » est la dernière mesure moins celle d’il y a 7 jours. L’évolution compare au classement par stars totales d’hier et disparaît si le rang est inchangé. Les barres montrent les nouvelles stars par jour ; la plus à droite est le dernier jour. Relevé chaque jour à 03:30 UTC."
+    "rulesCommon": "« Aujourd’hui » est la dernière mesure moins celle de la veille ; « 7 jours » est la dernière mesure moins celle d’il y a 7 jours. L’évolution compare au classement par stars totales d’hier et disparaît si le rang est inchangé. Les barres montrent les nouvelles stars par jour ; la plus à droite est le dernier jour. Relevé chaque jour à 03:30 UTC.",
+    "bestOf": "Les meilleurs {name} open source",
+    "crumbLabel": "Fil d’Ariane",
+    "allLeaves": "Tous les sous-domaines",
+    "domainIntro": "Classement par nombre total d’étoiles GitHub, mis à jour chaque jour. Le choix en tête est tiré des premiers selon une règle fixe, et chaque raison est vérifiable sur GitHub.",
+    "statRepos": "Projets",
+    "statToday": "Nouvelles étoiles aujourd’hui",
+    "badgePick": "Choix",
+    "badgeRiser": "Plus forte hausse 30 j",
+    "related": "Connexes"
   },
   "repoPage": {
     "crumbs": "Fil d’Ariane",
@@ -721,6 +730,23 @@
     "altsNote": "Vous cherchez une alternative open source à une app payante ?",
     "altsLink": "Parcourir par produit →",
     "open": "Ouvrir",
-    "details": "Détails"
+    "details": "Détails",
+    "pick": "Choix",
+    "crumbLabel": "Fil d’Ariane",
+    "crumbApps": "Applications"
+  },
+  "pick": {
+    "headDomain": "Si vous n’en prenez qu’un, commencez par {name}",
+    "headShelf": "{subject} : commencez par {name}",
+    "profile": "Voir la fiche",
+    "downloadOs": "Télécharger pour {os}",
+    "osOnly": "{os}",
+    "whyNot": "Pourquoi pas le #{pos}",
+    "riser": "Plus forte progression",
+    "riserVal": "{name} : +{n} étoiles en 30 jours (#{pos})",
+    "rank": "Rang",
+    "emptyHead": "Pas encore de choix aujourd’hui",
+    "emptyDomain": "Le choix est calculé chaque jour selon une règle fixe : le projet le plus étoilé parmi les {pool} premiers, avec un commit dans les {fresh} derniers jours, et qui n’est ni une liste ni un tutoriel. Soit le calcul du jour n’est pas encore terminé, soit aucun des {pool} premiers ne remplit toutes ces conditions. Le classement par étoiles ci-dessous est mis à jour normalement.",
+    "emptyShelf": "Le choix est calculé chaque jour selon une règle fixe : l’application la plus étoilée de cette page, avec un commit dans les {fresh} derniers jours et un installateur. Soit le calcul du jour n’est pas encore terminé, soit aucune application ne remplit toutes ces conditions. La liste ci-dessous est mise à jour normalement."
   }
 }
