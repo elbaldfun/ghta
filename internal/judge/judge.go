@@ -81,6 +81,17 @@ func (v Verdict) Primary() string {
 	return v.Paths[0]
 }
 
+// ClientBranch is the domain branch of libraries and tools for building
+// mobile and desktop clients. An app a person installs is not one, so an item
+// on a consumer shelf is never filed there (the model files many Android and
+// macOS apps under it).
+const ClientBranch = "client/"
+
+// OnConsumerShelf reports whether a shelf slug is a shelf of the apps branch.
+func OnConsumerShelf(shelf string) bool {
+	return shelf != "" && shelf != item.ShelfExcluded && !slices.Contains(DevShelves, shelf)
+}
+
 // Domain is what the item is filed under: the leaf of its shelf, when it is
 // on one, then the domain leaves. The shelf and the domain are two answers
 // stored as one fact, so the shelf's leaf is always among them.
@@ -89,7 +100,11 @@ func (v Verdict) Domain() []string {
 	if v.Shelf != item.ShelfExcluded && v.Shelf != "" {
 		out = append(out, ShelfLeaf(v.Shelf))
 	}
+	consumer := OnConsumerShelf(v.Shelf)
 	for _, p := range v.Paths {
+		if consumer && strings.HasPrefix(p, ClientBranch) {
+			continue
+		}
 		if !slices.Contains(out, p) {
 			out = append(out, p)
 		}

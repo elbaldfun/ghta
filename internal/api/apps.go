@@ -85,7 +85,12 @@ func (a *API) bestOf(c *gin.Context) {
 		a.fail(c, err)
 		return
 	}
-	a.cached(c, maxAgeBoard, gin.H{"data": rows, "shelf": shelf, "computedAt": at})
+	v, err := a.verdict(c, boards.ShelfVerdictKey(shelf))
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	a.cached(c, maxAgeBoard, gin.H{"data": rows, "shelf": shelf, "verdict": v, "computedAt": at})
 }
 
 // GET /v1/alternatives — the products with the most open-source alternatives.

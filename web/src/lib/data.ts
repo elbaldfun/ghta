@@ -5,3 +5,4 @@ export * from './api/apps';
 export * from './api/boards';
 export * from './api/models';
 export * from './api/repos';
+export * from './api/verdict';

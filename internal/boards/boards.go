@@ -33,19 +33,25 @@ type Row struct {
 		Domain []string `bson:"domain"`
 		Type   string   `bson:"type"`
 	} `bson:"labels"`
-	Gh *struct {
-		Owner    string    `bson:"owner"`
-		PushedAt time.Time `bson:"pushedAt"`
-	} `bson:"gh"`
-	Stale bool `bson:"stale"`
+	Gh    *RowGitHub  `bson:"gh"`
+	Ranks *item.Ranks `bson:"ranks"`
+	Stale bool        `bson:"stale"`
+}
+
+// RowGitHub is the slice of item.GitHub the boards read.
+type RowGitHub struct {
+	Owner         string           `bson:"owner"`
+	PushedAt      time.Time        `bson:"pushedAt"`
+	LatestRelease *item.ReleaseRef `bson:"latestRelease"`
 }
 
 // Projection is what the boards job reads of each item.
 func Projection() bson.M {
 	return bson.M{
 		"source": 1, "externalId": 1, "name": 1, "description": 1, "language": 1, "topics": 1,
-		"metrics.stars": 1, "metrics.forks": 1, "metrics.openIssues": 1, "growth.d1": 1,
-		"labels.domain": 1, "labels.type": 1, "gh.owner": 1, "gh.pushedAt": 1, "stale": 1,
+		"metrics.stars": 1, "metrics.forks": 1, "metrics.openIssues": 1, "growth.d1": 1, "growth.d30": 1,
+		"labels.domain": 1, "labels.type": 1, "gh.owner": 1, "gh.pushedAt": 1, "gh.latestRelease.publishedAt": 1,
+		"ranks.domain": 1, "ranks.prev.domain": 1, "stale": 1,
 	}
 }
 

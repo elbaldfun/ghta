@@ -154,6 +154,10 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	if err != nil {
 		return nil, err
 	}
+	overrides, err := judge.LoadOverrides(filepath.Join(dir, "overrides.yaml"), tree)
+	if err != nil {
+		return nil, err
+	}
 	forms := make([]boards.Facet, 0, len(facets.Type)+1)
 	for _, f := range facets.Type {
 		forms = append(forms, boards.Facet{Key: f.Key, Name: f.Name})
@@ -183,6 +187,9 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 			}, log))
 	}
 	return append(jobs,
+		// After the judge, before rank: a person's correction holds over the
+		// model's answer, and the rankings follow it.
+		pipeline.NewOverrides(st, overrides, tree.Version, log),
 		pipeline.NewRank(st),
 		// After rank and the judge: boards read growth and labels as of tonight.
 		pipeline.NewBoards(st, tree, forms),

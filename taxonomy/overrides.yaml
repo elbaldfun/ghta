@@ -1,0 +1,287 @@
+# StarRank 人工修正表 —— 模型判错、人已经裁决过的条目
+# ─────────────────────────────────────────────────────────────
+# 用途：每晚 overrides 任务（在 judge 之后、rank 之前）把这里的形态、领域、货架写回条目；
+#       judge 已判过的条目同时标 labels.by=manual，之后不再重判；还没判过的照常排队补齐 tagline 等，
+#       判完当晚再被改回来。改这里、发版即生效；生产库不手改。
+# 字段：
+#   id     GitHub 仓库 owner/name
+#   type   形态，facets.yaml 的 key 之一（library/app/cli/software/tutorial/awesome/interview/skill）
+#   paths  领域叶子，最相关的在前；货架的叶子由 shelf 自动补上，不要重复写。
+#          apps 叶子只在 golden 标了两个货架时作第二标签用（不会让条目上第二个货架）
+#   shelf  货架 slug、开发者货架（judge.DevShelves）或 excluded；资料类必须是 excluded，
+#          上货架的必须是 app 或 cli
+#   why    裁决理由，引用 golden 的 Qx 或分类树的叶子说明
+# 校验：go test ./internal/judge —— 路径是当前树的叶子、货架存在、golden 里有的条目必须与 golden 一致。
+# 删掉一条不会把条目交回模型；要重判，在 golden 或这里改成正确答案。
+# 同一任务还执行一条规则（judge.ClientBranch）：上了应用货架的条目去掉 client/* 叶子——
+# client 是"客户端开发库与工具"，装来用的应用不是；开发者货架上的（如 termux）不动。
+#
+# 2026-11-22 首选复核：所有货架页与领域页的首选（第 1 名）逐条看过，下面是判错的；
+# golden 里有的条目照 golden 改（形态、第二标签），没有的按分类树叶子说明裁决。
+
+items:
+  # ── 资料被当成项目 ──
+  - id: freeCodeCamp/freeCodeCamp
+    type: tutorial
+    paths: []
+    shelf: excluded
+    why: 课程站，Q9 学习型系统=tutorial；通用编程课程，同 golden 里的 developer-roadmap、Python-100-Days 不挂领域
+  - id: Asabeneh/30-Days-Of-Python
+    type: tutorial
+    paths: []
+    shelf: excluded
+    why: 30 天 Python 教程，同 Python-100-Days（golden）；原标签 web/backend、ai/data-science、data/database 都不是它
+  - id: iptv-org/iptv
+    type: awesome
+    paths: []
+    shelf: excluded
+    why: 公开 IPTV 频道链接汇总，Q2 纯链接汇总=awesome；非编程内容 domain 空（Q10）
+
+  # ── 第二标签不是主流用法（Q20）──
+  - id: immich-app/immich
+    type: app
+    paths: []
+    shelf: selfhosted/cloud
+    why: 自托管相册，golden 只标 apps/selfhosted/cloud；data/database 不是它的用途
+  - id: yt-dlp/yt-dlp
+    type: cli
+    paths: []
+    shelf: network/download
+    why: 音视频下载器，golden 只标 apps/network/download；data/pipeline 不是它的用途
+  - id: ytdl-org/youtube-dl
+    type: cli
+    paths: []
+    shelf: network/download
+    why: 视频下载器，golden 只标 apps/network/download；data/pipeline 不是它的用途
+  - id: nvm-sh/nvm
+    type: cli
+    paths: []
+    shelf: devtools/package-manager
+    why: Node 版本管理器；lang/utils 是"以上都不属于"的兜底叶子，不该做第二标签
+  - id: ShareX/ShareX
+    type: app
+    paths: []
+    shelf: system/screenshot
+    why: 截图录屏应用，有安装包；ai/cv 是计算机视觉，不是它
+  - id: bitcoin/bitcoin
+    type: software
+    paths: [blockchain/core]
+    shelf: excluded
+    why: golden 只标 blockchain/core；security/crypto-auth 是加密库与认证
+  - id: netdata/netdata
+    type: software
+    paths: [infra/monitoring]
+    shelf: excluded
+    why: golden 只标 infra/monitoring（software）；原规则层打了四个叶子，超过上限，containers/database 都不是它
+  - id: pocketbase/pocketbase
+    type: software
+    paths: [web/backend]
+    shelf: excluded
+    why: 单文件后端（BaaS），web/backend 的说明里就有 BaaS；不是加密认证库，也不是网盘
+  - id: Comfy-Org/ComfyUI
+    type: app
+    paths: [ai/media-gen]
+    shelf: ai/generation
+    why: 扩散模型 GUI，golden 标 app、[ai/media-gen, apps/ai/generation]；ai/ml-framework 不是它
+
+  # ── 叶子或形态判错 ──
+  - id: ggml-org/whisper.cpp
+    type: library
+    paths: [ai/speech-audio]
+    shelf: excluded
+    why: 推理库，golden 标 library、ai/speech-audio；不是音频编辑应用
+  - id: tensorflow/tensorflow
+    type: library
+    paths: [ai/ml-framework]
+    shelf: excluded
+    why: 机器学习框架，golden 标 library
+  - id: pixijs/pixijs
+    type: library
+    paths: [gamedev/engines]
+    shelf: excluded
+    why: HTML5 渲染引擎，golden 标 library、gamedev/engines；gamedev/games 是游戏本身
+  - id: BurntSushi/ripgrep
+    type: cli
+    paths: []
+    shelf: devtools/terminal
+    why: 命令行搜索工具，golden 标 devtools/terminal；devtools/code-quality 是 linter 与静态分析
+  - id: mermaid-js/mermaid
+    type: library
+    paths: [web/data-viz]
+    shelf: excluded
+    why: 文本生成流程图、时序图的图表库；web/static-site 是静态站点生成器与文档站
+  - id: massgravel/Microsoft-Activation-Scripts
+    type: cli
+    paths: [systems/os]
+    shelf: excluded
+    why: Windows/Office 激活脚本，golden 标 cli、systems/os（Q19）；不是启动器
+  - id: NousResearch/hermes-agent
+    type: cli
+    paths: [agents/frameworks]
+    shelf: ai/assistant
+    why: golden 标 cli、[agents/frameworks, apps/ai/assistant]
+
+  - id: louislam/uptime-kuma
+    type: app
+    paths: [infra/monitoring]
+    shelf: selfhosted/monitoring
+    why: golden 标 app、[infra/monitoring, apps/selfhosted/monitoring]；规则层兜底成了 software
+
+  # ── 货架判错 ──
+  - id: grafana/grafana
+    type: app
+    paths: []
+    shelf: infra/monitoring
+    why: golden 只标 infra/monitoring（app，"假命中案例"）；是开发者货架上的可观测平台，不是个人监控面板
+  - id: dani-garcia/vaultwarden
+    type: app
+    paths: []
+    shelf: security/passwords
+    why: 自托管的 Bitwarden 兼容服务端，同 bitwarden/clients（golden：apps/security/passwords）；不是加密库
+  - id: MetaCubeX/mihomo
+    type: cli
+    paths: [infra/networking]
+    shelf: network/proxy
+    why: Clash.Meta 代理内核（发行包 mihomo-*.zip/deb），同 clash-verge-rev 的标法；库里的描述、topics、README 串成了 KT-Yeh/mihomo（星铁 API 库），模型照着它判成了游戏
+  - id: oblien/openship
+    type: app
+    paths: [infra/automation]
+    shelf: excluded
+    why: 2026-10-14 货架标注裁决：openship 去掉货架，之后统一复核
+  - id: k1tbyte/Wand-Enhancer
+    type: app
+    paths: [gamedev/games]
+    shelf: excluded
+    why: WeMod 增强补丁，golden 只标 gamedev/games（Q19），不上游戏货架
+  - id: livekit/livekit
+    type: software
+    paths: [infra/networking]
+    shelf: excluded
+    why: WebRTC 实时音视频服务器与 SDK，给开发者用；媒体服务器货架是 Jellyfin 这类影音库
+  - id: koala73/worldmonitor
+    type: app
+    paths: []
+    shelf: media/reader
+    why: AI 新闻聚合与情报面板，同类的 TrendRadar 在阅读货架；监控面板货架是站点与设备监控
+  - id: block/buzz
+    type: app
+    paths: []
+    shelf: social/messaging
+    why: 自托管的频道式工作区（README：人和 agent 在同一个频道里协作），属聊天；自动化与智能家居货架不是它
+  - id: acmesh-official/acme.sh
+    type: cli
+    paths: [security/crypto-auth, infra/networking]
+    shelf: excluded
+    why: 服务器上的 SSL 证书自动签发脚本；自动化与智能家居货架是个人与家庭自动化
+  - id: prometheus/prometheus
+    type: software
+    paths: [infra/monitoring]
+    shelf: excluded
+    why: golden 只标 infra/monitoring（software）；不是个人监控面板
+  - id: ventoy/Ventoy
+    type: software
+    paths: [systems/os]
+    shelf: excluded
+    why: 可启动 U 盘方案，golden 只标 systems/os（software）；不是备份工具
+  - id: apache/superset
+    type: app
+    paths: [data/analytics]
+    shelf: excluded
+    why: BI 平台，Q30 裁决 BI 归 data/analytics；golden 标 app、[data/analytics]
+
+  # ── 形态或第二标签与 golden 不一致（照 golden）──
+  - id: openclaw/openclaw
+    type: app
+    paths: [agents/frameworks]
+    shelf: ai/assistant
+    why: golden 标 [agents/frameworks, apps/ai/assistant]
+  - id: ollama/ollama
+    type: cli
+    paths: [ai/llm-serving]
+    shelf: ai/local-llm
+    why: golden 标 cli
+  - id: unslothai/unsloth
+    type: library
+    paths: [ai/llm-training]
+    shelf: excluded
+    why: 微调库，golden 标 library
+  - id: excalidraw/excalidraw
+    type: app
+    paths: []
+    shelf: creative/whiteboard
+    why: golden 只标 apps/creative/whiteboard；web/frontend 不是它的用途
+  - id: shadps4-emu/shadPS4
+    type: app
+    paths: [systems/emulation]
+    shelf: games/emulator
+    why: golden 标 app
+  - id: Anuken/Mindustry
+    type: app
+    paths: [gamedev/games]
+    shelf: games/games
+    why: golden 标 app
+  - id: gorhill/uBlock
+    type: app
+    paths: []
+    shelf: network/browser-ext
+    why: golden 已审部分只标 apps/network/browser-ext（v3 补样段另有一条多标了 privacy，两条不一致，待负责人定）；web/frontend 不是它的用途
+  - id: Stirling-Tools/Stirling-PDF
+    type: app
+    paths: []
+    shelf: productivity/docs
+    why: golden 标 app
+  - id: usememos/memos
+    type: app
+    paths: [apps/selfhosted/cloud]
+    shelf: productivity/notes
+    why: golden 标 [apps/productivity/notes, apps/selfhosted/cloud]；agents/assistants 不是它的用途
+  - id: n8n-io/n8n
+    type: app
+    paths: []
+    shelf: selfhosted/automation
+    why: golden 只标 apps/selfhosted/automation
+  - id: microsoft/PowerToys
+    type: app
+    paths: []
+    shelf: system/launcher
+    why: golden 标 app
+  - id: Genymobile/scrcpy
+    type: cli
+    paths: []
+    shelf: system/phone
+    why: golden 标 cli、只标 apps/system/phone；client/android 是 Android 开发库
+  - id: ohmyzsh/ohmyzsh
+    type: software
+    paths: [devtools/terminal]
+    shelf: excluded
+    why: golden 标 software
+  - id: nektos/act
+    type: cli
+    paths: []
+    shelf: infra/automation
+    why: golden 标 cli、infra/automation；本地跑 GitHub Actions 的命令行工具，归开发者货架
+  - id: twbs/bootstrap
+    type: library
+    paths: [web/ui-components]
+    shelf: excluded
+    why: golden 标 library
+  - id: usebruno/bruno
+    type: app
+    paths: []
+    shelf: devtools/api-tools
+    why: golden 标 app、只标 devtools/api-tools；testing、vcs 不是它的用途
+  - id: open-webui/open-webui
+    type: app
+    paths: [agents/assistants]
+    shelf: ai/assistant
+    why: golden 标 [agents/assistants, apps/ai/assistant]（两处一致）；模型放到了本地运行货架
+  - id: restic/restic
+    type: cli
+    paths: []
+    shelf: system/backup
+    why: 备份程序；data/pipeline 是 ETL 与流处理，不是它的用途
+  - id: skylot/jadx
+    type: cli
+    paths: [security/reverse]
+    shelf: excluded
+    why: Dex 反编译器，Q19 逆向归 security/reverse；client/android 是 Android 开发库与组件

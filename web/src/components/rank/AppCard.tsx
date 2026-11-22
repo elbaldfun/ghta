@@ -20,7 +20,7 @@ const OS_SHORT: Record<OS, string> = {
 // Verge Rev". Only the first letter of each token is upper-cased so brand casing
 // like "AppFlowy" survives.
 const NAME_SUFFIX = /[-_.](releases?|desktop|app|electron|ui|client|gui|monorepo)$/i;
-function appName(repoName: string): string {
+export function appName(repoName: string): string {
   const stripped = repoName.replace(NAME_SUFFIX, '') || repoName;
   return stripped
     .split(/[-_]+/)
