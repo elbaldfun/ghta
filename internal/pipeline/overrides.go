@@ -45,7 +45,7 @@ func (j *Overrides) Run(ctx context.Context) (rep worker.Report, err error) {
 		rep.Note("missing", missing)
 		rep.Note("clientDropped", dropped)
 	}()
-	if dropped, err = j.st.DropClientLeaves(ctx, judge.ClientBranch); err != nil {
+	if dropped, err = j.st.DropClientLeaves(ctx, judge.ClientBranch, judge.DevShelves); err != nil {
 		return rep, err
 	}
 	at := j.now()

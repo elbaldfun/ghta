@@ -1,7 +1,8 @@
 # StarRank 人工修正表 —— 模型判错、人已经裁决过的条目
 # ─────────────────────────────────────────────────────────────
-# 用途：每晚 overrides 任务（在 judge 之后、rank 之前）把这里的标签写回条目，并标 labels.by=manual，
-#       之后 judge 不再重判它们。改这里、发版即生效；生产库不手改。
+# 用途：每晚 overrides 任务（在 judge 之后、rank 之前）把这里的形态、领域、货架写回条目；
+#       judge 已判过的条目同时标 labels.by=manual，之后不再重判；还没判过的照常排队补齐 tagline 等，
+#       判完当晚再被改回来。改这里、发版即生效；生产库不手改。
 # 字段：
 #   id     GitHub 仓库 owner/name
 #   type   形态，facets.yaml 的 key 之一（library/app/cli/software/tutorial/awesome/interview/skill）
@@ -24,7 +25,7 @@ items:
     type: tutorial
     paths: []
     shelf: excluded
-    why: 课程站，Q9 学习型系统=tutorial；通用编程课程，同 developer-roadmap、Python-100-Days 不挂领域（Q25）
+    why: 课程站，Q9 学习型系统=tutorial；通用编程课程，同 golden 里的 developer-roadmap、Python-100-Days 不挂领域
   - id: Asabeneh/30-Days-Of-Python
     type: tutorial
     paths: []
