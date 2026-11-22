@@ -1,0 +1,91 @@
+/*
+ * StarRank design tokens v1 — "数据报刊" (data broadsheet).
+ * Approved 2026-11-21; canvas: claude.ai/artifact/RBHVToyNVDt3GasU5dnUFL.
+ *
+ * Rules the tokens encode:
+ *  - Paper and ink neutrals carry the page. ONE signal colour (amber) means
+ *    momentum only: today's gain, acceleration, new entries. The brand green
+ *    lives in the logo dot and nowhere else.
+ *  - Direction is ▲ / ▼, never red vs green (up is red in Chinese markets and
+ *    green in Western ones). A fall is neutral ink-3.
+ *  - Layers are rules (2px ink to open a section, 1px rule between rows), not
+ *    shadows; the only shadow is --sr-shadow-pop for floating UI.
+ *
+ * Colours are "R G B" triples so Tailwind's <alpha-value> works. They live
+ * beside the legacy palette in globals.css (--bg, --fg, --accent …) and do not
+ * touch it: pages move over one at a time.
+ *
+ * Contrast (WCAG 2.x), measured: ink 17.9, ink-2 9.3, ink-3 5.2, signal 5.0
+ * on light paper; ink 17.1, ink-2 10.8, ink-3 6.2, signal 8.5 on dark paper.
+ * ink-3 on sunk is 4.8 — keep small text off sunk in ink-3 when possible.
+ */
+:root {
+  --sr-paper: 250 250 247;
+  --sr-surface: 255 255 255;
+  --sr-sunk: 242 241 236;
+  --sr-rule: 228 226 219;
+  --sr-bar: 214 212 204;
+  --sr-ink-3: 107 106 100;
+  --sr-ink-2: 69 68 63;
+  --sr-ink: 18 18 17;
+  --sr-signal: 194 65 12; /* text */
+  --sr-signal-bar: 234 88 12; /* fills: bars, meters */
+  --sr-signal-soft: 253 235 221; /* tag backgrounds */
+  --sr-signal-ink: 154 52 18; /* text on signal-soft */
+  --sr-brand: 47 107 58; /* logo dot only */
+
+  --sr-shadow-pop: 0 8px 24px rgb(18 18 17 / 0.1), 0 1px 2px rgb(18 18 17 / 0.06);
+
+  /* Latin faces come from next/font (layout.tsx); CJK falls back to the
+     system's own faces — shipping CJK webfonts would cost megabytes. */
+  --sr-cjk-sans: 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei';
+  --sr-cjk-serif: 'Songti SC', 'STSong', 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun';
+  --sr-font-text: var(--font-inter), 'Inter', var(--sr-cjk-sans), system-ui, sans-serif;
+  --sr-font-news: var(--font-newsreader), 'Newsreader', var(--sr-cjk-serif), Georgia, serif;
+  --sr-font-code: var(--font-jbmono), 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root:lang(ja) {
+  --sr-cjk-sans: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', 'Meiryo';
+  --sr-cjk-serif: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP';
+}
+:root:lang(ko) {
+  --sr-cjk-sans: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic';
+  --sr-cjk-serif: 'AppleMyungjo', 'Noto Serif KR', 'Batang';
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --sr-paper: 15 15 14;
+    --sr-surface: 23 23 22;
+    --sr-sunk: 30 30 28;
+    --sr-rule: 43 43 40;
+    --sr-bar: 58 58 54;
+    --sr-ink-3: 148 147 140;
+    --sr-ink-2: 196 195 188;
+    --sr-ink: 243 242 237;
+    --sr-signal: 251 146 60;
+    --sr-signal-bar: 249 115 22;
+    --sr-signal-soft: 58 31 14;
+    --sr-signal-ink: 253 186 116;
+    --sr-brand: 74 160 92;
+    --sr-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  --sr-paper: 15 15 14;
+  --sr-surface: 23 23 22;
+  --sr-sunk: 30 30 28;
+  --sr-rule: 43 43 40;
+  --sr-bar: 58 58 54;
+  --sr-ink-3: 148 147 140;
+  --sr-ink-2: 196 195 188;
+  --sr-ink: 243 242 237;
+  --sr-signal: 251 146 60;
+  --sr-signal-bar: 249 115 22;
+  --sr-signal-soft: 58 31 14;
+  --sr-signal-ink: 253 186 116;
+  --sr-brand: 74 160 92;
+  --sr-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+}

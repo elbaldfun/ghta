@@ -96,8 +96,10 @@ type MCPRank struct {
 	Rank  int    `json:"rank"`
 	// Change is the places gained since the previous ranking, negative for
 	// places lost; absent when there is nothing to compare with.
-	Change *int   `json:"change,omitempty" jsonschema:"places gained since the previous day's ranking; negative means it dropped"`
-	URL    string `json:"url,omitempty"`
+	Change *int `json:"change,omitempty" jsonschema:"places gained since the previous day's ranking; negative means it dropped"`
+	// New marks a position the repo did not hold at the previous ranking.
+	New bool   `json:"new,omitempty" jsonschema:"true when the repo was not in this ranking the previous day"`
+	URL string `json:"url,omitempty"`
 }
 
 // MCPDomain is one node of the domain tree.
@@ -422,21 +424,20 @@ func mcpDetail(it *item.Item) MCPRepoDetail {
 		d.PushedAt = it.Gh.PushedAt.UTC().Format("2006-01-02")
 	}
 	if r := it.Ranks; r != nil {
-		prev := r.Prev
-		if prev == nil {
-			prev = &item.RankPositions{}
+		// The same move as /v1/repos shows: scopeRank in detail.go.
+		add := func(scope, key string, now int, url string) {
+			change, isNew := rankMove(r, scope, key, now)
+			d.Ranks = append(d.Ranks, MCPRank{Scope: scope, Key: key, Rank: now, Change: change, New: isNew, URL: url})
 		}
 		if r.Overall > 0 {
-			d.Ranks = append(d.Ranks, MCPRank{Scope: "overall", Rank: r.Overall, Change: rankChange(prev.Overall, r.Overall), URL: SiteURL + "/github"})
+			add("overall", "", r.Overall, SiteURL+"/github")
 		}
 		if r.Language > 0 {
-			d.Ranks = append(d.Ranks, MCPRank{Scope: "language", Key: it.Language, Rank: r.Language,
-				Change: rankChange(prev.Language, r.Language), URL: boardURL(url.Values{"lang": {it.Language}})})
+			add("language", it.Language, r.Language, boardURL(url.Values{"lang": {it.Language}}))
 		}
 		for _, p := range it.Labels.Domain {
 			if n := r.Domain[p]; n > 0 {
-				d.Ranks = append(d.Ranks, MCPRank{Scope: "domain", Key: p, Rank: n,
-					Change: rankChange(prev.Domain[p], n), URL: boardURL(url.Values{"category": {p}})})
+				add("domain", p, n, boardURL(url.Values{"category": {p}}))
 			}
 		}
 	}

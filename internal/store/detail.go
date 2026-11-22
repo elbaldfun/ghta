@@ -30,6 +30,51 @@ func (s *Store) Item(ctx context.Context, source, externalID string) (item.Item,
 	return it, nil
 }
 
+// DerivativesIndex is the index Derivatives counts through.
+const DerivativesIndex = "hf_base_models"
+
+// Derivatives counts the live models that name the given model as a base.
+// The count goes through the index by name, so a database still without it
+// errs rather than scanning every item.
+func (s *Store) Derivatives(ctx context.Context, externalID string) (int, error) {
+	n, err := s.Items().CountDocuments(ctx,
+		bson.M{"hf.baseModels": externalID, "source": item.SourceHuggingFace, "stale": bson.M{"$ne": true}},
+		options.Count().SetHint(DerivativesIndex))
+	if err != nil {
+		return 0, fmt.Errorf("derivatives %s: %w", externalID, err)
+	}
+	return int(n), nil
+}
+
+// Counts are an item's current numbers, as the item itself holds them.
+type Counts struct {
+	ExternalID string             `bson:"externalId"`
+	Metrics    map[string]float64 `bson:"metrics"`
+	Growth     item.Growth        `bson:"growth"`
+	Stale      bool               `bson:"stale"`
+}
+
+// CurrentCounts reads the current numbers of the given items of one source,
+// keyed by external id; an id with no item is absent. A board stores the
+// numbers of the night it was computed; this is what overlays them, so a
+// board shows the same day's gain as the item's own page.
+func (s *Store) CurrentCounts(ctx context.Context, source string, ids []string) (map[string]Counts, error) {
+	cur, err := s.Items().Find(ctx, bson.M{"source": source, "externalId": bson.M{"$in": ids}},
+		options.Find().SetProjection(bson.M{"externalId": 1, "metrics.stars": 1, "metrics.forks": 1, "growth": 1, "stale": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("current counts: %w", err)
+	}
+	var rows []Counts
+	if err := cur.All(ctx, &rows); err != nil {
+		return nil, fmt.Errorf("current counts: %w", err)
+	}
+	out := make(map[string]Counts, len(rows))
+	for _, r := range rows {
+		out[r.ExternalID] = r
+	}
+	return out, nil
+}
+
 // Histories returns the history ring of each of the given items that has
 // one: the last 35 daily closing values.
 func (s *Store) Histories(ctx context.Context, source string, ids []string) (map[string][]item.Point, error) {

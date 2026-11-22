@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -55,7 +56,10 @@ func TestListRepos(t *testing.T) {
 	tagged.Labels.Type = "cli"
 	tagged.Labels.TaglineZh = "图像笔记工具"
 	tagged.Description = strings.Repeat("长", 500)
+	tagged.Ranks = &item.Ranks{Overall: 1, Language: 1, Domain: map[string]int{"ai/vision": 1}} // new to the rankings
 	topical := ghRepo("o/react-kit", "TypeScript", 200, 50, "web/frontend")
+	topical.Ranks = &item.Ranks{Overall: 2, Language: 1, Domain: map[string]int{"web/frontend": 1},
+		Prev: &item.RankPositions{Overall: 5, Language: 1, Domain: map[string]int{"web/frontend": 2}}}
 	topical.Topics = []string{"react", "ui"}
 	topical.Description = "React component kit"
 	seed(t, st, gone, model, tagged, topical,
@@ -77,6 +81,30 @@ func TestListRepos(t *testing.T) {
 	}
 	if n := len([]rune(c.Description)); n != cardDescription+1 {
 		t.Fatalf("description = %d runes; want the clip and its mark", n)
+	}
+
+	// The move is in the ranking the filters name; unchanged is left out.
+	type move struct {
+		Change int
+		New    bool
+	}
+	for url, want := range map[string]map[string]move{
+		"/v1/repos?limit=2":             {"o/tagged": {0, true}, "o/react-kit": {3, false}},
+		"/v1/repos?domain=web/frontend": {"o/react-kit": {1, false}, "o/react": {}},
+		"/v1/repos?language=TypeScript": {"o/react-kit": {}, "o/react": {}},
+	} {
+		var p listPage // fresh: decoding leaves omitted fields as they were
+		get(t, r, url, nil, &p)
+		got := map[string]move{}
+		for _, c := range p.Data {
+			got[c.FullName] = move{c.RankChange, c.RankNew}
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s moves = %+v; want %+v", url, got, want)
+		}
+	}
+	if w := get(t, r, "/v1/repos?language=Go", nil, nil); strings.Contains(w.Body.String(), "rank") {
+		t.Errorf("unranked rows carry rank fields: %s", w.Body.String())
 	}
 
 	get(t, r, "/v1/repos?sort=stars:asc&limit=2&page=1", nil, &p)

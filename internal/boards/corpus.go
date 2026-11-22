@@ -75,18 +75,13 @@ func (c *Corpus) Ecosystem(pillar string) (hot, popular []EcoItem) {
 			rows = append(rows, e)
 		}
 	}
-	hot = headEco(slices.Clone(rows), func(e EcoItem) int { return e.Growth })
-	popular = headEco(rows, func(e EcoItem) int { return e.Stars })
+	hot = headEco(slices.Clone(rows), EcoHot)
+	popular = headEco(rows, EcoPopular)
 	return hot, popular
 }
 
-func headEco(rows []EcoItem, key func(EcoItem) int) []EcoItem {
-	sort.Slice(rows, func(i, j int) bool {
-		if a, b := key(rows[i]), key(rows[j]); a != b {
-			return a > b
-		}
-		return rows[i].ExternalID < rows[j].ExternalID
-	})
+func headEco(rows []EcoItem, by string) []EcoItem {
+	SortEco(rows, by)
 	if len(rows) > EcoTopN {
 		rows = rows[:EcoTopN]
 	}
@@ -94,6 +89,20 @@ func headEco(rows []EcoItem, key func(EcoItem) int) []EcoItem {
 		rows = []EcoItem{}
 	}
 	return rows
+}
+
+// SortEco orders an ecosystem board: hot by the day's gain, popular by stars.
+func SortEco(rows []EcoItem, by string) {
+	key := func(e EcoItem) int { return e.Stars }
+	if by == EcoHot {
+		key = func(e EcoItem) int { return e.Growth }
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if a, b := key(rows[i]), key(rows[j]); a != b {
+			return a > b
+		}
+		return rows[i].ExternalID < rows[j].ExternalID
+	})
 }
 
 // ---- heat map ------------------------------------------------------------------

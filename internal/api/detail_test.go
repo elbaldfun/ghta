@@ -40,8 +40,9 @@ func TestRepoDetail(t *testing.T) {
 	}
 	w := get(t, r, "/v1/repos/o/app", nil, &d)
 	up3, same, down1 := 3, 0, -1
-	// No earlier position in a domain it has just joined: no change.
-	want := []Rank{{"overall", "", 40, &up3}, {"language", "Go", 7, &same}, {"domain", "apps/productivity/notes", 1, nil}, {"domain", "devtools/terminal", 3, &down1}}
+	// No earlier position in a domain it has just joined: new there.
+	want := []Rank{{"overall", "", 40, &up3, false}, {"language", "Go", 7, &same, false},
+		{"domain", "apps/productivity/notes", 1, nil, true}, {"domain", "devtools/terminal", 3, &down1, false}}
 	if w.Code != http.StatusOK || !reflect.DeepEqual(d.Data.Ranks, want) {
 		t.Fatalf("ranks = %d %+v", w.Code, d.Data.Ranks)
 	}

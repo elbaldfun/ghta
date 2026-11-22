@@ -116,10 +116,17 @@ var knownLangs = map[string]bool{
 // TagRefs are the structured relations extracted from a model's raw tags.
 type TagRefs struct {
 	BaseModels []string // "meta-llama/Llama-3.1-8B" — finetune/quant lineage
-	Datasets   []string
-	Arxiv      []string
-	Languages  []string
+	// BaseRelation is how the model derives from its base: "finetune",
+	// "quantized", "adapter" or "merge"; "" when the tags do not say.
+	BaseRelation string
+	Datasets     []string
+	Arxiv        []string
+	Languages    []string
 }
+
+// baseRelations are the qualifiers the Hub puts in base_model tags, from the
+// model card's base_model_relation (or its own guess).
+var baseRelations = map[string]bool{"finetune": true, "quantized": true, "adapter": true, "merge": true}
 
 // ParseTagRefs pulls base_model / dataset / arxiv / language relations out of
 // the raw tag list. base_model tags come as "base_model:owner/name" or
@@ -139,6 +146,9 @@ func ParseTagRefs(tags []string) TagRefs {
 			ref := strings.TrimPrefix(t, "base_model:")
 			// strip a relation qualifier ("finetune:", "quantized:", ...)
 			if i := strings.IndexByte(ref, ':'); i >= 0 {
+				if out.BaseRelation == "" && baseRelations[ref[:i]] {
+					out.BaseRelation = ref[:i]
+				}
 				ref = ref[i+1:]
 			}
 			add(&out.BaseModels, ref)

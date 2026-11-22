@@ -1,9 +1,12 @@
 package store
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -87,6 +90,7 @@ type FetchStats struct {
 	New       int // of those, first seen
 	Snapshots int // metric snapshots appended
 	Blobs     int // README/release blobs written because their content changed
+	Light     int // of the items, read without README and releases (Fetched.Light)
 }
 
 func (a *FetchStats) Add(b FetchStats) {
@@ -94,6 +98,7 @@ func (a *FetchStats) Add(b FetchStats) {
 	a.New += b.New
 	a.Snapshots += b.Snapshots
 	a.Blobs += b.Blobs
+	a.Light += b.Light
 }
 
 // snapshot is one metric_snapshots document.
@@ -123,6 +128,33 @@ func observe(history []item.Point, value float64, today string) (next []item.Poi
 
 const ageBatch = 500
 
+// MetricSpan is a closed range of one metric: the items a shard covers.
+type MetricSpan struct {
+	Metric string
+	Lo, Hi float64
+}
+
+// MergeSpans joins overlapping or touching spans of the same metric, so a run
+// of adjacent shards ("1000..1010", "1010..1020") becomes one range.
+func MergeSpans(spans []MetricSpan) []MetricSpan {
+	sorted := slices.Clone(spans)
+	slices.SortFunc(sorted, func(a, b MetricSpan) int {
+		if c := strings.Compare(a.Metric, b.Metric); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.Lo, b.Lo)
+	})
+	var out []MetricSpan
+	for _, sp := range sorted {
+		if n := len(out); n > 0 && out[n-1].Metric == sp.Metric && sp.Lo <= out[n-1].Hi {
+			out[n-1].Hi = max(out[n-1].Hi, sp.Hi)
+			continue
+		}
+		out = append(out, sp)
+	}
+	return out
+}
+
 // AgeGrowth re-measures the growth of the live items of one source that no
 // fetch observed today, taking their last observed value as today's: an item
 // out of the fetch range is counted as not growing, as the old metrics job
@@ -130,10 +162,19 @@ const ageBatch = 500
 // was seen, and an item that fell out of range would keep its place in the
 // growth rankings until reconcile looks at it a week later. No history point
 // is added — only an observation does that. Returns how many items changed.
-func (s *Store) AgeGrowth(ctx context.Context, source, today string) (int, error) {
-	cur, err := s.Items().Find(ctx,
-		bson.M{"source": source, "stale": bson.M{"$ne": true}, "history.0": bson.M{"$exists": true}, "history.d": bson.M{"$ne": today}},
-		options.Find().SetProjection(bson.M{"history": 1, "growth": 1}))
+//
+// Items inside a resting span belong to a shard that was not due today: they
+// were not looked for, so they keep the growth of their last fetch.
+func (s *Store) AgeGrowth(ctx context.Context, source, today string, resting ...MetricSpan) (int, error) {
+	filter := bson.M{"source": source, "stale": bson.M{"$ne": true}, "history.0": bson.M{"$exists": true}, "history.d": bson.M{"$ne": today}}
+	if len(resting) > 0 {
+		var skip []bson.M
+		for _, r := range resting {
+			skip = append(skip, bson.M{"metrics." + r.Metric: bson.M{"$gte": r.Lo, "$lte": r.Hi}})
+		}
+		filter["$nor"] = skip
+	}
+	cur, err := s.Items().Find(ctx, filter, options.Find().SetProjection(bson.M{"history": 1, "growth": 1}))
 	if err != nil {
 		return 0, fmt.Errorf("age growth: %w", err)
 	}
@@ -179,7 +220,50 @@ func (s *Store) AgeGrowth(ctx context.Context, source, today string) (int, error
 	return changed, flush()
 }
 
+// DetailStates returns, for those of the given GitHub items that are stored,
+// what their last detailed read saw. An item missing from the map is new.
+//
+// An item stored before detailed reads were tracked has no gh.detailedOn; its
+// fetchedAt day stands in, as every fetch until then read the detail.
+func (s *Store) DetailStates(ctx context.Context, externalIDs []string) (map[string]item.DetailState, error) {
+	cur, err := s.Items().Find(ctx,
+		bson.M{"source": item.SourceGitHub, "externalId": bson.M{"$in": externalIDs}},
+		options.Find().SetProjection(bson.M{"externalId": 1, "gh.pushedAt": 1, "gh.detailedOn": 1, "fetchedAt": 1, "topics": 1, "homepage": 1, "language": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("detail states: %w", err)
+	}
+	var rows []struct {
+		ExternalID string `bson:"externalId"`
+		Gh         struct {
+			PushedAt   time.Time `bson:"pushedAt"`
+			DetailedOn string    `bson:"detailedOn"`
+		} `bson:"gh"`
+		FetchedAt time.Time `bson:"fetchedAt"`
+		Topics    []string  `bson:"topics"`
+		Homepage  string    `bson:"homepage"`
+		Language  string    `bson:"language"`
+	}
+	if err := cur.All(ctx, &rows); err != nil {
+		return nil, fmt.Errorf("detail states: %w", err)
+	}
+	out := make(map[string]item.DetailState, len(rows))
+	for _, r := range rows {
+		on := r.Gh.DetailedOn
+		if on == "" && !r.FetchedAt.IsZero() {
+			on = item.DayOf(r.FetchedAt)
+		}
+		out[r.ExternalID] = item.DetailState{
+			PushedAt: r.Gh.PushedAt, DetailedOn: on,
+			Topics: r.Topics, Homepage: r.Homepage, Language: r.Language,
+		}
+	}
+	return out, nil
+}
+
 // WriteFetched stores one batch of freshly fetched items, all from one source.
+//
+// A Light reading (item.Fetched.Light) leaves the README, the releases and
+// the gh fields derived from them as stored; it sets gh.owner and gh.pushedAt.
 //
 // It writes only what the fetcher owns. On an existing item that is the
 // descriptive fields, metrics, the gh/hf block, fetchedAt, and the history
@@ -259,6 +343,9 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 		if !existed {
 			stats.New++
 		}
+		if f.Light {
+			stats.Light++
+		}
 
 		set := bson.M{
 			"name": it.Name, "description": it.Description, "topics": nonNil(it.Topics),
@@ -276,7 +363,15 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 		optional("language", it.Language)
 		optional("homepage", it.Homepage)
 		optional("license", it.License)
-		if it.Gh != nil {
+		switch {
+		case it.Gh != nil && f.Light:
+			set["gh.owner"] = it.Gh.Owner
+			if it.Gh.PushedAt.IsZero() {
+				unset["gh.pushedAt"] = ""
+			} else {
+				set["gh.pushedAt"] = it.Gh.PushedAt
+			}
+		case it.Gh != nil:
 			set["gh"] = it.Gh
 		}
 		if it.Hf != nil {

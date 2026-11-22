@@ -88,4 +88,29 @@ func TestParseTagRefs(t *testing.T) {
 	if !reflect.DeepEqual(refs.Datasets, []string{"ms_marco"}) || !reflect.DeepEqual(refs.Arxiv, []string{"2402.12345"}) {
 		t.Errorf("datasets=%v arxiv=%v", refs.Datasets, refs.Arxiv)
 	}
+	if refs.BaseRelation != "finetune" {
+		t.Errorf("relation = %q", refs.BaseRelation)
+	}
+}
+
+// The Hub tags a base twice, bare and qualified; one base results, with the
+// qualifier as the relation. An unknown qualifier is not a relation.
+func TestParseTagRefsRelation(t *testing.T) {
+	for _, c := range []struct {
+		tags     []string
+		bases    []string
+		relation string
+	}{
+		{[]string{"base_model:Qwen/Qwen2.5-7B", "base_model:quantized:Qwen/Qwen2.5-7B"}, []string{"Qwen/Qwen2.5-7B"}, "quantized"},
+		{[]string{"base_model:a/x", "base_model:merge:a/x", "base_model:merge:b/y"}, []string{"a/x", "b/y"}, "merge"},
+		{[]string{"base_model:adapter:a/x"}, []string{"a/x"}, "adapter"},
+		{[]string{"base_model:a/x"}, []string{"a/x"}, ""},
+		{[]string{"base_model:weird:a/x"}, []string{"a/x"}, ""},
+		{[]string{"gguf"}, nil, ""},
+	} {
+		refs := ParseTagRefs(c.tags)
+		if !reflect.DeepEqual(refs.BaseModels, c.bases) || refs.BaseRelation != c.relation {
+			t.Errorf("%v: bases %v relation %q", c.tags, refs.BaseModels, refs.BaseRelation)
+		}
+	}
 }

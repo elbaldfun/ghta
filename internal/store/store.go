@@ -40,6 +40,9 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 		{Keys: bson.D{{Key: "labels.shelf", Value: 1}}, Options: options.Index().SetSparse(true)},
 		// The judge's queue.
 		{Keys: bson.D{{Key: "jobs.judge.status", Value: 1}, {Key: "metrics.stars", Value: -1}}},
+		// A model's derivatives: only models with a base are indexed.
+		{Keys: bson.D{{Key: "hf.baseModels", Value: 1}}, Options: options.Index().SetName(DerivativesIndex).
+			SetPartialFilterExpression(bson.M{"hf.baseModels": bson.M{"$exists": true}})},
 	}
 	items = append(items, listIndexes...)
 	if _, err := s.Items().Indexes().CreateMany(ctx, items); err != nil {

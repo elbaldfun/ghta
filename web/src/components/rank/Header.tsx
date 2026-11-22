@@ -7,41 +7,42 @@ import { SearchBox } from './SearchBox';
 import { LocaleMenu } from './LocaleMenu';
 import { ThemePill } from './ThemePill';
 
-/** Persistent 2a header: full-bleed border, content aligned to the site container. */
+/**
+ * Site header in design tokens v1 ("数据报刊"): paper ground, ink type, the
+ * brand green only in the logo dot. Pages that still use the legacy palette
+ * sit under it unchanged; paper and the legacy background are a shade apart.
+ */
 export function RankHeader() {
   const t = useTranslations('rank');
   const tb = useTranslations('blog');
 
   return (
-    <header className="border-b border-border">
-      {/* Mobile stacks three compact rows (logo+controls / nav / search);
-          from lg up everything sits on one line. */}
-      <PageShell className="flex flex-wrap items-center gap-x-4 gap-y-3 py-4 lg:flex-nowrap lg:gap-x-5 lg:py-5">
-        <Link href="/" className="order-1 flex items-baseline gap-2.5">
-          <span className="font-display text-[21px] font-extrabold text-accent">StarRank</span>
-          <span className="hidden text-xs text-muted sm:inline">Explorer</span>
+    <header className="border-b border-rule bg-paper font-text text-ink">
+      {/* Mobile: logo + controls, then a scrolling nav row, then search.
+          From lg up everything sits on one line. */}
+      <PageShell className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-3 lg:flex-nowrap lg:py-3">
+        <Link href="/" className="order-1 flex h-11 items-center gap-2 text-[20px] font-bold tracking-[-0.02em] text-ink">
+          <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden="true" />
+          StarRank
         </Link>
-        <nav className="order-3 -mx-1 flex w-full flex-wrap items-center gap-1 lg:order-2 lg:mx-0 lg:w-auto">
+        <nav
+          aria-label={t('navMain')}
+          className="order-3 -mx-4 flex w-[calc(100%+2rem)] items-center gap-5 overflow-x-auto px-4 text-sr-small font-medium lg:order-2 lg:mx-0 lg:w-auto lg:gap-7 lg:overflow-visible lg:px-0"
+        >
           <NavLink href="/" label={t('navToday')} />
-          <NavLink
-            href="/github"
-            label="GitHub"
-            alsoOn={['/breakout', '/ai', '/ecosystem', '/topics', '/map', '/repo']}
-          />
+          <NavLink href="/ai" label={t('navAi')} alsoOn={['/ecosystem']} />
+          <NavLink href="/github" label="GitHub" alsoOn={['/breakout', '/topics', '/map', '/repo']} />
           <NavLink href="/apps" label={t('navApps')} alsoOn={['/alternatives']} />
           <NavLink href="/models" label={t('navModels')} />
           <NavLink href="/developers" label={t('navDevelopers')} />
           <NavLink href="/blog" label={tb('nav')} />
         </nav>
-        <div className="order-4 w-full lg:order-3 lg:w-auto lg:max-w-[460px] lg:flex-1">
+        <div className="order-4 w-full pb-3 lg:order-3 lg:ml-auto lg:w-auto lg:max-w-[360px] lg:flex-1 lg:pb-0">
           <Suspense>
             <SearchBox />
           </Suspense>
         </div>
-        {/* ml-auto at every breakpoint pins the controls to the container's
-            right edge — the search field is width-capped, so without this the
-            row wouldn't fill and the controls drifted off the alignment line. */}
-        <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-4">
+        <div className="order-2 ml-auto flex items-center gap-2 lg:order-4 lg:ml-0">
           <Suspense>
             <LocaleMenu />
           </Suspense>

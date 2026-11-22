@@ -28,6 +28,12 @@ export interface RepoSummary {
   htmlUrl: string;
   dailyIncrease: number | null;
   weeklyIncrease: number | null;
+  /** Overall position by stars (1-based); list endpoints only. */
+  rank?: number;
+  /** Places moved since yesterday in the ranking the list is filtered to
+   * (leaf domain, else language, else overall); lists only. */
+  rankChange?: number;
+  rankNew?: boolean;
 }
 
 export interface ReleaseAsset {
@@ -42,6 +48,8 @@ export interface RepoRank {
   scope: 'overall' | 'language' | 'category';
   key?: string; // language name or category path
   rank: number; // 1-based
+  change?: number; // places gained since yesterday, negative for lost
+  isNew?: boolean; // not in this ranking yesterday
 }
 
 export interface RepoDetail extends RepoSummary {
@@ -76,7 +84,10 @@ interface Card {
   forks: number;
   openIssues: number;
   growth?: { d1: number | null; d7: number | null; d30: number | null };
+  rank?: number;
   pushedAt?: string;
+  rankChange?: number;
+  rankNew?: boolean;
 }
 
 function mapCard(c: Card): RepoSummary {
@@ -99,6 +110,9 @@ function mapCard(c: Card): RepoSummary {
     htmlUrl: `https://github.com/${c.fullName}`,
     dailyIncrease: c.growth?.d1 ?? null,
     weeklyIncrease: c.growth?.d7 ?? null,
+    ...(c.rank ? { rank: c.rank } : {}),
+    ...(c.rankChange ? { rankChange: c.rankChange } : {}),
+    ...(c.rankNew ? { rankNew: true } : {}),
   };
 }
 
@@ -225,7 +239,7 @@ const repoPath = (owner: string, name: string) =>
   `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
 
 interface DetailDTO extends Card {
-  ranks: { scope: string; key?: string; rank: number }[];
+  ranks: { scope: string; key?: string; rank: number; change?: number; new?: boolean }[];
   screenshotUrl?: string;
   shotSource?: string;
   platforms: OS[];
@@ -244,7 +258,13 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
       ...mapCard(d),
       ranks: (d.ranks ?? [])
         .filter((r) => r.rank > 0)
-        .map((r) => ({ scope: r.scope === 'domain' ? 'category' : (r.scope as RepoRank['scope']), key: r.key, rank: r.rank })),
+        .map((r) => ({
+          scope: r.scope === 'domain' ? 'category' : (r.scope as RepoRank['scope']),
+          key: r.key,
+          rank: r.rank,
+          change: r.change,
+          isNew: r.new,
+        })),
       screenshotUrl: d.screenshotUrl || undefined,
       shotSource: d.shotSource || undefined,
       platforms: d.platforms ?? [],
