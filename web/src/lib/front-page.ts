@@ -15,34 +15,38 @@ function daysBetween(a: number, b: number): number {
   return Math.floor(b / DAY) - Math.floor(a / DAY);
 }
 
+/** Go's math.Round: halves round away from zero (JS Math.round(-0.5) is 0). */
+function goRound(x: number): number {
+  return Math.sign(x) * Math.round(Math.abs(x));
+}
+
 /**
  * Cumulative star readings → stars gained per calendar day, oldest first,
- * ending on the day of the last reading. Readings two or more days apart
- * (every-other-day fetches, a missed run) have their gain spread evenly over
- * the days between them, the way the backend's ComputeGrowth prorates a
- * window (internal/item/growth.go). Rounding is cumulative so the days still
- * add up to the real gain. Two readings on one day: the later one counts.
+ * ending on the day of the last reading. Readings are first reduced to one
+ * per UTC day (the day's last reading counts, as item.SetPoint keeps it).
+ * Readings two or more days apart (every-other-day fetches, a missed run)
+ * have their gain spread over the days between them so that the last day
+ * equals what the backend's ComputeGrowth reports as d1 for that span
+ * (gain / span, rounded the Go way; internal/item/growth.go), and rounding is
+ * cumulative so the days still add up to the real gain.
  */
 export function dailySeries(points: TrendPoint[] | undefined): number[] {
   if (!points || points.length < 2) return [];
+  const byDay: { day: number; v: number }[] = [];
+  for (const p of points) {
+    const day = Math.floor(p.t / DAY);
+    const last = byDay[byDay.length - 1];
+    if (last && last.day === day) last.v = p.v;
+    else byDay.push({ day, v: p.v });
+  }
   const out: number[] = [];
-  let prev = points[0];
-  for (let i = 1; i < points.length; i++) {
-    const p = points[i];
-    const span = daysBetween(prev.t, p.t);
-    if (span <= 0) {
-      if (out.length === 0) prev = p;
-      else {
-        out[out.length - 1] += p.v - prev.v;
-        prev = p;
-      }
-      continue;
+  for (let i = 1; i < byDay.length; i++) {
+    const span = byDay[i].day - byDay[i - 1].day;
+    const gain = byDay[i].v - byDay[i - 1].v;
+    // j counts back from the newer reading: j = 1 is its own day.
+    for (let j = span; j >= 1; j--) {
+      out.push(goRound((gain * j) / span) - goRound((gain * (j - 1)) / span));
     }
-    const gain = p.v - prev.v;
-    for (let k = 1; k <= span; k++) {
-      out.push(Math.round((gain * k) / span) - Math.round((gain * (k - 1)) / span));
-    }
-    prev = p;
   }
   return out;
 }

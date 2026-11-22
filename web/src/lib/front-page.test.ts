@@ -12,9 +12,15 @@ test('daily readings give one gain per day', () => {
 });
 
 test('every-other-day readings are spread over both days', () => {
-  // 100 → 120 over two days, then 120 → 121 over two days (the odd star
-  // lands on the first day: half rounds up, as in ComputeGrowth).
-  assert.deepEqual(dailySeries([at(0, 100), at(2, 120), at(4, 121)]), [10, 10, 1, 0]);
+  // 100 → 120 over two days, then 120 → 121 over two days.
+  assert.deepEqual(dailySeries([at(0, 100), at(2, 120), at(4, 121)]), [10, 10, 0, 1]);
+});
+
+test('the last day of a span matches ComputeGrowth d1 (Go rounding)', () => {
+  // d1 = math.Round(1/2) = 1 and math.Round(-1/2) = -1 in Go.
+  assert.deepEqual(dailySeries([at(0, 100), at(2, 101)]), [0, 1]);
+  assert.deepEqual(dailySeries([at(0, 100), at(2, 99)]), [0, -1]);
+  assert.deepEqual(dailySeries([at(0, 0), at(3, 5)]).at(-1), 2); // round(5/3)
 });
 
 test('spread gains still add up to the real gain', () => {
@@ -31,6 +37,16 @@ test('a long gap fills every missing day', () => {
 
 test('two readings on one day: the later one counts', () => {
   assert.deepEqual(dailySeries([at(0, 100), at(1, 110), at(1, 112, 5), at(2, 120)]), [12, 8]);
+  // Also after a gap: day 2's later reading replaces its earlier one.
+  assert.deepEqual(dailySeries([at(0, 100), at(2, 120), at(2, 124, 5)]), [12, 12]);
+  // And on the first day.
+  assert.deepEqual(dailySeries([at(0, 90), at(0, 100, 5), at(1, 110)]), [10]);
+});
+
+test('days split at UTC midnight', () => {
+  const late = Date.UTC(2026, 10, 1, 23, 0);
+  const early = Date.UTC(2026, 10, 2, 1, 0); // two hours later, next UTC day
+  assert.deepEqual(dailySeries([{ t: late, v: 0 }, { t: early, v: 5 }]), [5]);
 });
 
 test('losses are kept', () => {
