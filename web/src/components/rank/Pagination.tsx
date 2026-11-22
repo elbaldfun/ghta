@@ -19,6 +19,7 @@ export function Pagination({
   basePath = '/',
   href,
   cap = 1000,
+  tone = 'legacy',
 }: {
   page: number;
   perPage: number;
@@ -31,6 +32,8 @@ export function Pagination({
   /** Hard ceiling on reachable results (GitHub search exposes only 1000; our
    * own boards are capped by the backend's top-N). */
   cap?: number;
+  /** 'sr': design tokens v1 (ink outlines, 44px touch targets). */
+  tone?: 'legacy' | 'sr';
 }) {
   const t = useTranslations('rank');
   const link = href ?? ((n: number) => pageHref(basePath, params, n));
@@ -42,15 +45,25 @@ export function Pagination({
   const windowStart = Math.max(1, Math.min(page - 2, maxPage - 4));
   const numbers = Array.from({ length: Math.min(5, maxPage) }, (_, i) => windowStart + i);
 
-  const navBtn =
-    'flex items-center gap-1 rounded-lg border border-border bg-surface px-[11px] py-1.5 text-xs font-semibold text-fg';
+  const sr = tone === 'sr';
+  const navBtn = sr
+    ? 'flex h-11 min-w-11 items-center justify-center rounded border border-rule text-ink-2 hover:border-ink-3 hover:text-ink md:h-9'
+    : 'flex items-center gap-1 rounded-lg border border-border bg-surface px-[11px] py-1.5 text-xs font-semibold text-fg';
+  const numClass = (on: boolean) =>
+    sr
+      ? `flex h-11 min-w-11 items-center justify-center rounded border text-sr-small tabular-nums md:h-9 ${
+          on ? 'border-ink font-semibold text-ink' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
+        }`
+      : `min-w-[32px] rounded-lg border py-1.5 text-center text-xs font-bold ${
+          on ? 'border-accent bg-accent text-accent-fg' : 'border-border bg-surface text-fg hover:border-accent'
+        }`;
 
   return (
-    <div className="mt-[22px] flex flex-wrap items-center justify-between gap-3">
-      <span className="text-xs text-muted">
+    <div className={`flex flex-wrap items-center justify-between gap-3 ${sr ? 'py-5' : 'mt-[22px]'}`}>
+      <span className={sr ? 'text-sr-small tabular-nums text-ink-2' : 'text-xs text-muted'}>
         {t('rangeText', { start, end, total: totalCount.toLocaleString() })}
       </span>
-      <div className="flex items-center gap-1.5">
+      <div className={`flex items-center ${sr ? 'gap-2' : 'gap-1.5'}`}>
         {page > 1 ? (
           <Link href={link(page - 1)} className={navBtn} aria-label="Previous page">
             <ChevronLeft size={13} />
@@ -65,11 +78,7 @@ export function Pagination({
             key={n}
             href={link(n)}
             aria-current={n === page ? 'page' : undefined}
-            className={`min-w-[32px] rounded-lg border py-1.5 text-center text-xs font-bold ${
-              n === page
-                ? 'border-accent bg-accent text-accent-fg'
-                : 'border-border bg-surface text-fg hover:border-accent'
-            }`}
+            className={numClass(n === page)}
           >
             {n}
           </Link>

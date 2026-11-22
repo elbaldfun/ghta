@@ -61,6 +61,11 @@ export interface RepoDetail extends RepoSummary {
   releaseAssets: ReleaseAsset[];
   latestRelease?: { tag?: string; publishedAt?: string | null } | null;
   alternativeTo: Alternative[];
+  /** Stars gained over 30 days; null when the history is shorter. */
+  monthlyIncrease: number | null;
+  /** One-line summaries written for the site, when there is one. */
+  taglineZh?: string;
+  taglineEn?: string;
 }
 
 export interface StarPoint {
@@ -247,6 +252,8 @@ interface DetailDTO extends Card {
   releaseAssets: ReleaseAsset[];
   latestRelease: { tag?: string; publishedAt?: string } | null;
   alternatives: Alternative[];
+  taglineZh?: string;
+  taglineEn?: string;
 }
 
 export async function getRepo(owner: string, name: string): Promise<Fetched<RepoDetail>> {
@@ -272,6 +279,9 @@ export async function getRepo(owner: string, name: string): Promise<Fetched<Repo
       releaseAssets: d.releaseAssets ?? [],
       latestRelease: d.latestRelease,
       alternativeTo: d.alternatives ?? [],
+      monthlyIncrease: d.growth?.d30 ?? null,
+      taglineZh: d.taglineZh || undefined,
+      taglineEn: d.taglineEn || undefined,
     },
     error: null,
   };
