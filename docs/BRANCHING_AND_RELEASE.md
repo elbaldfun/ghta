@@ -75,7 +75,7 @@ PR 标题决定它在发布说明里归到哪一类：
    - 标题是 `Release vYYYY.MM.DD.N`，用的是预计版本号；实际版本号在打标签时才确定，如果当天别人先发了一版，号会顺延。
    - 正文按「新增 / 修复 / 改进」分组，列出 `origin/main..origin/develop` 之间合并的 PR。
    - `develop` 没有 `main` 缺少的提交时，脚本会拒绝执行。
-   - 加 `--dry-run` 只打印将要执行的 `gh` 命令和正文，不改 GitHub 上的任何东西。
+   - 加 `--dry-run` 只打印将要执行的 `gh` 命令和正文：不推送，也不改 GitHub 上的任何东西，但仍会 `git fetch`（更新本地的远端分支和标签）。
 2. **合并**：`release-source`、`build-test`、`web` 都通过、而且没加 `hold` 标签时，master 用 merge commit 合并。负责人想叫停，就给发版 PR 加 `hold`。
 3. **发版**：在已经并入 `origin/main` 的 HEAD 上运行 `scripts/release.sh api` / `web` / `worker` / `all`。后端先于前端发。
 4. **打标签**：所有服务的健康检查都通过后，脚本会：
@@ -83,13 +83,16 @@ PR 标题决定它在发布说明里归到哪一类：
    2. 打注释标签并推送；
    3. 用 `gh release create --verify-tag --latest` 建一个正式的 GitHub Release（不是草稿，也不是预发布）。
 
-   如果打标签这一步失败了（例如网络断了），服务其实已经发出去了。修好以后用 `scripts/release.sh tag <服务列表>` 补打，例如 `tag api,worker,web`。
+   如果打标签这一步失败了（例如网络断了），服务其实已经发出去了。修好以后用 `scripts/release.sh tag <服务列表>` 补上，例如 `tag api,worker,web`：已经做完的步骤会跳过，本地标签已打但没推上去就补推，Release 没建成就补建。`tag` 也支持 `--dry-run`。
 
 ### 流水线时间窗
 
 worker 每天 UTC 03:30（北京时间 11:30）开始跑抓取和指标计算，08:30 前跑完。这段时间里重启 worker，会把当天剩下的抓取杀掉。
 
 所以 `scripts/release.sh worker` 和 `all` 在 UTC 03:30–08:30 一律拒绝执行，并说明原因，**没有绕过开关**。
+
+- 开始时检查一次。真正重启 worker 之前还会再检查一次：构建和传输要几分钟，03:25 开始的发版不能拖到 03:35 才重启 worker。
+- 第二次检查没通过时，worker 不会重启，也不会打标签，脚本会说明哪些服务已经发出去了。用 `all` 时 api 已经是新镜像，web 还没发。
 
 - 只发 `api` 或 `web` 不受限：它们不重启 worker。
 - `rollback api` 会把 worker 一起换回上一个镜像。它是应急操作，不受时间窗限制，但在窗口里执行同样会打断当天的抓取。

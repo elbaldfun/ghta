@@ -122,6 +122,13 @@ require_outside_pipeline_window() {
 	fi
 }
 
+# Checked again right before the worker restarts: building and shipping take
+# minutes, and a release started at 03:25 must not restart it at 03:35.
+guard_worker_restart() {
+	relcli window || return 0
+	die "it is $(date -u +%H:%M) UTC: the nightly pipeline window (03:30–08:30) began while this release was running, so the worker was not restarted. $1 Ship the worker after 08:30 UTC: scripts/release.sh worker"
+}
+
 require_docker() {
 	docker info >/dev/null 2>&1 && return
 	if [ -d /Applications/OrbStack.app ]; then
@@ -249,6 +256,7 @@ release() {
 	build "$svc"
 	require_compose_in_sync
 	ship "$svc"
+	[ "$svc" != worker ] || guard_worker_restart "Its image is on the server but not running."
 	restart "$svc"
 	verify "$svc"
 	record "$svc"
@@ -257,10 +265,15 @@ release() {
 
 # ---- versions, tags and the release PR --------------------------------------
 
-# All tags, local and on origin (a tag pushed from another checkout counts).
+# Brings in the tags pushed from other checkouts, so versions are counted from
+# all of them. Call it at the top level, not inside $(...): a failure there
+# would not stop the script.
 fetch_tags() {
-	git fetch -q --tags origin
-	git tag -l 'v*'
+	git fetch -q --tags origin || die "cannot fetch tags from origin"
+}
+
+remote_has_tag() {
+	git ls-remote --exit-code --tags origin "refs/tags/$1" >/dev/null
 }
 
 # The date version already on HEAD, if any.
@@ -279,15 +292,15 @@ plan_tag() {
 		say "HEAD is not in origin/main — this release will not be tagged"
 		return
 	fi
-	local tags existing
-	tags="$(fetch_tags)"
+	local existing
+	fetch_tags
 	existing="$(head_tag)"
 	if [ -n "$existing" ]; then
 		RELEASE_TAG="$existing" TAG_EXISTS=1
 		say "HEAD is already tagged $existing — it will not be tagged again"
 		return
 	fi
-	RELEASE_TAG="$(printf '%s\n' "$tags" | relcli next-version)"
+	RELEASE_TAG="$(git tag -l 'v*' | relcli next-version)" || die "cannot work out the next version"
 	say "this release will be tagged $RELEASE_TAG"
 }
 
@@ -295,48 +308,59 @@ plan_tag() {
 # With no previous one (the first tag) the newest 30 PR merges stand in.
 release_notes() {
 	local services="$1" prev
-	prev="$(git tag -l 'v*' --merged HEAD | relcli latest 2>/dev/null || true)"
+	# The tag being published is excluded: when a cut-short run is finished,
+	# it is already on HEAD.
+	prev="$(git tag -l 'v*' --merged HEAD | grep -vxF "$RELEASE_TAG" | relcli latest 2>/dev/null || true)"
+	# Runs inside $(...), where errexit is off: every step returns its failure.
 	if [ -n "$prev" ]; then
 		git log --merges --format='%s%x1f%b%x1e' "$prev..HEAD" |
-			relcli notes -version "$RELEASE_TAG" -services "$services"
+			relcli notes -version "$RELEASE_TAG" -services "$services" || return 1
 		printf '\n上一个版本：%s\n' "$prev"
 	else
 		git log --merges --format='%s%x1f%b%x1e' -n 200 HEAD |
-			relcli notes -version "$RELEASE_TAG" -services "$services" -limit 30
+			relcli notes -version "$RELEASE_TAG" -services "$services" -limit 30 || return 1
 		printf '\n第一个日期版本：只列最近 30 个 PR。\n'
 	fi
 }
 
-# Tags HEAD as $RELEASE_TAG and publishes the GitHub Release. Called only after
-# every service of the run passed its health check. An existing tag is left as
-# it is; the release notes get a line saying what was shipped again.
+# Tags HEAD as $RELEASE_TAG, pushes the tag and publishes the GitHub Release.
+# Called only after every service of the run passed its health check. Each
+# step that is already done is skipped, so a run cut short (the push or the
+# Release failed) is finished by `scripts/release.sh tag`; a commit fully
+# released before only gets a line in its notes saying what shipped again.
 tag_release() {
-	local services="$1"
+	local services="$1" notes
 	[ -n "${RELEASE_TAG:-}" ] || return 0
+	local fresh=1
 	if [ -n "${TAG_EXISTS:-}" ]; then
-		local note
-		note="$(gh release view "$RELEASE_TAG" --json body --jq .body 2>/dev/null || true)"
-		[ -n "$note" ] || { say "no GitHub Release for $RELEASE_TAG — leaving it"; return 0; }
+		fresh=
+	else
+		say "tagging $(git rev-parse --short HEAD) as $RELEASE_TAG"
+		if [ -n "$DRY_RUN" ]; then
+			printf '  [dry-run] git tag -a %s -m "StarRank %s (%s)" %s\n' "$RELEASE_TAG" "$RELEASE_TAG" "$services" "$(git rev-parse --short HEAD)"
+		else
+			git tag -a "$RELEASE_TAG" -m "StarRank $RELEASE_TAG ($services)" HEAD
+		fi
+	fi
+	if [ -n "$fresh" ] || ! remote_has_tag "$RELEASE_TAG"; then
+		publish git push origin "refs/tags/$RELEASE_TAG"
+	fi
+	if [ -z "$fresh" ] && gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+		local body
+		body="$(gh release view "$RELEASE_TAG" --json body --jq .body)" || die "cannot read the $RELEASE_TAG release notes"
 		say "adding the services shipped now to the $RELEASE_TAG release notes"
-		publish gh release edit "$RELEASE_TAG" --notes "$(printf '%s\n\n%s 再次发布：%s。\n' "$note" "$(date -u +'%F %H:%M UTC')" "${services//,/、}")"
-		return 0
-	fi
-	local notes
-	notes="$(release_notes "$services")"
-	say "tagging $(git rev-parse --short HEAD) as $RELEASE_TAG"
-	if [ -n "$DRY_RUN" ]; then
-		printf '  [dry-run] git tag -a %s -m "StarRank %s (%s)" %s\n' "$RELEASE_TAG" "$RELEASE_TAG" "$services" "$(git rev-parse --short HEAD)"
+		publish gh release edit "$RELEASE_TAG" --notes "$(printf '%s\n\n%s 再次发布：%s。\n' "$body" "$(date -u +'%F %H:%M UTC')" "${services//,/、}")"
 	else
-		git tag -a "$RELEASE_TAG" -m "StarRank $RELEASE_TAG ($services)" HEAD
+		notes="$(release_notes "$services")" || die "cannot build the release notes; the tag is in place — finish with: scripts/release.sh tag $services"
+		if [ -n "$DRY_RUN" ]; then
+			printf '  [dry-run] gh release create %s --verify-tag --latest --title "StarRank %s" --notes <<\n' "$RELEASE_TAG" "$RELEASE_TAG"
+			printf '%s\n' "$notes" | sed 's/^/    | /'
+		else
+			gh release create "$RELEASE_TAG" --verify-tag --latest --title "StarRank $RELEASE_TAG" --notes "$notes" ||
+				die "the GitHub Release failed; finish with: scripts/release.sh tag $services"
+		fi
 	fi
-	publish git push origin "refs/tags/$RELEASE_TAG"
-	if [ -n "$DRY_RUN" ]; then
-		printf '  [dry-run] gh release create %s --verify-tag --latest --title "StarRank %s" --notes <<\n' "$RELEASE_TAG" "$RELEASE_TAG"
-		printf '%s\n' "$notes" | sed 's/^/    | /'
-	else
-		gh release create "$RELEASE_TAG" --verify-tag --latest --title "StarRank $RELEASE_TAG" --notes "$notes"
-	fi
-	if [ -n "$DRY_RUN" ]; then say "dry run: nothing was tagged or published"; else say "tagged $RELEASE_TAG"; fi
+	if [ -n "$DRY_RUN" ]; then say "dry run: nothing was tagged or published"; else say "released as $RELEASE_TAG"; fi
 }
 
 # Opens the develop → main release PR, or refreshes the open one: its title
@@ -347,9 +371,12 @@ promote() {
 	[ -n "$(git rev-list -n 1 origin/main..origin/develop)" ] ||
 		die "develop has nothing that main lacks — nothing to promote"
 	local version body existing
-	version="$(fetch_tags | relcli next-version)"
-	body="$(git log --merges --format='%s%x1f%b%x1e' origin/main..origin/develop | relcli promote-body -version "$version")"
-	existing="$(gh pr list --base main --head develop --state open --json number --jq '.[0].number // empty')"
+	fetch_tags
+	version="$(git tag -l 'v*' | relcli next-version)" || die "cannot work out the next version"
+	body="$(git log --merges --format='%s%x1f%b%x1e' origin/main..origin/develop | relcli promote-body -version "$version")" ||
+		die "cannot build the release PR body"
+	existing="$(gh pr list --base main --head develop --state open --json number --jq '.[0].number // empty')" ||
+		die "cannot list the open release PRs"
 	local action=(gh pr create --base main --head develop)
 	if [ -n "$existing" ]; then
 		say "refreshing release PR #$existing as Release $version"
@@ -385,6 +412,7 @@ case "$cmd" in
 		plan_tag
 		release api
 		# Same image as the api just shipped: only the container needs replacing.
+		guard_worker_restart "The api is live on the new image; web was not shipped either — run scripts/release.sh web too. Nothing was tagged."
 		restart worker
 		verify worker
 		record worker
