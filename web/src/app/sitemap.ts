@@ -22,6 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push(...everyLocale(path, { changeFrequency: 'daily', priority: 0.9 }));
   }
 
+  entries.push(...everyLocale('/mcp', { changeFrequency: 'monthly', priority: 0.5 }));
+
   // The board's landing pages: every domain and leaf, language and form.
   const [tree, facets] = await Promise.all([getCategoryTree(), getFacets()]);
   for (const group of tree) {

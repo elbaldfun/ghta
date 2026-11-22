@@ -6,6 +6,7 @@ import { PageShell } from './PageShell';
 export function RankFooter() {
   const t = useTranslations('rank');
   const tp = useTranslations('privacy');
+  const tm = useTranslations('mcp');
   const year = new Date().getFullYear();
 
   return (
@@ -17,6 +18,9 @@ export function RankFooter() {
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link href="/" className="inline-flex min-h-11 items-center hover:text-ink md:min-h-0">
             {t('navRankings')}
+          </Link>
+          <Link href="/mcp" className="inline-flex min-h-11 items-center hover:text-ink md:min-h-0">
+            {tm('footerLink')}
           </Link>
           <Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-ink md:min-h-0">
             {tp('title')}

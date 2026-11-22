@@ -415,5 +415,25 @@
     "rulesLabel": "선정 기준",
     "rules": "헤드라인은 수록 7일 이상 프로젝트 중 오늘 신규 스타가 가장 많은 것, 새 얼굴은 수록 7일 미만 중 같은 기준, 둔화는 전체 상위 10위 중 30일 전보다 일일 증가가 가장 많이 준 것입니다. 공개된 원시 데이터만 쓰며 가중 점수는 없습니다.",
     "dataNote": "데이터는 GitHub와 Hugging Face 공개 API에서 매일 UTC 03:30에 수집합니다."
+  },
+  "mcp": {
+    "title": "StarRank MCP server",
+    "metaDescription": "Query StarRank's open-source rankings from Claude Code, Cursor and other AI coding agents with a free, read-only MCP server.",
+    "intro": "Ask your coding agent about open-source projects and get StarRank's rankings back: what is trending today, the top projects of a domain or language, or how one repository ranks. Read-only, free, no API key.",
+    "installH": "Install",
+    "claudeCode": "Claude Code",
+    "otherClients": "Cursor, VS Code, Windsurf and other clients: add a remote (HTTP) MCP server with this URL.",
+    "toolsH": "Tools",
+    "tools": {
+      "search_repos": "Search repositories by keyword, most relevant first.",
+      "top_repos": "A ranking, optionally within a domain and/or language, by total stars or by stars gained per day, week or month.",
+      "trending_today": "The repositories that gained the most stars in the last day.",
+      "get_repo": "One repository: stars, growth, and its overall, language and domain ranks with the change since the previous day.",
+      "list_domains": "The domain taxonomy with repository counts."
+    },
+    "examplesH": "Try asking",
+    "examples": "Which Rust projects gained the most stars this week?\nWhat is trending in AI agents today?\nHow does ollama/ollama rank, and is it moving up?",
+    "limits": "Every result links to its page on starrank.dev. Up to 25 rows per call; calls are rate-limited per client. Data refreshes once a day.",
+    "footerLink": "MCP"
   }
 }

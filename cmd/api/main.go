@@ -101,6 +101,8 @@ func newRouter(v1 *api.API, adminToken string) *gin.Engine {
 	// Public: /health and the read-only /v1 interface the website consumes.
 	v1.RegisterHealth(r)
 	v1.Register(r)
+	// Public: /mcp, the same reads as MCP tools for coding agents.
+	v1.RegisterMCP(r)
 
 	// Admin, bearer-token guarded: GET /internal/jobs, the worker's latest runs.
 	v1.RegisterInternal(r.Group("", api.RequireAdminToken(adminToken)))

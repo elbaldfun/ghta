@@ -415,5 +415,25 @@
     "rulesLabel": "排名规则",
     "rules": "头条取收录满 7 天的项目里今日新增 star 最多的一个；新面孔取收录不满 7 天的；降温中取总榜前 10 里日增比 30 天前降得最多的。只用公开、可核实的原始数据，不做加权总分。",
     "dataNote": "数据来自 GitHub 与 Hugging Face 公开接口，每天 UTC 03:30 抓取。"
+  },
+  "mcp": {
+    "title": "StarRank MCP 服务器",
+    "metaDescription": "用免费、只读的 MCP 服务器，在 Claude Code、Cursor 等 AI 编程助手里直接查询 StarRank 开源项目榜单。",
+    "intro": "在编程助手里直接问开源项目，拿到 StarRank 的榜单数据：今天什么在涨、某个领域或语言的头部项目、某个仓库排第几。只读、免费、无需 API 密钥。",
+    "installH": "安装",
+    "claudeCode": "Claude Code",
+    "otherClients": "Cursor、VS Code、Windsurf 等客户端：添加一个远程（HTTP）MCP 服务器，地址如下。",
+    "toolsH": "工具",
+    "tools": {
+      "search_repos": "按关键词搜索仓库，相关度优先。",
+      "top_repos": "榜单，可限定领域和语言，按总星数或日、周、月涨星排序。",
+      "trending_today": "过去一天涨星最多的仓库。",
+      "get_repo": "单个仓库：星数、增长，以及总榜、语言榜、领域榜名次和相对前一天的名次变化。",
+      "list_domains": "领域分类树及各领域的仓库数。"
+    },
+    "examplesH": "可以这样问",
+    "examples": "本周涨星最多的 Rust 项目有哪些？\n今天 AI 智能体领域什么在涨？\nollama/ollama 排第几，名次在上升吗？",
+    "limits": "每条结果都带 starrank.dev 的页面链接。单次最多 25 条，按客户端限流。数据每天更新一次。",
+    "footerLink": "MCP"
   }
 }
