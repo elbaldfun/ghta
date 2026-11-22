@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/elbaldfun/ghta/internal/boards"
+	"github.com/elbaldfun/ghta/internal/item"
 )
 
 // The aggregated rankings, read whole from the boards the nightly job writes.
@@ -102,8 +104,46 @@ func (a *API) ecosystem(c *gin.Context) {
 		a.fail(c, err)
 		return
 	}
+	if rows, err = a.currentEco(c.Request.Context(), rows, sort); err != nil {
+		a.fail(c, err)
+		return
+	}
 	a.cached(c, maxAgeBoard, gin.H{"data": page(rows, limit, pg), "total": len(rows), "page": pg,
 		"pillar": pillar, "sort": sort, "computedAt": at})
+}
+
+// currentEco puts the items' current stars, forks and day's gain on an
+// ecosystem board and orders it by them again, so a repository shows the
+// same growth.d1 here as in /v1/repos. The board is written once a night,
+// after the fetch; the items change while the fetch runs (and on any rerun
+// after the board), and between the two the board showed the day before's
+// gain. Who is on the board stays as computed; one gone since is dropped.
+func (a *API) currentEco(ctx context.Context, rows []boards.EcoItem, sort string) ([]boards.EcoItem, error) {
+	if len(rows) == 0 {
+		return rows, nil
+	}
+	ids := make([]string, len(rows))
+	for i, r := range rows {
+		ids[i] = r.ExternalID
+	}
+	now, err := a.st.CurrentCounts(ctx, item.SourceGitHub, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := rows[:0]
+	for _, r := range rows {
+		n, ok := now[r.ExternalID]
+		if !ok || n.Stale {
+			continue
+		}
+		r.Stars, r.Forks, r.Growth = int(n.Metrics["stars"]), int(n.Metrics["forks"]), 0
+		if n.Growth.D1 != nil {
+			r.Growth = int(*n.Growth.D1)
+		}
+		out = append(out, r)
+	}
+	boards.SortEco(out, sort)
+	return out, nil
 }
 
 // whole serves a board that is returned as it is stored.

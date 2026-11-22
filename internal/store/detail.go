@@ -46,6 +46,35 @@ func (s *Store) Derivatives(ctx context.Context, externalID string) (int, error)
 	return int(n), nil
 }
 
+// Counts are an item's current numbers, as the item itself holds them.
+type Counts struct {
+	ExternalID string             `bson:"externalId"`
+	Metrics    map[string]float64 `bson:"metrics"`
+	Growth     item.Growth        `bson:"growth"`
+	Stale      bool               `bson:"stale"`
+}
+
+// CurrentCounts reads the current numbers of the given items of one source,
+// keyed by external id; an id with no item is absent. A board stores the
+// numbers of the night it was computed; this is what overlays them, so a
+// board shows the same day's gain as the item's own page.
+func (s *Store) CurrentCounts(ctx context.Context, source string, ids []string) (map[string]Counts, error) {
+	cur, err := s.Items().Find(ctx, bson.M{"source": source, "externalId": bson.M{"$in": ids}},
+		options.Find().SetProjection(bson.M{"externalId": 1, "metrics.stars": 1, "metrics.forks": 1, "growth": 1, "stale": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("current counts: %w", err)
+	}
+	var rows []Counts
+	if err := cur.All(ctx, &rows); err != nil {
+		return nil, fmt.Errorf("current counts: %w", err)
+	}
+	out := make(map[string]Counts, len(rows))
+	for _, r := range rows {
+		out[r.ExternalID] = r
+	}
+	return out, nil
+}
+
 // Histories returns the history ring of each of the given items that has
 // one: the last 35 daily closing values.
 func (s *Store) Histories(ctx context.Context, source string, ids []string) (map[string][]item.Point, error) {
