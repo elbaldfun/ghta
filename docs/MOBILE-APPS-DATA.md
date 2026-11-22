@@ -9,7 +9,7 @@
 ## 结论先说
 
 1. **iOS 先做，Android 暂不自抓。** Apple 有公开、免 key 的榜单 RSS 和 Lookup 接口，一天约 500 次请求就能覆盖
-   5 个国家的免费、付费、畅销三种榜型 × 27 个 genre 的前 100 名，外加这些应用的评分、评分数、版本、价格、开发者、
+   5 个国家的免费、付费、畅销三种榜型 × 总榜和 25 个 genre 的前 100 名，外加这些应用的评分、评分数、版本、价格、开发者、
    图标和截图。整套抓取在本机实测都能跑通，生产 droplet 负担很小。
 2. **Google Play 没有官方榜单接口。** 详情页 robots 允许抓，里面有**精确安装数**（实测 Obsidian 6,476,683）。
    但完整榜单要用 robots 禁止的 `/_/` 内部接口拿，开源库 google-play-scraper 走的就是这条路。
@@ -139,6 +139,18 @@ UA 是自报的 `starrank-probe/0.1`。注意：本机的 Apple 请求经过国�
 | 20 | GP `/store/apps/top` | 302 到首页，2.2 MB，没有榜单 |
 | 21 | GP 分类页 PRODUCTIVITY | 200，1.7 MB；首屏"Top free productivity apps"，解析出 40 个包名（ChatGPT、Docs、Claude、Gemini、Word…）；付费、畅销是切换按钮 |
 
+### 3.1 droplet 重测（P0，2026-11-22 10:46 UTC）
+
+在生产 droplet 上用一次性 curl 发了 9 次请求，没装任何东西，临时文件用完就删了。
+
+| 请求 | 结果 |
+|---|---|
+| 旧版 RSS：us 免费、cn 免费、cn 畅销 × Productivity、jp 付费、gb 免费 × Games、de 畅销 | 全部 200，385–498 KB，**0.15–1.15 s**；每张 99–100 条；**cn 区可用** |
+| Lookup：us、cn 各 100 个 id | 都是 200，各返回 100 条，约 1.06 MB，1.6–2.3 s |
+| 新版 RSS：us 免费 100 | 200，53 KB |
+
+feed 里的 `updated` 等于请求时刻，说明榜单是按请求实时生成的，所以每天要在固定时刻去读。当时 droplet 的负载是 0.26，磁盘用了 72%（剩 14 GB）。
+
 观察到的稳定性：Apple 新版 RSS 生成器 8 次请求里出了 2 次 5xx 和 1 次 404（其中一次是参数越界），旧版 RSS 和 Lookup 全部成功。
 样本太小，不足以下稳定性结论，所以适配器从第一天起就按"会失败"来写：单张榜失败可以重试，单张榜缺失不影响别的榜。
 
@@ -203,33 +215,38 @@ Android 先用 4.1；4.3 确认之后，再把 `Δinstalls` 换成 Android 的�
 |---|---|---|
 | 国家 | **us、cn、jp、gb、de**（5 个） | 美区是全球风向标；cn 和 jp 对应站点的中文、日文用户；gb 和 de 覆盖欧洲。cn 区在旧版 RSS 里可用，但上线前要再测一次 |
 | 榜型 | 免费、付费、畅销 | 三种都有现成接口 |
-| genre | 总榜加 26 个一级 genre（去掉 Stickers） | Games 的 18 个子 genre 二期再说 |
+| genre | 总榜加 25 个一级 genre（去掉 Stickers；Catalogs 在美区三种榜都是空的，11-22 也去掉了） | Games 的 18 个子 genre 二期再说 |
 | 榜深 | 100（接口上限） | |
 
-### 5.2 每天的请求量（iOS 一期）
+### 5.2 每天的请求量（iOS 一期，按 11-22 冒烟实测修正）
+
+11-22 在本机对 us 一个国家完整跑了一遍：读 81 张榜，查到 **6,422 个不重复的应用**，65 次 Lookup 全部成功，0 失败，用时 13 分钟。原先估的"5 国合计约 1 万个应用"偏低。下面按一个国家约 6,400 个应用、跨国家约三成重复来估。
 
 | 项 | 计算 | 次数 / 天 | 下载量 / 天 |
 |---|---|---|---|
-| 榜单 | 5 国 × 3 榜型 × 27（总榜 + 26 genre） | 405 | 约 180 MB |
-| 详情 | 去重后约 1 万个应用，每个只在"主国家"查一次（6.1），100 个一批 | 约 100 | 约 100 MB |
-| **合计** | 按每 3 秒 1 次 | **约 505 次，25 分钟** | **约 280 MB** |
+| 榜单 | 5 国 × 3 榜型 × 26（总榜 + 25 genre） | 390 | 约 180 MB |
+| 详情 | 去重后约 2–2.5 万个应用，每个只在主国家查一次，100 个一批 | 约 230 | 约 240 MB |
+| **合计** | 每 3 秒最多 1 次；droplet 上单次 0.15–2.3 s | **约 620 次，45–60 分钟** | **约 420 MB** |
 
-榜单一张一张地流式解析，内存峰值约 1 MB 的 JSON，worker 的内存可以忽略。DO 每月出入流量额度远超 8 GB，不额外计费。
+榜单是一张一张流式解析的，内存峰值是 1 MB 左右的 JSON，对 worker 可以忽略。DO 的月流量额度远超每月 13 GB，不另外计费。
 
-### 5.3 存储增长
+### 5.3 存储增长（按冒烟实测的文档大小）
 
-| 集合 | 量 | 估算 |
-|---|---|---|
-| `items`（ios） | 约 1 万条，累计会涨到 2–3 万条（掉出榜的保留历史） | 每条约 3 KB（简介截断到 1 KB，35 点 history 环）→ **30–90 MB** |
-| `item_blobs`（ios） | 完整简介和更新说明，只在哈希变了才写 | 约 4 KB × 2 万 → 80 MB |
-| `chart_snapshots` | 一张榜一天一个文档：405 个 × 约 2 KB（100 个 `[id, rank]`）| **每天 0.8 MB，一年约 300 MB**（压缩前） |
+实测：一个 iOS 条目平均 **2.7 KB**，一个榜单快照文档平均 **1.9 KB**。
 
-一年合计约 0.5 GB（压缩前，WiredTiger 压缩后约 1/3）。生产盘已用 77%（11-21 体检），所以：
+| 集合 | 每天（压缩前） | 一年（压缩前） | 说明 |
+|---|---|---|---|
+| `chart_snapshots` | 390 × 1.9 KB ≈ **0.75 MB** | 约 270 MB | TTL 400 天，过期以后就不再增长 |
+| `metric_snapshots`（iOS 部分） | 每个条目每天 1 个点，约 2.5 万 × 150 B ≈ **3.7 MB** | 约 1.35 GB | 时序集合压缩率高，落盘约 1/5，约 0.27 GB |
+| `items`（ios） | 前几周增长，之后基本持平 | 2.5–4 万条 × 2.7 KB ≈ 70–110 MB | 掉出榜单的条目保留历史 |
+| `item_blobs`（ios） | 只有简介变了才重写 | 约 100 MB | 完整的商店简介 |
+| **合计** | **约 4.5 MB** | **约 1.8 GB，落盘约 0.5 GB** | |
+
+生产盘 11-22 实测已用 72%，剩 14 GB。一年 0.5 GB 落盘的量放得下，但要注意以下几点：
 
 - `chart_snapshots` 加 TTL，**保留 400 天**（一年的同比，加一个月余量）；
-- 不按"应用 × 国家 × 榜 × 天"一条一个文档存（REDESIGN 5.8 原来写的时序集合），那样每天 4 万个文档，
-  元数据比数据还大；改成一张榜一个文档，读榜单页只要一次查询；
-- Android 一期如果走 DataForSEO 方案，量级相近，再加约 0.5 GB 一年。
+- 不按"应用 × 国家 × 榜 × 天"一条一个文档存（REDESIGN 5.8 原来写的时序集合），那样每天 4 万个文档，元数据比数据还大；改成一张榜一个文档，读榜单页只要一次查询；
+- `metric_snapshots` 里 iOS 的点占了大头。如果以后磁盘紧张，可以让 iOS 不写这个集合：growth 用的是条目里 35 天的 history 环，用不到它。这需要改 `WriteFetched`，一期先不做。
 
 ### 5.4 抓取时段
 
@@ -261,12 +278,12 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 | `labels.shelf` | 静态映射得出（6.3），映射不到就留空 | 同 |
 | `labels.by` | `source` | `source` |
 | `assets.iconUrl` / `screenshotUrl` | `artworkUrl512` / `screenshotUrls[0]` | 同 |
-| 来源专有字段 | 新增 `Store *Store`（bson `store`）：`bundleId`、`developerId`、`developer`、`genreIds`、`version`、`updatedAt`、`releasedAt`、`contentRating`、`homeCountry`、`countries`（在哪些国家上过榜） | 同一个结构，`bundleId` 存包名 |
+| 来源专有字段 | 新增 `App *StoreApp`（bson `app`，不用 `store`，避免和旧系统的 `store.*` 字段混淆）：`bundleId`、`developerId`、`developer`、`genreId`、`genreIds`、`version`、`currency`、`contentRating`、`screenshots`（前 3 张）、`updatedAt`、`releasedAt`、`homeCountry`、`countries`（今天在哪些国家上榜） | 同一个结构，`bundleId` 存包名 |
 
 - **主国家** `homeCountry`：按国家列表顺序（us、cn、jp、gb、de），取这个应用第一个上过榜的国家。
   评分、评分数只在主国家取，每个应用一天只查一次 Lookup。代价是只在日区上榜的应用，展示的就是日区的评分数，
   详情页要写明"日本区评分"。
-- `Store` 是 iOS 和 Android 共用的一个结构，不像 `Gh`、`Hf` 那样每个源一个，因为两个商店的字段几乎一样。
+- `StoreApp` 是 iOS 和 Android 共用的一个结构，不像 `Gh`、`Hf` 那样每个源一个，因为两个商店的字段几乎一样。
 - `domain.Source` 里已有一个 `SourceAppStore = "appstore"`，是旧数据模型留下的，`items` 里没有用过。
   新代码用 `item.SourceIOS = "ios"`、`item.SourceAndroid = "android"`，和 URL 前缀一致，旧常量不动。
 
@@ -279,7 +296,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
   genre:   "6007" | "all",
   day:     "2026-11-21",
   fetchedAt: ISODate,
-  entries: [ ["6448311069", 1], ["…", 2], … ]   // 名次从 1 开始，最多 100 条
+  entries: [ "6448311069", "…", … ]   // 按名次排列，名次 = 下标 + 1，最多 100 条
 }
 索引：{ source, country, chart, genre, day: -1 }；TTL：fetchedAt 400 天
 ```
@@ -306,23 +323,22 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 大约一半的消费类 genre 没有对应的货架。这里不补货架，补货架要改分类树并写 migrations，等商店数据上线、
 看到量以后再说。规则表配一个 golden 文件（50 个人工标注的应用），`go test ./internal/taxonomy` 一起校验。
 
-### 6.4 适配器
+### 6.4 适配器与任务（P1 实现，11-22）
 
-照 `internal/source/huggingface` 的写法，实现 `ItemFetcher`：
+没有照 HF 的写法实现 `ItemFetcher`。原因有两个：一是 iOS 不在夜间流水线里，有自己的时间表；二是它要分两步，先读完所有榜单，才能知道每个应用的主国家，再去查详情，这和"分片互不依赖"的模型合不上。
 
-- `Source()` 返回 `ios`；
-- `Shards()` 返回 `us/free/all`、`us/free/6007` 这样的 405 个分片，单个分片失败可以单独重试；
-- `FetchItems` 的榜单分片写 `chart_snapshots`；所有分片完成后，再跑一次"详情"分片，
-  调 Lookup 把条目写进 `items`；
-- 实现 `Cadenced`：一期所有分片每天都要抓（`Due` 恒为真）；二期如果加子 genre，可以隔天抓。
+- `internal/source/appstore`：`Client` 负责旧版 RSS 榜单和 Lookup，请求间隔至少 3 秒（`IOS_PACE_MS`）。5xx 和超时按 5 s、15 s、45 s 退避重试；429 和 403 记为 `ErrThrottled`；404 记为 `ErrNoChart`。`ToFetched` 把查到的详情转成 `item.Fetched`。
+- `internal/pipeline/ios.go`：任务名 `ios`。先按国家 × 榜型 × genre 的顺序读 390 张榜，每张写一个 `chart_snapshots` 文档；再按主国家每 100 个一批调 Lookup，用现有的 `WriteFetched` 写进 `items`，最后用 `AgeGrowth` 把当天掉出所有榜单的应用的增长归零。
+- 调度：`cmd/worker` 里单独挂一个 cron，`IOS_CRON` 默认 `0 0 9 * * *`（UTC），设成 `off` 就关掉；国家列表在 `IOS_COUNTRIES`，默认 `us,cn,jp,gb,de`。它和夜间流水线共用一个 runner，任务严格串行，所以流水线超时跑到 09:00 以后，iOS 任务会排队等它跑完，不会和它并发。也可以用 `worker -run ios` 单独跑一次。
+- 货架：留了 `appstore.Shelver` 接口。现在没有配置，所以 iOS 条目不带 `labels.shelf`。映射表等榜单与内容规则线出草案、负责人确认后再接（见第十一节）。
 
 ### 6.5 降级
 
 | 失败 | 处理 |
 |---|---|
 | 单张榜 5xx / 超时 | 重试 3 次，指数退避；还是失败就记录缺失，那张榜当天不写快照，动量用前一天的值 |
-| 旧版 RSS 整体下线（整批 404 / 410） | 报警。降级到新版 RSS 生成器（只有免费、付费总榜，没有 genre）；再评估 apps.apple.com 网页榜 |
-| Lookup 限流（429 / 403） | 停止当天的详情抓取，保留昨天的指标，growth 不更新（沿用 #61 的做法：抓取失败不改增长） |
+| 旧版 RSS 整体下线（整批 404 / 410） | 一张榜都读不到时任务失败，`job_runs` 里记为 failed，这就是报警。P1 没有实现自动降级，到时候再接新版 RSS 生成器（只有免费、付费总榜，没有 genre），并评估 apps.apple.com 网页榜 |
+| Lookup 限流（429 / 403）或部分批次失败 | 停止（限流时）或跳过失败的批次，已查到的照常写入；当天**不跑 AgeGrowth**，没查到的应用保留原来的增长（沿用 #61 的做法：抓取失败不改增长）。一张榜都读不到时任务失败，不写任何条目 |
 
 ---
 
@@ -330,7 +346,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 
 | 阶段 | 内容 | 上线标准 | 负责人要做的 |
 |---|---|---|---|
-| **P0 准备**（0.5 天） | 在 droplet 上用 10 次以内的请求重测 2.1（核实 cn 区、延迟、有没有拦截） | 结果补进本文第三节 | 无 |
+| **P0 准备** ✅ 11-22 | 在 droplet 上用 10 次以内的请求重测 2.1（核实 cn 区、延迟、有没有拦截） | 结果见 3.1 | 无 |
 | **P1 iOS 数据**（3–4 天） | 适配器、`chart_snapshots`、`items` 写入、genre 映射表加 golden、UTC 09:00 调度 | develop 上连续 7 天无人值守跑完；每张榜的条数 ≥ 95；不影响 GitHub 流水线的完成时间 | 合并 PR、发版 |
 | **P2 iOS 页面**（3 天） | `/ios` 榜单页（国家 × 榜型 × genre）、`/ios/id{n}` 详情页、`/v1` 接口；`/apps` 货架加平台切换 | 7 天的动量数据就绪后才开放；sitemap 收录 | 确认首页和导航要不要露出 |
 | **P3 Android 观察**（1 周，与 P1 并行） | 50 个包名的详情页每天抓一次，记录精确安装数是否每天变化 | 给出 4.3 是否可用的结论 | 定 Android 走哪条渠道（第九节第 2 条） |

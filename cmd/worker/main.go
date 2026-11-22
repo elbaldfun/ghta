@@ -2,9 +2,10 @@
 // process that writes the rebuilt collections; the api only reads them, so the
 // worker can be restarted at any time without affecting the site.
 //
-//	worker                  run the nightly pipeline on PIPELINE_CRON
+//	worker                  run the nightly pipeline on PIPELINE_CRON, and the
+//	                        App Store job on IOS_CRON
 //	worker -run fetch,rank  run the named jobs once, in pipeline order, and exit
-//	worker -list            print the pipeline and exit
+//	worker -list            print the jobs and exit
 //
 // The judge job joins the pipeline when JUDGE_BASE_URL and JUDGE_MODEL name an
 // OpenAI-compatible model server; see internal/judge.
@@ -32,6 +33,7 @@ import (
 	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/judge"
 	"github.com/elbaldfun/ghta/internal/pipeline"
+	"github.com/elbaldfun/ghta/internal/source/appstore"
 	"github.com/elbaldfun/ghta/internal/source/github"
 	"github.com/elbaldfun/ghta/internal/source/huggingface"
 	"github.com/elbaldfun/ghta/internal/store"
@@ -67,7 +69,7 @@ func run(log *slog.Logger, runList string, list bool) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(strings.Join(names(jobs), "\n"))
+		fmt.Println(strings.Join(names(append(jobs, scheduled(nil, log)...)), "\n"))
 		return nil
 	}
 	uri, db := os.Getenv("MONGODB_URI"), os.Getenv("MONGODB_DB")
@@ -100,8 +102,9 @@ func run(log *slog.Logger, runList string, list bool) error {
 	}
 	runner := worker.NewRunner(st, log)
 
+	extra := scheduled(st, log)
 	if runList != "" {
-		chosen, err := pick(jobs, runList)
+		chosen, err := pick(append(jobs, extra...), runList)
 		if err != nil {
 			return err
 		}
@@ -120,8 +123,18 @@ func run(log *slog.Logger, runList string, list bool) error {
 	if _, err := sched.AddFunc(spec, func() { runner.Run(ctx, jobs...) }); err != nil {
 		return fmt.Errorf("PIPELINE_CRON %q: %w", spec, err)
 	}
+	// The App Store job runs after the nightly pipeline. Jobs share one
+	// runner, so if the pipeline overruns, this waits for it rather than
+	// competing for the host.
+	iosSpec := getEnv("IOS_CRON", "0 0 9 * * *")
+	if iosSpec != "off" {
+		if _, err := sched.AddFunc(iosSpec, func() { runner.Run(ctx, extra...) }); err != nil {
+			return fmt.Errorf("IOS_CRON %q: %w", iosSpec, err)
+		}
+	}
 	sched.Start()
-	log.Info("worker started", "worker", st.Worker, "db", db, "pipelineCron", spec, "jobs", names(jobs))
+	log.Info("worker started", "worker", st.Worker, "db", db, "pipelineCron", spec, "jobs", names(jobs),
+		"iosCron", iosSpec, "iosCountries", iosCountries())
 
 	<-ctx.Done()
 	log.Info("worker stopping: waiting for the running job")
@@ -191,6 +204,27 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 		// Last: a full sweep can sit out GitHub's hourly window more than once.
 		pipeline.NewDevSync(st, gh, buffer, log),
 	), nil
+}
+
+// scheduled are the jobs outside the nightly pipeline, each on its own
+// schedule: today only the App Store charts.
+func scheduled(st *store.Store, log *slog.Logger) []worker.Job {
+	pace := time.Duration(envInt("IOS_PACE_MS", 3000)) * time.Millisecond
+	// No shelver yet: the genre → shelf tables wait on the taxonomy work
+	// (docs/MOBILE-APPS-DATA.md §11).
+	return []worker.Job{pipeline.NewIOS(st, appstore.NewClient(pace), iosCountries(), nil, log)}
+}
+
+// iosCountries are the App Store storefronts to chart, in priority order: an
+// app's metrics come from the first one that charts it.
+func iosCountries() []string {
+	var out []string
+	for _, c := range strings.Split(getEnv("IOS_COUNTRIES", "us,cn,jp,gb,de"), ",") {
+		if c = strings.ToLower(strings.TrimSpace(c)); c != "" && !slices.Contains(out, c) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // trending scrapes GitHub's trending page, all languages.
