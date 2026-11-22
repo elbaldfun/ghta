@@ -107,6 +107,12 @@ func TestMapRepoItemMatchesImportedShape(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			wantItem, wantBlob := viaOldStore(t, n, at)
 			got := mapRepoItem(n, at)
+			// The day of the detailed read is the fetcher's bookkeeping, not
+			// something the old system had.
+			if got.Item.Gh.DetailedOn != item.DayOf(at) {
+				t.Errorf("detailedOn = %q", got.Item.Gh.DetailedOn)
+			}
+			got.Item.Gh.DetailedOn = ""
 
 			if w, g := fetcherOwned(wantItem), fetcherOwned(got.Item); !reflect.DeepEqual(w, g) {
 				t.Errorf("item differs\n imported: %+v gh=%+v\n fetched:  %+v gh=%+v", w, w.Gh, g, g.Gh)

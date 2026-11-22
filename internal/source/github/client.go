@@ -72,19 +72,15 @@ type searchResponse struct {
 			} `json:"edges"`
 		} `json:"search"`
 	} `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
+	Errors []graphqlError `json:"errors"`
 }
 
-const searchQuery = `
-query($q: String!, $first: Int!, $after: String) {
-  rateLimit { remaining resetAt cost }
-  search(query: $q, type: REPOSITORY, first: $first, after: $after) {
-    pageInfo { hasNextPage endCursor startCursor }
-    edges {
-      node {
-        ... on Repository {
+// repoLightFields are the repository fields every daily fetch reads: the
+// metrics and the descriptive fields, all cheap scalars. repoDetailFields are
+// the expensive part — the README blob and the release list with its assets —
+// which only change when the repository is pushed to (see Adapter.FetchItems).
+const repoLightFields = `
+          id
           name
           owner { login }
           description
@@ -96,32 +92,115 @@ query($q: String!, $first: Int!, $after: String) {
           primaryLanguage { name }
           issues(states: OPEN) { totalCount }
           licenseInfo { name }
-          repositoryTopics(first: 20) { edges { node { topic { name } url } } }
+          repositoryTopics(first: 20) { edges { node { topic { name } url } } }`
+
+const repoDetailFields = `
           releases(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) {
             edges { node {
               name tagName isPrerelease isLatest isDraft publishedAt
               releaseAssets(first: 40) { nodes { name downloadUrl size } }
             } }
           }
-          readme: object(expression: "HEAD:README.md") { ... on Blob { text } }
+          readme: object(expression: "HEAD:README.md") { ... on Blob { text } }`
+
+func searchQueryWith(fields string) string {
+	return `
+query($q: String!, $first: Int!, $after: String) {
+  rateLimit { remaining resetAt cost }
+  search(query: $q, type: REPOSITORY, first: $first, after: $after) {
+    pageInfo { hasNextPage endCursor startCursor }
+    edges {
+      node {
+        ... on Repository {` + fields + `
         }
       }
     }
   }
 }`
+}
 
-// search runs one search query for a star range page, honoring rate limits and
-// retrying transient failures with exponential backoff.
+var (
+	// searchQuery reads everything about each repository found.
+	searchQuery = searchQueryWith(repoLightFields + repoDetailFields)
+	// lightSearchQuery reads the daily fields only: about a quarter of the
+	// time per repository.
+	lightSearchQuery = searchQueryWith(repoLightFields)
+	// nodesQuery reads everything about the repositories given by node id.
+	nodesQuery = `
+query($ids: [ID!]!) {
+  rateLimit { remaining resetAt cost }
+  nodes(ids: $ids) {
+    ... on Repository {` + repoLightFields + repoDetailFields + `
+    }
+  }
+}`
+)
+
+type nodesResponse struct {
+	Data struct {
+		RateLimit rateLimit   `json:"rateLimit"`
+		Nodes     []*repoNode `json:"nodes"`
+	} `json:"data"`
+	Errors []graphqlError `json:"errors"`
+}
+
+type graphqlError struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
+
+// graphqlResult is a decoded answer: its errors and the rate limit it reports.
+type graphqlResult interface {
+	errs() []graphqlError
+	rate() rateLimit
+}
+
+func (r *searchResponse) errs() []graphqlError { return r.Errors }
+func (r *searchResponse) rate() rateLimit      { return r.Data.RateLimit }
+func (r *nodesResponse) errs() []graphqlError  { return r.Errors }
+func (r *nodesResponse) rate() rateLimit       { return r.Data.RateLimit }
+
+// search runs one search page with the full repository fields.
 func (c *Client) search(ctx context.Context, query string, first int, after string) (*searchResponse, error) {
+	return c.searchWith(ctx, searchQuery, query, first, after)
+}
+
+// searchLight runs one search page with the daily fields only.
+func (c *Client) searchLight(ctx context.Context, query string, first int, after string) (*searchResponse, error) {
+	return c.searchWith(ctx, lightSearchQuery, query, first, after)
+}
+
+func (c *Client) searchWith(ctx context.Context, gql, query string, first int, after string) (*searchResponse, error) {
 	vars := map[string]any{"q": query, "first": first}
 	if after != "" {
 		vars["after"] = after
 	}
-	body, err := json.Marshal(map[string]any{"query": searchQuery, "variables": vars})
-	if err != nil {
+	var out searchResponse
+	if err := c.do(ctx, gql, vars, &out); err != nil {
 		return nil, err
 	}
+	return &out, nil
+}
 
+// nodes reads the full fields of the repositories with the given node ids, in
+// order; an id that no longer resolves (deleted, made private) is nil.
+// GraphQL reports such an id as a NOT_FOUND error next to the data, which is
+// not a failure here.
+func (c *Client) nodes(ctx context.Context, ids []string) ([]*repoNode, error) {
+	var out nodesResponse
+	if err := c.do(ctx, nodesQuery, map[string]any{"ids": ids}, &out); err != nil {
+		return nil, err
+	}
+	return out.Data.Nodes, nil
+}
+
+// do posts one GraphQL query, honoring rate limits and retrying transient
+// failures with exponential backoff.
+func (c *Client) do(ctx context.Context, gql string, vars map[string]any, out graphqlResult) error {
+	body, err := json.Marshal(map[string]any{"query": gql, "variables": vars})
+	if err != nil {
+		return err
+	}
 	var lastErr error
 	var wait time.Duration // before the next attempt; 0 means the backoff
 	for attempt := 0; attempt < maxRetries; attempt++ {
@@ -133,13 +212,13 @@ func (c *Client) search(ctx context.Context, query string, first int, after stri
 			wait = 0
 			c.log.Warn("github retry", "attempt", attempt, "delay", delay.String(), "err", lastErr)
 			if err := sleep(ctx, delay); err != nil {
-				return nil, err
+				return err
 			}
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(body))
 		if err != nil {
-			return nil, err
+			return err
 		}
 		req.Header.Set("Authorization", "Bearer "+c.token)
 		req.Header.Set("Content-Type", "application/json")
@@ -162,26 +241,28 @@ func (c *Client) search(ctx context.Context, query string, first int, after stri
 				lastErr = fmt.Errorf("github http %d", resp.StatusCode)
 				continue
 			default:
-				return nil, fmt.Errorf("github http %d (non-retryable)", resp.StatusCode)
+				return fmt.Errorf("github http %d (non-retryable)", resp.StatusCode)
 			}
 		}
 
-		var out searchResponse
 		dec := json.NewDecoder(resp.Body)
-		decErr := dec.Decode(&out)
+		decErr := dec.Decode(out)
 		resp.Body.Close()
 		if decErr != nil {
 			lastErr = decErr
 			continue
 		}
-		if len(out.Errors) > 0 {
-			return nil, fmt.Errorf("graphql error: %s", out.Errors[0].Message)
+		_, byID := out.(*nodesResponse)
+		for _, e := range out.errs() {
+			if !byID || e.Type != "NOT_FOUND" {
+				return fmt.Errorf("graphql error: %s", e.Message)
+			}
 		}
 
-		c.waitIfRateLimited(ctx, out.Data.RateLimit)
-		return &out, nil
+		c.waitIfRateLimited(ctx, out.rate())
+		return nil
 	}
-	return nil, fmt.Errorf("github search failed after %d attempts: %w", maxRetries, lastErr)
+	return fmt.Errorf("github query failed after %d attempts: %w", maxRetries, lastErr)
 }
 
 // waitIfRateLimited pauses until resetAt when the remaining quota falls below the

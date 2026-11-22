@@ -191,6 +191,20 @@ type GitHub struct {
 	PlatformSource string         `bson:"platformSource,omitempty"`
 	ReleaseAssets  []ReleaseAsset `bson:"releaseAssets,omitempty"`
 	LatestRelease  *ReleaseRef    `bson:"latestRelease,omitempty"`
+	// DetailedOn is the UTC day the README, the releases and the fields
+	// derived from them (platforms, assets, latest release) were last read.
+	DetailedOn string `bson:"detailedOn,omitempty"`
+}
+
+// DetailState is what is stored about a GitHub item's last detailed read:
+// what the fetcher compares a light reading against to decide whether the
+// README and the releases have to be read again.
+type DetailState struct {
+	PushedAt   time.Time `bson:"pushedAt"`
+	DetailedOn string    `bson:"detailedOn"`
+	Topics     []string  `bson:"topics"`
+	Homepage   string    `bson:"homepage"`
+	Language   string    `bson:"language"`
 }
 
 // ReleaseAsset is a downloadable release file resolved to a platform.
@@ -270,6 +284,10 @@ func BlobHash(readme string, releases []Release) string {
 type Fetched struct {
 	Item Item
 	Blob *Blob
+	// Light marks a reading without the detail: Item.Gh carries the owner and
+	// pushedAt only and Blob is nil. The stored README, releases and the
+	// fields derived from them are kept as they are.
+	Light bool
 }
 
 // Release is one entry of a repository's release list.
