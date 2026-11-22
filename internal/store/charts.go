@@ -76,3 +76,33 @@ func (s *Store) Chart(ctx context.Context, source, country, chart, genre, day st
 	}
 	return c, true, nil
 }
+
+// HomeCountries returns the stored home storefront of those of the given
+// store items that have one. An app's metrics always come from the same
+// storefront, or its history would mix one country's rating count with
+// another's.
+func (s *Store) HomeCountries(ctx context.Context, source string, externalIDs []string) (map[string]string, error) {
+	out := map[string]string{}
+	for start := 0; start < len(externalIDs); start += 1000 {
+		ids := externalIDs[start:min(start+1000, len(externalIDs))]
+		cur, err := s.Items().Find(ctx,
+			bson.M{"source": source, "externalId": bson.M{"$in": ids}, "app.homeCountry": bson.M{"$gt": ""}},
+			options.Find().SetProjection(bson.M{"externalId": 1, "app.homeCountry": 1}))
+		if err != nil {
+			return nil, fmt.Errorf("home countries: %w", err)
+		}
+		var rows []struct {
+			ExternalID string `bson:"externalId"`
+			App        struct {
+				HomeCountry string `bson:"homeCountry"`
+			} `bson:"app"`
+		}
+		if err := cur.All(ctx, &rows); err != nil {
+			return nil, fmt.Errorf("home countries: %w", err)
+		}
+		for _, r := range rows {
+			out[r.ExternalID] = r.App.HomeCountry
+		}
+	}
+	return out, nil
+}

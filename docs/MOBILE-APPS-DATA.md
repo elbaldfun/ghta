@@ -280,7 +280,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 | `assets.iconUrl` / `screenshotUrl` | `artworkUrl512` / `screenshotUrls[0]` | 同 |
 | 来源专有字段 | 新增 `App *StoreApp`（bson `app`，不用 `store`，避免和旧系统的 `store.*` 字段混淆）：`bundleId`、`developerId`、`developer`、`genreId`、`genreIds`、`version`、`currency`、`contentRating`、`screenshots`（前 3 张）、`updatedAt`、`releasedAt`、`homeCountry`、`countries`（今天在哪些国家上榜） | 同一个结构，`bundleId` 存包名 |
 
-- **主国家** `homeCountry`：按国家列表顺序（us、cn、jp、gb、de），取这个应用第一个上过榜的国家。
+- **主国家** `homeCountry`：应用第一次被看到的那天，按国家列表顺序（us、cn、jp、gb、de）取它上榜的第一个国家，**之后固定不变**。以后哪怕它只在别的国家上榜，也照样去主国家查详情，否则一条 history 里会混进两个国家的评分数（codex 审查 11-22 发现）。
   评分、评分数只在主国家取，每个应用一天只查一次 Lookup。代价是只在日区上榜的应用，展示的就是日区的评分数，
   详情页要写明"日本区评分"。
 - `StoreApp` 是 iOS 和 Android 共用的一个结构，不像 `Gh`、`Hf` 那样每个源一个，因为两个商店的字段几乎一样。
@@ -336,7 +336,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 
 | 失败 | 处理 |
 |---|---|
-| 单张榜 5xx / 超时 | 重试 3 次，指数退避；还是失败就记录缺失，那张榜当天不写快照，动量用前一天的值 |
+| 单张榜 5xx / 超时 | 重试 3 次，指数退避；还是失败就记录缺失，那张榜当天不写快照，动量用前一天的值；当天**不跑 AgeGrowth**（只在那张榜上的应用并没有掉榜） |
 | 旧版 RSS 整体下线（整批 404 / 410） | 一张榜都读不到时任务失败，`job_runs` 里记为 failed，这就是报警。P1 没有实现自动降级，到时候再接新版 RSS 生成器（只有免费、付费总榜，没有 genre），并评估 apps.apple.com 网页榜 |
 | Lookup 限流（429 / 403）或部分批次失败 | 停止（限流时）或跳过失败的批次，已查到的照常写入；当天**不跑 AgeGrowth**，没查到的应用保留原来的增长（沿用 #61 的做法：抓取失败不改增长）。一张榜都读不到时任务失败，不写任何条目 |
 

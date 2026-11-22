@@ -153,3 +153,55 @@ func TestIOSFailures(t *testing.T) {
 		t.Fatalf("partial lookup: %v, report %+v", err, rep)
 	}
 }
+
+// An app's home storefront is fixed the first day: charted only in jp the
+// next day, it is still read in us, so its history stays one country's.
+func TestIOSHomeCountryIsSticky(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	f := &fakeAppStore{ratings: 1000, charts: map[string][]string{"us/free/all": {"1"}, "jp/free/all": {"1"}}}
+	if _, err := iosJob(st, f, "2026-11-22").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	f.charts = map[string][]string{"jp/free/all": {"1"}}
+	f.lookups = nil
+	if _, err := iosJob(st, f, "2026-11-23").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(f.lookups, ",") != "us:1" {
+		t.Fatalf("lookups %v, want the stored home storefront", f.lookups)
+	}
+	var one item.Item
+	_ = st.Items().FindOne(ctx, bson.M{"source": item.SourceIOS, "externalId": "1"}).Decode(&one)
+	if one.App.HomeCountry != "us" || strings.Join(one.App.Countries, ",") != "jp" {
+		t.Errorf("app %+v", one.App)
+	}
+	if _, ok := one.Metrics["bestRank"]; ok {
+		t.Errorf("a best rank outside the home storefront: %v", one.Metrics)
+	}
+}
+
+// A failed chart may hide an app that is still charted: growth is not aged.
+func TestIOSFailedChartKeepsGrowth(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	f := &fakeAppStore{ratings: 1000, charts: map[string][]string{"us/free/all": {"1"}, "us/paid/all": {"3"}}}
+	if _, err := iosJob(st, f, "2026-11-22").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	f.ratings = 1100
+	if _, err := iosJob(st, f, "2026-11-23").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	// Day three: the paid chart fails, so app 3 is not seen.
+	f.chartErr = map[string]error{"us/paid/all": fmt.Errorf("appstore: http 503")}
+	f.ratings = 1200
+	if _, err := iosJob(st, f, "2026-11-24").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var three item.Item
+	_ = st.Items().FindOne(ctx, bson.M{"source": item.SourceIOS, "externalId": "3"}).Decode(&three)
+	if three.Growth.D1 == nil || *three.Growth.D1 != 100 {
+		t.Errorf("growth of an app behind a failed chart was aged: %+v", three.Growth)
+	}
+}

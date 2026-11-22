@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strconv"
 	"time"
 
 	"github.com/elbaldfun/ghta/internal/item"
@@ -24,10 +26,13 @@ type AppStore interface {
 // pipeline, not inside it.
 //
 // Every chart of every country is read first and stored in chart_snapshots;
-// then each app found is looked up once, in its home storefront — the first
-// configured country that charted it — and written to items. An app that
-// left every chart is not looked up; its growth ages like a GitHub item's
-// that fell out of range.
+// then each app found is looked up once, in its home storefront, and written
+// to items. The home storefront is fixed the first day an app is seen — the
+// first configured country that charted it — so its rating history never
+// mixes two countries. An app that left every chart is not looked up; its
+// growth ages like a GitHub item's that fell out of range, but only on a day
+// every chart and lookup succeeded: an app missed because a request failed
+// has not stopped growing.
 type IOS struct {
 	st        *store.Store
 	client    AppStore
@@ -54,9 +59,9 @@ func (*IOS) Name() string { return "ios" }
 
 // seenApp is what today's charts say about one app.
 type seenApp struct {
-	home      string
-	countries []string
-	best      int // best rank in the home storefront
+	first     string         // first configured country that charted it today
+	countries []string       // countries that charted it today, in order
+	rank      map[string]int // best rank today, by country
 }
 
 func (j *IOS) Run(ctx context.Context) (rep worker.Report, err error) {
@@ -104,15 +109,15 @@ charts:
 					ids[i] = e.ID
 					a := seen[e.ID]
 					if a == nil {
-						a = &seenApp{home: country}
+						a = &seenApp{first: country, rank: map[string]int{}}
 						seen[e.ID] = a
 						order = append(order, e.ID)
 					}
-					if a.countries == nil || a.countries[len(a.countries)-1] != country {
+					if n := len(a.countries); n == 0 || a.countries[n-1] != country {
 						a.countries = append(a.countries, country)
 					}
-					if country == a.home && (a.best == 0 || e.Rank < a.best) {
-						a.best = e.Rank
+					if r, ok := a.rank[country]; !ok || e.Rank < r {
+						a.rank[country] = e.Rank
 					}
 				}
 				if err := j.st.WriteChart(ctx, store.ChartSnapshot{
@@ -130,14 +135,28 @@ charts:
 		return rep, fmt.Errorf("ios: no chart could be read (%d failed, %d missing)", failed, missing)
 	}
 
-	// One lookup per batch of apps sharing a home storefront.
+	// One lookup per batch of apps sharing a home storefront: the stored one,
+	// or for an app new today the first country that charted it.
+	stored, err := j.st.HomeCountries(ctx, item.SourceIOS, order)
+	if err != nil {
+		return rep, err
+	}
+	home := make(map[string]string, len(order))
 	byHome := map[string][]string{}
+	homes := slices.Clone(j.countries)
 	for _, id := range order {
-		h := seen[id].home
+		h := stored[id]
+		if h == "" {
+			h = seen[id].first
+		}
+		home[id] = h
+		if !slices.Contains(homes, h) {
+			homes = append(homes, h) // a storefront dropped from IOS_COUNTRIES
+		}
 		byHome[h] = append(byHome[h], id)
 	}
 lookups:
-	for _, country := range j.countries {
+	for _, country := range homes {
 		ids := byHome[country]
 		for start := 0; start < len(ids); start += appstore.LookupBatch {
 			if err := ctx.Err(); err != nil {
@@ -159,12 +178,13 @@ lookups:
 			}
 			fetched := make([]item.Fetched, 0, len(apps))
 			for _, a := range apps {
-				s := seen[fmt.Sprint(a.TrackID)]
-				if s == nil {
+				id := strconv.FormatInt(a.TrackID, 10)
+				s := seen[id]
+				if s == nil || home[id] != country {
 					continue // Apple answered for an id we did not ask about
 				}
 				fetched = append(fetched, appstore.ToFetched(a, appstore.Listing{
-					HomeCountry: s.home, Countries: s.countries, BestRank: s.best,
+					HomeCountry: country, Countries: s.countries, BestRank: s.rank[country],
 				}, j.shelve))
 			}
 			gone += len(batch) - len(fetched)
@@ -180,10 +200,11 @@ lookups:
 		return rep, fmt.Errorf("ios: throttled by Apple; %d charts and %d listings written, growth not aged", charts, looked)
 	case looked == 0:
 		return rep, fmt.Errorf("ios: %d charts read but no listing could be looked up", charts)
-	case rep.Failed > 0:
-		// Some listings were not read: an app missing today is not one that
-		// stopped growing, so growth is left as it was (as fetch does, #61).
-		j.log.Warn("ios: some lookups failed; growth not aged", "apps", rep.Failed)
+	case rep.Failed > 0 || failed > 0:
+		// A chart or a listing was not read: an app missing today may only
+		// be missing from what failed, so growth is left as it was (as fetch
+		// does, #61).
+		j.log.Warn("ios: some requests failed; growth not aged", "charts", failed, "apps", rep.Failed)
 		return rep, nil
 	}
 	if _, err := j.st.AgeGrowth(ctx, item.SourceIOS, day); err != nil {
