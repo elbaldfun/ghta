@@ -23,7 +23,8 @@ const KINDS: AppKind[] = ['app', 'cli'];
 // consumer shelves; its subs are full domain-leaf paths.
 const SHELF_MAJORS = [
   'productivity', 'creative', 'ai', 'selfhosted', 'network',
-  'media', 'social', 'system', 'security', 'games', 'dev',
+  'media', 'social', 'system', 'security', 'games',
+  'finance', 'shopping', 'travel', 'health', 'life', 'education', 'dev',
 ] as const;
 const SHELF_SUBS: Record<string, string[]> = {
   productivity: ['notes', 'todo', 'docs', 'knowledge'],
@@ -31,11 +32,17 @@ const SHELF_SUBS: Record<string, string[]> = {
   ai: ['assistant', 'local-llm', 'generation', 'builder'],
   selfhosted: ['cloud', 'media-server', 'monitoring', 'tunnel', 'automation'],
   network: ['browser', 'download', 'proxy', 'remote', 'browser-ext'],
-  media: ['player', 'music', 'reader'],
+  media: ['player', 'music', 'reader', 'streaming'],
   social: ['messaging', 'tools'],
   system: ['screenshot', 'launcher', 'files', 'transfer', 'phone', 'backup'],
   security: ['passwords', 'privacy'],
   games: ['games', 'emulator'],
+  finance: ['budget', 'investing', 'payments'],
+  shopping: ['shopping', 'food'],
+  travel: ['travel', 'navigation'],
+  health: ['fitness', 'wellness'],
+  life: ['lifestyle', 'weather', 'sports'],
+  education: ['learning', 'reference'],
   dev: DEV_SHELVES,
 };
 const DEV = 'dev';
