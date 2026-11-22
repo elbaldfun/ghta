@@ -2,6 +2,7 @@
 // alternatives pages.
 
 import { apiGet } from './client';
+import type { Verdict } from './verdict';
 
 export type OS = 'macos' | 'windows' | 'linux' | 'android' | 'ios' | 'web';
 export type AppKind = 'app' | 'cli';
@@ -97,7 +98,17 @@ export async function getApps(params: {
 
 /** The best-of collection for one shelf (/apps/best/<major>/<sub>). */
 export async function getBestOf(shelf: string): Promise<AppItem[]> {
-  const res = await apiGet<{ data: AppDTO[] }>(`/apps/best/${shelf}`, 1800);
-  if (res.error !== null || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapApp);
+  return (await getBestOfPage(shelf)).items;
+}
+
+/** A shelf's best-of collection with its pick and when both were computed. */
+export async function getBestOfPage(
+  shelf: string,
+): Promise<{ items: AppItem[]; verdict: Verdict | null; computedAt: string | null }> {
+  const res = await apiGet<{ data: AppDTO[]; verdict?: Verdict | null; computedAt?: string }>(
+    `/apps/best/${shelf}`,
+    1800,
+  );
+  if (res.error !== null || !Array.isArray(res.data?.data)) return { items: [], verdict: null, computedAt: null };
+  return { items: res.data.data.map(mapApp), verdict: res.data.verdict ?? null, computedAt: res.data.computedAt ?? null };
 }

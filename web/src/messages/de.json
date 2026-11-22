@@ -283,7 +283,6 @@
     "shelf_dev_agents_coding": "Coding-Agenten",
     "appsAllShelves": "Alle",
     "bestTitle": "Beste Open-Source-{label}-Apps",
-    "bestMethodology": "Ranking = Sterne + Momentum + Release in 90 Tagen + Downloads; täglich aktualisiert; {count} Apps.",
     "bestSeeShelf": "Alle {label} ansehen",
     "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
     "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
@@ -435,5 +434,27 @@
     "examples": "Which Rust projects gained the most stars this week?\nWhat is trending in AI agents today?\nHow does ollama/ollama rank, and is it moving up?",
     "limits": "Every result links to its page on starrank.dev. Up to 25 rows per call; calls are rate-limited per client. Data refreshes once a day.",
     "footerLink": "MCP"
+  },
+  "verdict": {
+    "label": "Empfehlung",
+    "pickLine": "<b>{name}</b>: {facts}.",
+    "sep": ", ",
+    "posStars": "Platz {pos} nach Sternen ({stars} Sterne)",
+    "posBest": "Platz {pos} auf dieser Seite, {stars} Sterne",
+    "gain": "+{n} Sterne in 30 Tagen",
+    "pushed": "{days, plural, =0 {heute noch Commits} one {letzter Commit vor # Tag} other {letzter Commit vor # Tagen}}",
+    "release": "{days, plural, =0 {heute veröffentlicht} one {letztes Release vor # Tag} other {letztes Release vor # Tagen}}",
+    "noRelease": "noch kein GitHub-Release",
+    "downloads": "Installer für {platforms}",
+    "rankUp": "nach Sternen auf Platz {now} gestiegen (vorher {prev})",
+    "rankDown": "nach Sternen auf Platz {now} gefallen (vorher {prev})",
+    "skipLine": "Trotz mehr Sternen nicht gewählt: {items}.",
+    "skipReading": "{name} (Liste oder Tutorial, kein Projekt)",
+    "skipStale": "{name} (seit {days} Tagen kein Commit)",
+    "skipUnknown": "{name} (letzter Commit unbekannt)",
+    "skipNoBuild": "{name} (nichts zum Herunterladen)",
+    "riserLine": "Am schnellsten wachsend: <b>{name}</b>, +{n} Sterne in 30 Tagen (hier Platz {pos}).",
+    "ruleDomain": "So wird gerankt: nach GitHub-Sternen, absteigend. Die Empfehlung ist das Projekt mit den meisten Sternen unter den Top {pool}, das in den letzten {fresh} Tagen einen Commit hatte und keine Liste oder kein Tutorial ist; die Gründe nennen nur Sterne, Wachstum, Commits, Releases und Platz, alles auf GitHub prüfbar. Täglich aktualisiert, zuletzt am {date}.",
+    "ruleShelf": "So wird gerankt: die 60 Apps des Regals mit den meisten Sternen, sortiert nach ln(Sterne) + 2×ln(Tageszuwachs) + 2 für ein Release in 90 Tagen + 1 für Installer; die Top {count} werden gezeigt. Die Empfehlung ignoriert diesen Wert: Es ist die App dieser Seite mit den meisten Sternen, einem Commit in den letzten {fresh} Tagen und einem Installer. Täglich aktualisiert, zuletzt am {date}."
   }
 }

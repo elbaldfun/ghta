@@ -283,7 +283,6 @@
     "shelf_dev_agents_coding": "コーディングエージェント",
     "appsAllShelves": "すべて",
     "bestTitle": "ベストオープンソース{label}アプリ",
-    "bestMethodology": "ランキングはスター数・直近の伸び・90日以内のリリース・DL可能なビルドで算出、毎日更新({count}件)。",
     "bestSeeShelf": "{label}をすべて見る",
     "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
     "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",
@@ -435,5 +434,27 @@
     "examples": "Which Rust projects gained the most stars this week?\nWhat is trending in AI agents today?\nHow does ollama/ollama rank, and is it moving up?",
     "limits": "Every result links to its page on starrank.dev. Up to 25 rows per call; calls are rate-limited per client. Data refreshes once a day.",
     "footerLink": "MCP"
+  },
+  "verdict": {
+    "label": "おすすめ",
+    "pickLine": "<b>{name}</b>：{facts}。",
+    "sep": "、",
+    "posStars": "このランキングのスター数 {pos} 位（{stars} スター）",
+    "posBest": "このページ {pos} 位、{stars} スター",
+    "gain": "30 日間で +{n} スター",
+    "pushed": "{days, plural, =0 {今日もコミットあり} other {# 日前にコミット}}",
+    "release": "{days, plural, =0 {今日リリース} other {最新リリースは # 日前}}",
+    "noRelease": "GitHub リリースなし",
+    "downloads": "{platforms} 用インストーラーあり",
+    "rankUp": "スター順位が {now} 位に上昇（前回 {prev} 位）",
+    "rankDown": "スター順位が {now} 位に下降（前回 {prev} 位）",
+    "skipLine": "スターがより多い {items} は選外です。",
+    "skipReading": "{name}（リスト・教材でプロジェクトではない）",
+    "skipStale": "{name}（{days} 日間コミットなし）",
+    "skipUnknown": "{name}（最終コミット不明）",
+    "skipNoBuild": "{name}（ダウンロードなし）",
+    "riserLine": "最も伸びているのは <b>{name}</b>：30 日間で +{n} スター（このページ {pos} 位）。",
+    "ruleDomain": "ランキング方法：GitHub スター総数の多い順。おすすめは上位 {pool} 件のうち、{fresh} 日以内にコミットがあり、リストや教材ではない、スター最多のプロジェクト。理由はスター・伸び・コミット・リリース・順位のみで、すべて GitHub で確認できます。毎日更新、最終更新 {date}。",
+    "ruleShelf": "ランキング方法：この棚のスター上位 60 アプリを ln(スター) + 2×ln(日次増加) + 90 日以内のリリースで 2 点 + インストーラーで 1 点 で並べ替え、上位 {count} 件を表示。おすすめはこのスコアを使わず、このページで {fresh} 日以内にコミットがありインストーラーのある、スター最多のアプリです。毎日更新、最終更新 {date}。"
   }
 }

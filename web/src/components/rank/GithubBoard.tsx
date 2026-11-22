@@ -6,6 +6,7 @@ import {
   categoryLabel,
   findCategory,
   getCategoryTree,
+  getDomainVerdict,
   getFacets,
   getTrends,
   getTotalCount,
@@ -24,6 +25,7 @@ import { Pagination } from './Pagination';
 import { RepoRow } from './RepoRow';
 import { GithubTabs } from './GithubTabs';
 import { PageShell } from './PageShell';
+import { RankingRule, VerdictBlock } from './Verdict';
 
 const PER_PAGE = 24;
 
@@ -84,8 +86,11 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
       : 'stars';
   if (sort === 'relevance' && !f.q) sort = 'stars';
   const page = f.page ?? 1;
+  // A domain's pick is computed for its default view only: most stars first,
+  // first page, no other filter. Any other view is the reader's own question.
+  const domainView = !!f.category && sort === 'stars' && page === 1 && !f.q && !f.type && !f.lang && !f.license;
 
-  const [tree, facets, total, searchRes] = await Promise.all([
+  const [tree, facets, total, searchRes, picked] = await Promise.all([
     getCategoryTree(),
     getFacets(),
     getTotalCount(),
@@ -99,6 +104,7 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
       page,
       perPage: PER_PAGE,
     }),
+    domainView && f.category ? getDomainVerdict(f.category) : null,
   ]);
 
   // The rows' sparklines: seven days of change (eight daily points).
@@ -150,6 +156,18 @@ export async function GithubBoard({ locale, filters: f }: { locale: string; filt
             </div>
             <FilterBar types={facets} filters={f} />
           </div>
+
+          {picked && searchRes.error === null && searchRes.data.items.length > 0 && (
+            <>
+              <VerdictBlock verdict={picked.verdict} />
+              <RankingRule
+                scope="domain"
+                computedAt={picked.computedAt}
+                pool={picked.verdict?.pool}
+                freshDays={picked.verdict?.freshDays}
+              />
+            </>
+          )}
 
           {searchRes.error !== null ? (
             <ErrorState />
