@@ -4,10 +4,9 @@
 
 ## 工作规则
 
-- 分支模型（与 OpticDrop 一致）：`develop` 是集成分支，`main` 是生产分支。改动走工作分支，开 PR 到 `develop`（`gh pr create --base develop`）；不直接改 `develop` 或 `main`。CI 的两个任务（`build-test`、`web`）通过后 PR 自动合并；想让 PR 先停着，开成草稿或加 `hold` 标签。改动 `.github/workflows` 的 PR 工作流合不了：负责人已授权 Claude 在 CI 通过后用 `gh pr merge --merge` 合并。
-- `develop` 到 `main` 由 `.github/workflows/sync-main.yml` 同步：手动触发，或仓库变量 `AUTO_SYNC_MAIN=true` 时每次推送自动同步。重构切换之前这个变量不设，`develop` 上的重构代码不进 `main`。
-- 生产热修是唯一直接开 PR 到 `main` 的情况；合并后要把 `main` 合回 `develop`（开一个 `main` → `develop` 的 PR）。
-- 发版只用 `scripts/release.sh`（`api` / `web` / `all` / `rollback`），只发已并入 `origin/main` 的 HEAD，后端先于前端。负责人说"发布版本"就是让你自己发。
+- 分支模型：`develop` 是集成分支，`main` 只代表线上。改动走工作分支，开 PR 到 `develop`（`gh pr create --base develop`）；不直接改 `develop` 或 `main`，热修也走 `develop`。CI 的两个任务（`build-test`、`web`）通过后进 `develop` 的 PR 自动合并；想让 PR 先停着，开成草稿或加 `hold` 标签。改动 `.github/workflows` 的 PR 工作流合不了：负责人已授权 Claude 在 CI 通过后用 `gh pr merge --merge` 合并。跟上 develop 用 `git merge origin/develop`，不 rebase。
+- `main` 只经 `scripts/release.sh promote` 开的 `develop → main` 发版 PR 更新（CI 的 `release-source` 拦住其他来源），CI 通过后由 master 用 merge commit 合并。完整规则见 `docs/BRANCHING_AND_RELEASE.md`。
+- 发版只用 `scripts/release.sh`（`api` / `web` / `worker` / `all` / `rollback`），只发已并入 `origin/main` 的 HEAD，后端先于前端；健康检查通过后自动打 `vYYYY.MM.DD.N` 标签并建 GitHub Release，回滚不动标签。UTC 03:30–08:30 不能发 worker / all。负责人说"发布版本"就是让你自己发。
 - 生产机只看 `docker logs --tail N`，绝不用 `--since`；查库用 `docker run --rm --network ghta_default -m 220m --env-file /opt/ghta/.env mongo:7 sh -c 'mongosh --host mongo …'` 从容器外连，不要 `docker exec` 进 mongo 容器。不要碰 `/opt/edge`（与 opticdrop.app 共用的 Caddy）以外的其他项目。
 - LLM 分类任务同一时刻只能有一个 Run（中继并发上限很低），触发前先确认上一轮的 `categorizer done` 日志。
 - 重构进行中（方案见 `docs/REBUILD.md`）：新代码只读写新集合（`items`、`item_blobs`、`boards` 等），不改旧集合 `tracked_items`，也不在新代码里写旧数据形态的兼容分支，规范化只放在导入器里。重构的 PR 进 `develop`，切换前 `develop` 不同步到 `main`。
