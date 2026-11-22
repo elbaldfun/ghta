@@ -349,7 +349,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 | **P0 准备** ✅ 11-22 | 在 droplet 上用 10 次以内的请求重测 2.1（核实 cn 区、延迟、有没有拦截） | 结果见 3.1 | 无 |
 | **P1 iOS 数据**（3–4 天） | 适配器、`chart_snapshots`、`items` 写入、genre 映射表加 golden、UTC 09:00 调度 | develop 上连续 7 天无人值守跑完；每张榜的条数 ≥ 95；不影响 GitHub 流水线的完成时间 | 合并 PR、发版 |
 | **P2 iOS 页面**（3 天） | `/ios` 榜单页（国家 × 榜型 × genre）、`/ios/id{n}` 详情页、`/v1` 接口；`/apps` 货架加平台切换 | 7 天的动量数据就绪后才开放；sitemap 收录 | 确认首页和导航要不要露出 |
-| **P3 Android 观察**（1 周，与 P1 并行） | 50 个包名的详情页每天抓一次，记录精确安装数是否每天变化 | 给出 4.3 是否可用的结论 | 定 Android 走哪条渠道（第九节第 2 条） |
+| ~~**P3 Android 观察**~~（负责人 11-22 定：随 Android 暂缓，重新考虑时先复核 Google 条款再做） | 50 个包名的详情页每天抓一次，记录精确安装数是否每天变化 | 给出 4.3 是否可用的结论 | 定 Android 走哪条渠道（第九节第 2 条） |
 | **P4 Android 数据和页面** | 按第 2 条的决定实现；数据模型与 iOS 同构 | 同 P1、P2 | 选了 DataForSEO 的话：注册账号、预充值（最低充值额待确认） |
 | 以后 | Games 子 genre；跨源关联（GitHub 仓库 ↔ App Store ↔ Google Play，用 bundleId、包名和主页域名匹配）；更多国家 | | |
 
@@ -403,7 +403,7 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 ## 十一、2026-11-22 负责人结论
 
 1. **先 iOS 后 Android。** iOS 一期按本方案做，Android 等 iOS 上线之后再说。
-2. **Android 继续暂缓。** DataForSEO 和自抓都不做；P3 的一周观察也一起暂停（待确认）。Google 条款原文的复核随之不再需要。
+2. **Android 继续暂缓。** DataForSEO 和自抓都不做；P3 的一周观察：负责人 11-22 定，随 Android 一起暂缓；以后重新考虑 Android 时，先复核 Google 条款再做。
 3. **首批国家：us、cn、jp、gb、de。**
 4. **现在就补消费类货架。** 推翻 6.3 第 3 条：财务、购物、旅行、健康等消费类 genre 要有自己的货架。
    做法是改 `taxonomy/taxonomy.yaml` 和 `migrations.yaml`，版本号加一，同时补 `store-genres.yaml` 和 golden，
