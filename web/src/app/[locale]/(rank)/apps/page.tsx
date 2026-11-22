@@ -2,7 +2,7 @@ import { DEV_SHELVES, shelfLabelKey } from '@/lib/shelves';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getApps, type AppSort, type OS } from '@/lib/data';
+import { getApps, type AppKind, type AppSort, type OS } from '@/lib/data';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
 import { Dropdown, Segmented, fmtInt } from '@/components/ui';
@@ -17,6 +17,7 @@ const PER_PAGE = 30;
 const BOARD_CAP = 300;
 const OSES: OS[] = ['macos', 'windows', 'linux', 'android', 'ios', 'web'];
 const SORTS: AppSort[] = ['hot', 'popular', 'new'];
+const KINDS: AppKind[] = ['app', 'cli'];
 // Consumer shelves = the apps/ branch of taxonomy v3 (slug = path minus "apps/").
 // "dev" is a view, not a shelf: the developer-app leaves that left the
 // consumer shelves; its subs are full domain-leaf paths.
@@ -72,26 +73,30 @@ export default async function AppsPage({
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { os?: string; shelf?: string; sort?: string; page?: string };
+  searchParams: { os?: string; kind?: string; shelf?: string; sort?: string; page?: string };
 }) {
   setRequestLocale(locale);
   const t = await getTranslations('appsPage');
   const tr = await getTranslations('rank');
 
   const os = (OSES as string[]).includes(searchParams.os ?? '') ? (searchParams.os as OS) : '';
+  // Form: GUI apps or command-line tools. Old links may also carry
+  // ?category=; it is no longer a filter here and is simply ignored.
+  const kind: AppKind | '' = (KINDS as string[]).includes(searchParams.kind ?? '') ? (searchParams.kind as AppKind) : '';
   const shelf = validShelf(searchParams.shelf ?? '') ? (searchParams.shelf ?? '') : '';
   const major = majorOf(shelf);
   const sort: AppSort = (SORTS as string[]).includes(searchParams.sort ?? '') ? (searchParams.sort as AppSort) : 'hot';
   const page = Math.max(1, Math.floor(Number(searchParams.page)) || 1);
 
-  const { items, total } = await getApps({ os, shelf, sort, limit: PER_PAGE, page });
+  const { items, total } = await getApps({ os, kind, shelf, sort, limit: PER_PAGE, page });
   const now = new Date();
 
   /** Link to this page with some filters changed; defaults are left out. */
-  const href = (over: { os?: string; shelf?: string; sort?: AppSort; page?: number }) => {
-    const v = { os, shelf, sort, page, ...over };
+  const href = (over: { os?: string; kind?: string; shelf?: string; sort?: AppSort; page?: number }) => {
+    const v = { os, kind, shelf, sort, page, ...over };
     const q = new URLSearchParams();
     if (v.os) q.set('os', v.os);
+    if (v.kind) q.set('kind', v.kind);
     if (v.shelf) q.set('shelf', v.shelf);
     if (v.sort !== 'hot') q.set('sort', v.sort);
     if (v.page > 1) q.set('page', String(v.page));
@@ -105,7 +110,8 @@ export default async function AppsPage({
   const sortRule: Record<AppSort, string> = { hot: t('ruleHot'), popular: t('rulePopular'), new: t('ruleNew') };
 
   // What is being shown, for the count line above the grid.
-  const scope = [os ? OS_NAME[os] : '', shelf && shelf !== major ? subLabel(shelf) : major ? majorLabel(major) : '']
+  const kindName: Record<AppKind, string> = { app: tr('appsKindApp'), cli: tr('appsKindCli') };
+  const scope = [kind ? kindName[kind] : '', os ? OS_NAME[os] : '', shelf && shelf !== major ? subLabel(shelf) : major ? majorLabel(major) : '']
     .filter(Boolean)
     .join(' · ');
 
@@ -121,20 +127,37 @@ export default async function AppsPage({
       </section>
 
       <section aria-label={t('filters')} className="flex flex-col gap-3 border-y border-rule py-3 lg:flex-row lg:items-center lg:justify-between">
-        <nav aria-label={t('osLabel')} className="flex flex-wrap gap-1.5">
-          {[{ key: '', name: t('allOs') }, ...OSES.map((o) => ({ key: o, name: OS_NAME[o] }))].map((x) => (
-            <Link
-              key={x.key || 'all'}
-              href={href({ os: x.key, page: 1 })}
-              aria-current={os === x.key ? 'true' : undefined}
-              className={`flex h-11 items-center rounded border px-3 text-[13px] md:h-8 ${
-                os === x.key ? 'border-ink bg-ink text-paper' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
-              }`}
-            >
-              {x.name}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <nav aria-label={t('kindLabel')} className="flex flex-wrap gap-1.5">
+            {[{ key: '', name: tr('appsAll') }, ...KINDS.map((k) => ({ key: k, name: kindName[k] }))].map((x) => (
+              <Link
+                key={x.key || 'all'}
+                href={href({ kind: x.key, page: 1 })}
+                aria-current={kind === x.key ? 'true' : undefined}
+                className={`flex h-11 items-center rounded border px-3 text-[13px] md:h-8 ${
+                  kind === x.key ? 'border-ink bg-ink text-paper' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
+                }`}
+              >
+                {x.name}
+              </Link>
+            ))}
+          </nav>
+          <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-rule md:block" />
+          <nav aria-label={t('osLabel')} className="flex flex-wrap gap-1.5">
+            {[{ key: '', name: t('allOs') }, ...OSES.map((o) => ({ key: o, name: OS_NAME[o] }))].map((x) => (
+              <Link
+                key={x.key || 'all'}
+                href={href({ os: x.key, page: 1 })}
+                aria-current={os === x.key ? 'true' : undefined}
+                className={`flex h-11 items-center rounded border px-3 text-[13px] md:h-8 ${
+                  os === x.key ? 'border-ink bg-ink text-paper' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
+                }`}
+              >
+                {x.name}
+              </Link>
+            ))}
+          </nav>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Dropdown
             label={major ? t('shelfIs', { name: majorLabel(major) }) : t('shelfAll')}
@@ -168,8 +191,8 @@ export default async function AppsPage({
         <div className="flex flex-col items-start gap-3 border-b border-rule py-12">
           <p className="font-news text-[24px] leading-tight">{t('emptyHead')}</p>
           <p className="max-w-[560px] text-sr-small text-ink-2">{t('emptyBody')}</p>
-          {(os || shelf) && (
-            <Link href={href({ os: '', shelf: '', page: 1 })} className="inline-flex min-h-11 items-center text-sr-small font-semibold underline underline-offset-4 md:min-h-0">
+          {(os || kind || shelf) && (
+            <Link href={href({ os: '', kind: '', shelf: '', page: 1 })} className="inline-flex min-h-11 items-center text-sr-small font-semibold underline underline-offset-4 md:min-h-0">
               {t('clear')}
             </Link>
           )}

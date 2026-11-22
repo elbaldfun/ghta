@@ -733,7 +733,8 @@
     "details": "Details",
     "pick": "Pick",
     "crumbLabel": "Breadcrumb",
-    "crumbApps": "Apps"
+    "crumbApps": "Apps",
+    "kindLabel": "Form"
   },
   "pick": {
     "headDomain": "If you pick one, start with {name}",

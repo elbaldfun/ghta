@@ -733,7 +733,8 @@
     "details": "Details",
     "pick": "Tipp",
     "crumbLabel": "Brotkrümelnavigation",
-    "crumbApps": "Apps"
+    "crumbApps": "Apps",
+    "kindLabel": "Form"
   },
   "pick": {
     "headDomain": "Wenn nur eines, dann {name}",

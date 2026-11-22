@@ -733,7 +733,8 @@
     "details": "详情",
     "pick": "首选",
     "crumbLabel": "位置",
-    "crumbApps": "应用"
+    "crumbApps": "应用",
+    "kindLabel": "形态"
   },
   "pick": {
     "headDomain": "要选一个，先看 {name}",

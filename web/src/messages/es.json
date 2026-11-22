@@ -733,7 +733,8 @@
     "details": "Detalles",
     "pick": "Recomendado",
     "crumbLabel": "Ruta de navegación",
-    "crumbApps": "Apps"
+    "crumbApps": "Apps",
+    "kindLabel": "Tipo"
   },
   "pick": {
     "headDomain": "Si eliges uno, empieza por {name}",
