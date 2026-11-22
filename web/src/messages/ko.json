@@ -733,7 +733,8 @@
     "details": "상세",
     "pick": "추천",
     "crumbLabel": "탐색 경로",
-    "crumbApps": "앱"
+    "crumbApps": "앱",
+    "kindLabel": "형태"
   },
   "pick": {
     "headDomain": "하나만 고른다면 {name}부터",

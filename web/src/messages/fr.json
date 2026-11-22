@@ -733,7 +733,8 @@
     "details": "Détails",
     "pick": "Choix",
     "crumbLabel": "Fil d’Ariane",
-    "crumbApps": "Applications"
+    "crumbApps": "Applications",
+    "kindLabel": "Type"
   },
   "pick": {
     "headDomain": "Si vous n’en prenez qu’un, commencez par {name}",

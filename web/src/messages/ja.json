@@ -733,7 +733,8 @@
     "details": "詳細",
     "pick": "おすすめ",
     "crumbLabel": "パンくずリスト",
-    "crumbApps": "アプリ"
+    "crumbApps": "アプリ",
+    "kindLabel": "形態"
   },
   "pick": {
     "headDomain": "1つ選ぶなら {name} から",
