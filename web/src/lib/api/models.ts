@@ -25,6 +25,11 @@ export interface ModelItem {
   quantFormats?: string[];
   createdAt?: string | null;
   url: string;
+  /** The model(s) this one was made from, and how (quantized, adapter, finetune, merge). */
+  baseModel?: string[];
+  baseRelation?: string;
+  /** Models on Hugging Face that name this one as their base. */
+  derivatives?: number;
 }
 
 /** One page of a model board. Empty on error so the page degrades. */
