@@ -69,6 +69,9 @@ func TestReconcile(t *testing.T) {
 		return it
 	}
 	tracked := frozen("new/taken", 50, time.Hour) // fetched an hour ago: not a candidate
+	// The fetcher keeps this one under GitHub's spelling; the lower-case
+	// record beside it is a ghost only this job still refreshes.
+	twin := frozen("o/Twin", 700, time.Hour)
 	docs := []any{
 		frozen("o/gone", 10, 12*24*time.Hour),
 		frozen("o/alive", 900, 11*24*time.Hour),
@@ -76,7 +79,9 @@ func TestReconcile(t *testing.T) {
 		frozen("o/ghost", 200, 9*24*time.Hour),
 		frozen("o/flaky", 100, 8*24*time.Hour),
 		frozen("o/dmca", 80, 8*24*time.Hour+12*time.Hour),
-		tracked,
+		frozen("o/twin", 600, 7*24*time.Hour+12*time.Hour),
+		frozen("o/recased", 400, 7*24*time.Hour+6*time.Hour),
+		tracked, twin,
 	}
 	if _, err := st.Items().InsertMany(ctx, docs); err != nil {
 		t.Fatal(err)
@@ -87,9 +92,11 @@ func TestReconcile(t *testing.T) {
 
 	api := &fakeGitHub{
 		repos: map[string]*github.RepoInfo{
-			"o/alive": {FullName: "O/Alive", Stars: 940, Forks: 3}, // case differences are not a rename
-			"o/moved": {FullName: "acme/renamed", Stars: 320},
-			"o/ghost": {FullName: "new/taken", Stars: 50},
+			"o/alive":   {FullName: "o/alive", Stars: 940, Forks: 3},
+			"o/moved":   {FullName: "acme/renamed", Stars: 320},
+			"o/ghost":   {FullName: "new/taken", Stars: 50},
+			"o/twin":    {FullName: "o/Twin", Stars: 700}, // a change of case is a rename
+			"o/recased": {FullName: "O/Recased", Stars: 410},
 		},
 		broken: map[string]bool{"o/flaky": true},
 		taken:  map[string]bool{"o/dmca": true},
@@ -97,16 +104,16 @@ func TestReconcile(t *testing.T) {
 	job := NewReconcile(st, api, 100, nil)
 	job.now = func() time.Time { return now }
 	rep, err := job.Run(ctx)
-	if err != nil || rep.Processed != 5 || rep.Failed != 1 {
+	if err != nil || rep.Processed != 7 || rep.Failed != 1 {
 		t.Fatalf("report = %+v, %v", rep, err)
 	}
-	for verdict, want := range map[string]int{"gone": 1, "blocked": 1, "refreshed": 1, "renamed": 1, "merged": 1} {
+	for verdict, want := range map[string]int{"gone": 1, "blocked": 1, "refreshed": 1, "renamed": 2, "merged": 2} {
 		if rep.Notes[verdict] != want {
 			t.Errorf("notes[%s] = %v, want %d (%v)", verdict, rep.Notes[verdict], want, rep.Notes)
 		}
 	}
-	if len(api.asked) != 6 || api.asked[0] != "o/gone" {
-		t.Errorf("asked %v; want the six old records, longest-untouched first", api.asked)
+	if len(api.asked) != 8 || api.asked[0] != "o/gone" {
+		t.Errorf("asked %v; want the eight old records, longest-untouched first", api.asked)
 	}
 	// Taken down by GitHub: retired, not retried every night.
 	if it, _ := find(t, st, "o/dmca"); !it.Stale || it.StaleReason != "blocked" {
@@ -121,6 +128,22 @@ func TestReconcile(t *testing.T) {
 	}
 	if it, _ := find(t, st, "new/taken"); it.Stale || it.Metrics["stars"] != 50 {
 		t.Errorf("the record already under the new name was touched: %+v", it)
+	}
+	// A lower-case twin of a fetched record leaves the rankings instead of
+	// being refreshed once a week with a week's gain as its daily growth.
+	if it, _ := find(t, st, "o/twin"); !it.Stale || it.StaleReason != "renamed:o/Twin" {
+		t.Errorf("twin: stale=%v reason=%q", it.Stale, it.StaleReason)
+	}
+	if it, _ := find(t, st, "o/Twin"); it.Stale || it.Metrics["stars"] != 700 {
+		t.Errorf("the fetched record of the twin was touched: %+v", it)
+	}
+	// With no record under GitHub's spelling, the record moves to it, so the
+	// fetcher finds it again.
+	if _, still := find(t, st, "o/recased"); still {
+		t.Error("the old casing is still there after a rename")
+	}
+	if it, ok := find(t, st, "O/Recased"); !ok || it.Name != "Recased" || it.Gh.Owner != "O" || it.Metrics["stars"] != 410 {
+		t.Errorf("recased: %+v", it)
 	}
 	// A refresh is an observation: metrics, a history point, growth, a snapshot.
 	// The baseline is ten days back: 40 stars over ten days is 28 over seven.
