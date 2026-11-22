@@ -3,16 +3,57 @@
 //   lead  — tracked 7+ days, most new stars today
 //   fresh — tracked under 7 days, most new stars today
 //   cool  — overall top 10 whose daily gain fell most against 30 days ago
-// "Tracked under 7 days" is read from the trend series length: the list's
-// 7-day growth is not reliably null for new entries.
+// "Tracked under 7 days" is read from the date of the first reading: the
+// list's 7-day growth is not reliably null for new entries, and repos under
+// 3,000 stars are read every other day, so counting readings misleads too.
 import type { RepoSummary, TrendPoint } from '@/lib/data';
 
-/** Cumulative star readings → stars gained per reading, oldest first. */
+const DAY = 86_400_000;
+
+/** Whole UTC days from a to b (unix ms). */
+function daysBetween(a: number, b: number): number {
+  return Math.floor(b / DAY) - Math.floor(a / DAY);
+}
+
+/** Go's math.Round: halves round away from zero (JS Math.round(-0.5) is 0). */
+function goRound(x: number): number {
+  return Math.sign(x) * Math.round(Math.abs(x));
+}
+
+/**
+ * Cumulative star readings → stars gained per calendar day, oldest first,
+ * ending on the day of the last reading. Readings are first reduced to one
+ * per UTC day (the day's last reading counts, as item.SetPoint keeps it).
+ * Readings two or more days apart (every-other-day fetches, a missed run)
+ * have their gain spread over the days between them so that the last day
+ * equals what the backend's ComputeGrowth reports as d1 for that span
+ * (gain / span, rounded the Go way; internal/item/growth.go), and rounding is
+ * cumulative so the days still add up to the real gain.
+ */
 export function dailySeries(points: TrendPoint[] | undefined): number[] {
   if (!points || points.length < 2) return [];
+  const byDay: { day: number; v: number }[] = [];
+  for (const p of points) {
+    const day = Math.floor(p.t / DAY);
+    const last = byDay[byDay.length - 1];
+    if (last && last.day === day) last.v = p.v;
+    else byDay.push({ day, v: p.v });
+  }
   const out: number[] = [];
-  for (let i = 1; i < points.length; i++) out.push(points[i].v - points[i - 1].v);
+  for (let i = 1; i < byDay.length; i++) {
+    const span = byDay[i].day - byDay[i - 1].day;
+    const gain = byDay[i].v - byDay[i - 1].v;
+    // j counts back from the newer reading: j = 1 is its own day.
+    for (let j = span; j >= 1; j--) {
+      out.push(goRound((gain * j) / span) - goRound((gain * (j - 1)) / span));
+    }
+  }
   return out;
+}
+
+/** Days on the board as of `now`, counting the first reading's day as day 1. */
+export function daysTracked(points: TrendPoint[], now: number): number {
+  return daysBetween(points[0].t, now) + 1;
 }
 
 export interface LeadStory {
@@ -24,14 +65,19 @@ export interface LeadStory {
   breakout: boolean;
 }
 
-/** A repo with 7 or fewer daily readings joined the board this week. No
- * series at all (the trend call failed) means unknown, not new. */
-export function isNewEntry(points: TrendPoint[] | undefined): boolean {
-  return points != null && points.length <= 7;
+/** First read under 7 days before `now`. No readings at all (the trend
+ * call failed, or the repo was not asked for) means unknown, not new. */
+export function isNewEntry(points: TrendPoint[] | undefined, now: number): boolean {
+  return points != null && points.length > 0 && daysTracked(points, now) <= 7;
 }
 
-export function pickLead(movers: RepoSummary[], trends: Record<string, TrendPoint[]>): LeadStory | null {
-  const repo = movers.find((r) => trends[r.fullName] && !isNewEntry(trends[r.fullName]));
+/** Candidates must come with their trend: one without is unknown, skipped. */
+export function pickLead(
+  movers: RepoSummary[],
+  trends: Record<string, TrendPoint[]>,
+  now: number,
+): LeadStory | null {
+  const repo = movers.find((r) => trends[r.fullName]?.length && !isNewEntry(trends[r.fullName], now));
   if (!repo) return null;
   const series = dailySeries(trends[repo.fullName]);
   const before = series.slice(0, -7);
@@ -48,11 +94,15 @@ export interface FreshStory {
   days: number;
 }
 
-export function pickFresh(movers: RepoSummary[], trends: Record<string, TrendPoint[]>): FreshStory | null {
-  const repo = movers.find((r) => isNewEntry(trends[r.fullName]));
+export function pickFresh(
+  movers: RepoSummary[],
+  trends: Record<string, TrendPoint[]>,
+  now: number,
+): FreshStory | null {
+  const repo = movers.find((r) => isNewEntry(trends[r.fullName], now));
   if (!repo) return null;
-  const points = trends[repo.fullName] ?? [];
-  return { repo, series: dailySeries(points), days: Math.max(1, points.length) };
+  const points = trends[repo.fullName];
+  return { repo, series: dailySeries(points), days: daysTracked(points, now) };
 }
 
 export interface CoolStory {

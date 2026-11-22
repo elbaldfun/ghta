@@ -68,6 +68,8 @@ jobs:
         run: npm run typecheck
       - name: Layout guard
         run: npm run lint:layout
+      - name: Unit tests
+        run: npm test
 
   automerge:
     name: auto-merge

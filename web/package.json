@@ -8,7 +8,8 @@
     "lint:layout": "node scripts/layout-guard.mjs",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types --no-warnings=ExperimentalWarning src/lib/*.test.ts"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
