@@ -3,10 +3,10 @@
 import { Link, usePathname } from '@/i18n/navigation';
 
 /**
- * A nav item that highlights when it points at the current page. usePathname
- * returns the locale-stripped path (e.g. "/apps"), so active state survives
- * client-side navigation — the header stops showing "排行榜" as selected on every
- * page. `alsoOn` lists other paths the item stands for.
+ * A header nav item. usePathname returns the locale-stripped path (e.g.
+ * "/apps"), so the active state survives client-side navigation. `alsoOn`
+ * lists other paths the item stands for. Active is ink with a 2px ink
+ * underline; the rest are ink-2. 44px tall for touch.
  */
 export function NavLink({ href, label, alsoOn = [] }: { href: string; label: string; alsoOn?: string[] }) {
   const pathname = usePathname();
@@ -17,8 +17,8 @@ export function NavLink({ href, label, alsoOn = [] }: { href: string; label: str
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`rounded-lg px-[13px] py-[7px] text-[12.5px] font-bold ${
-        active ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'
+      className={`flex h-11 shrink-0 items-center whitespace-nowrap border-b-2 transition-colors duration-150 ${
+        active ? 'border-ink text-ink' : 'border-transparent text-ink-2 hover:text-ink'
       }`}
     >
       {label}

@@ -167,7 +167,7 @@ func (j *Fetch) Run(ctx context.Context) (worker.Report, error) {
 		tally.Aged = aged
 		rep.Note(name, tally)
 		j.log.Info("fetch: source done", "source", name, "items", tally.Items, "new", tally.New,
-			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "skipped", tally.Skipped, "resting", tally.Resting, "retried", tally.Retried, "failed", tally.Failed, "aged", tally.Aged)
+			"snapshots", tally.Snapshots, "blobs", tally.Blobs, "light", tally.Light, "skipped", tally.Skipped, "resting", tally.Resting, "retried", tally.Retried, "failed", tally.Failed, "aged", tally.Aged)
 	}
 
 	// Shards still failing are retried by the next run. A source with every

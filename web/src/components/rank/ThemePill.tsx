@@ -5,7 +5,7 @@ import { MoonIcon, SunIcon } from './icons';
 
 type Theme = 'light' | 'dark';
 
-/** Round panel2 theme toggle from the 2a header (sun in dark mode, moon in light). */
+/** Theme toggle (sun in dark mode, moon in light): a 4px-cornered ruled button. */
 export function ThemePill() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
@@ -27,7 +27,7 @@ export function ThemePill() {
     <button
       onClick={toggle}
       aria-label="Toggle color theme"
-      className="ml-1.5 flex rounded-full border border-border bg-surface2 p-2 text-fg"
+      className="flex h-11 w-11 items-center justify-center rounded border border-rule text-ink-2 transition-colors duration-150 hover:border-ink-3 hover:text-ink md:h-9"
     >
       {theme === 'dark' ? <SunIcon size={14} /> : <MoonIcon size={14} />}
     </button>

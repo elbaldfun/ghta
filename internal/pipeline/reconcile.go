@@ -32,7 +32,8 @@ type RepoChecker interface {
 //   - 404                       → tombstone, reason "gone"
 //   - taken down by GitHub      → tombstone, reason "blocked"
 //   - 200 under another name    → move the record, or tombstone it when the
-//     new name is already tracked
+//     new name is already tracked; a name differing only in case is another
+//     name, since the fetcher keys records by GitHub's exact spelling
 //   - 200 under the same name   → it fell below the fetch cutoff; record a
 //     fresh reading so its metrics and growth stay honest
 type Reconcile struct {
@@ -104,13 +105,17 @@ func (j *Reconcile) settle(ctx context.Context, id string, info *github.RepoInfo
 	metrics := map[string]float64{
 		"stars": float64(info.Stars), "forks": float64(info.Forks), "openIssues": float64(info.OpenIssues),
 	}
-	if strings.EqualFold(info.FullName, id) {
+	if info.FullName == id {
 		return "refreshed", j.st.RefreshMetrics(ctx, src, id, metrics, now)
 	}
 
-	// Renamed upstream. When the new name is already tracked — the fetcher
-	// found it again — this record is a duplicate ghost. Otherwise the record
-	// moves, history and all.
+	// Renamed upstream — a change of case included: GitHub resolves any casing
+	// to the repository, but the fetcher stores the name exactly as GitHub
+	// spells it, so a record under another casing never sees a fetch again and
+	// would only be refreshed here, a week apart, with a week's growth showing
+	// as one day's. When the new name is already tracked — the fetcher found it
+	// again — this record is a duplicate ghost. Otherwise the record moves,
+	// history and all.
 	owner, name, _ := strings.Cut(info.FullName, "/")
 	err := j.st.Rename(ctx, src, id, info.FullName, owner, name, now)
 	if errors.Is(err, store.ErrTaken) {

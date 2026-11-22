@@ -138,6 +138,9 @@ func run(log *slog.Logger, runList string, list bool) error {
 func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	buffer := envInt("RATE_LIMIT_BUFFER", 200)
 	gh := github.NewAdapter(os.Getenv("GITHUB_API_TOKEN"), buffer, 50, log)
+	// The nightly fetch reads READMEs and releases only where they may have
+	// changed (see github.Adapter.FetchItems).
+	gh.SetDetailLookup(st.DetailStates)
 	dir := getEnv("TAXONOMY_DIR", "taxonomy")
 	tree, err := taxonomy.LoadTree(filepath.Join(dir, "taxonomy.yaml"))
 	if err != nil {

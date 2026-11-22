@@ -48,24 +48,32 @@ func ModelProjection() bson.M {
 		"externalId": 1, "name": 1, "license": 1, "metrics": 1, "growth.d1": 1, "stale": 1,
 		"hf.author": 1, "hf.task": 1, "hf.pipelineTag": 1, "hf.library": 1, "hf.gated": 1,
 		"hf.quantFormats": 1, "hf.params": 1, "hf.trendingScore": 1, "hf.createdAt": 1, "hf.lastModified": 1,
+		"hf.baseModels": 1, "hf.baseRelation": 1,
 	}
 }
 
 type Model struct {
-	ExternalID   string    `bson:"externalId" json:"externalId"`
-	Author       string    `bson:"author,omitempty" json:"author,omitempty"`
-	Name         string    `bson:"name" json:"name"`
-	Task         string    `bson:"task,omitempty" json:"task,omitempty"`
-	PipelineTag  string    `bson:"pipelineTag,omitempty" json:"pipelineTag,omitempty"`
-	Library      string    `bson:"library,omitempty" json:"library,omitempty"`
-	License      string    `bson:"license,omitempty" json:"license,omitempty"`
-	Likes        int       `bson:"likes" json:"likes"`
-	Downloads30d int64     `bson:"downloads30d" json:"downloads30d"`
-	DownloadsAll int64     `bson:"downloadsAll,omitempty" json:"downloadsAll,omitempty"`
-	Params       int64     `bson:"params,omitempty" json:"params,omitempty"`
-	Growth       int       `bson:"growth" json:"growth"`
-	Gated        bool      `bson:"gated" json:"gated"`
-	QuantFormats []string  `bson:"quantFormats,omitempty" json:"quantFormats,omitempty"`
+	ExternalID   string   `bson:"externalId" json:"externalId"`
+	Author       string   `bson:"author,omitempty" json:"author,omitempty"`
+	Name         string   `bson:"name" json:"name"`
+	Task         string   `bson:"task,omitempty" json:"task,omitempty"`
+	PipelineTag  string   `bson:"pipelineTag,omitempty" json:"pipelineTag,omitempty"`
+	Library      string   `bson:"library,omitempty" json:"library,omitempty"`
+	License      string   `bson:"license,omitempty" json:"license,omitempty"`
+	Likes        int      `bson:"likes" json:"likes"`
+	Downloads30d int64    `bson:"downloads30d" json:"downloads30d"`
+	DownloadsAll int64    `bson:"downloadsAll,omitempty" json:"downloadsAll,omitempty"`
+	Params       int64    `bson:"params,omitempty" json:"params,omitempty"`
+	Growth       int      `bson:"growth" json:"growth"`
+	Gated        bool     `bson:"gated" json:"gated"`
+	QuantFormats []string `bson:"quantFormats,omitempty" json:"quantFormats,omitempty"`
+	// BaseModel is the models this one was made from, as the Hub records
+	// them (usually one; a merge lists several); BaseRelation says how:
+	// finetune, quantized, adapter or merge, when the Hub says.
+	BaseModel    []string `bson:"baseModel,omitempty" json:"baseModel,omitempty"`
+	BaseRelation string   `bson:"baseRelation,omitempty" json:"baseRelation,omitempty"`
+	// Derivatives is how many tracked models name this one as their base.
+	Derivatives  int       `bson:"derivatives,omitempty" json:"derivatives,omitempty"`
 	CreatedAt    time.Time `bson:"createdAt,omitempty" json:"createdAt,omitzero"`
 	LastModified time.Time `bson:"lastModified,omitempty" json:"lastModified,omitzero"`
 	URL          string    `bson:"url" json:"url"`
@@ -76,11 +84,31 @@ type Model struct {
 // Models collects the live models.
 type Models struct {
 	rows []Model
+	// derived counts, per model, the live models made from it.
+	derived map[string]int
 }
 
 func (m *Models) Add(r ModelRow) {
-	if r.Stale || r.Hf == nil {
+	row, ok := ModelOf(r)
+	if !ok {
 		return
+	}
+	if m.derived == nil {
+		m.derived = map[string]int{}
+	}
+	for _, b := range row.BaseModel {
+		if b != row.ExternalID {
+			m.derived[b]++
+		}
+	}
+	m.rows = append(m.rows, row)
+}
+
+// ModelOf is a live model's board row, without its derivative count; false
+// for a stale model or one without HuggingFace fields.
+func ModelOf(r ModelRow) (Model, bool) {
+	if r.Stale || r.Hf == nil {
+		return Model{}, false
 	}
 	row := Model{
 		ExternalID: r.ExternalID, Author: r.Hf.Author, Name: r.Name, Task: r.Hf.Task, PipelineTag: r.Hf.PipelineTag,
@@ -88,12 +116,13 @@ func (m *Models) Add(r ModelRow) {
 		Downloads30d: int64(r.Metrics["downloads30d"]), DownloadsAll: int64(r.Metrics["downloadsAll"]),
 		Params: r.Hf.Params, Gated: r.Hf.Gated, QuantFormats: r.Hf.QuantFormats,
 		CreatedAt: r.Hf.CreatedAt.UTC(), LastModified: r.Hf.LastModified.UTC(),
+		BaseModel: r.Hf.BaseModels, BaseRelation: r.Hf.BaseRelation,
 		URL: "https://huggingface.co/" + r.ExternalID, trending: r.Hf.TrendingScore,
 	}
 	if r.Growth.D1 != nil {
 		row.Growth = int(*r.Growth.D1)
 	}
-	m.rows = append(m.rows, row)
+	return row, true
 }
 
 func (m *Models) Len() int { return len(m.rows) }
@@ -133,6 +162,9 @@ func (m *Models) Board(task, sortBy string) []Model {
 	})
 	if len(rows) > ModelTopN {
 		rows = rows[:ModelTopN]
+	}
+	for i := range rows {
+		rows[i].Derivatives = m.derived[rows[i].ExternalID]
 	}
 	if rows == nil {
 		rows = []Model{}

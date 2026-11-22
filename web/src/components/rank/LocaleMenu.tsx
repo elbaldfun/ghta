@@ -51,7 +51,7 @@ export function LocaleMenu() {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={LOCALE_NAMES[active]}
-        className="flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-[11px] font-semibold text-fg hover:border-accent"
+        className="flex h-11 min-w-11 items-center justify-center gap-1 rounded border border-rule px-3 text-[13px] font-medium text-ink-2 transition-colors duration-150 hover:border-ink-3 hover:text-ink md:h-9"
       >
         {LOCALE_SHORT[active]}
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden>
@@ -62,7 +62,7 @@ export function LocaleMenu() {
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-card border border-border bg-surface py-1 shadow-card-hover"
+          className="absolute right-0 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-lg border border-rule bg-sr-surface py-1 font-text shadow-sr-pop"
         >
           {routing.locales.map((l) => (
             <li key={l}>
@@ -70,14 +70,14 @@ export function LocaleMenu() {
                 role="option"
                 aria-selected={l === active}
                 onClick={() => pick(l)}
-                className={`flex w-full items-center justify-between gap-3 px-3.5 py-1.5 text-left text-[12.5px] ${
+                className={`flex min-h-11 w-full items-center justify-between gap-3 px-3.5 text-left text-sr-small md:min-h-9 ${
                   l === active
-                    ? 'bg-surface2 font-semibold text-accent'
-                    : 'text-fg hover:bg-surface2'
+                    ? 'bg-sunk font-semibold text-ink'
+                    : 'text-ink-2 hover:bg-sunk hover:text-ink'
                 }`}
               >
                 {LOCALE_NAMES[l]}
-                <span className="text-[10px] text-muted">{LOCALE_SHORT[l]}</span>
+                <span className="text-sr-caption text-ink-3">{LOCALE_SHORT[l]}</span>
               </button>
             </li>
           ))}

@@ -305,6 +305,33 @@ func TestModels(t *testing.T) {
 		t.Fatalf("row = %+v", b[0])
 	}
 
+	// A model's bases ride on its row; a base counts the live models made
+	// from it, stale ones and self-references aside.
+	var tree Models
+	base := model("q/base", "text-gen", 100, 0, 0, 0, 1)
+	quant := model("q/base-gguf", "text-gen", 5, 0, 0, 0, 2)
+	quant.Hf.BaseModels, quant.Hf.BaseRelation = []string{"q/base"}, "quantized"
+	merged := model("x/merge", "text-gen", 3, 0, 0, 0, 3)
+	merged.Hf.BaseModels, merged.Hf.BaseRelation = []string{"q/base", "other/untracked", "x/merge"}, "merge"
+	dead := model("x/dead", "text-gen", 1, 0, 0, 0, 4)
+	dead.Hf.BaseModels, dead.Stale = []string{"q/base"}, true
+	for _, r := range []ModelRow{base, quant, merged, dead} {
+		tree.Add(r)
+	}
+	rows := map[string]Model{}
+	for _, r := range tree.Board("", ModelLikes) {
+		rows[r.ExternalID] = r
+	}
+	if b := rows["q/base"]; b.Derivatives != 2 || b.BaseModel != nil {
+		t.Errorf("base = %+v", b)
+	}
+	if q := rows["q/base-gguf"]; !reflect.DeepEqual(q.BaseModel, []string{"q/base"}) || q.BaseRelation != "quantized" || q.Derivatives != 0 {
+		t.Errorf("quant = %+v", q)
+	}
+	if mg := rows["x/merge"]; len(mg.BaseModel) != 3 || mg.Derivatives != 0 {
+		t.Errorf("merge = %+v", mg)
+	}
+
 	// A day with no gains at all: HuggingFace's trending score instead.
 	var quiet Models
 	quiet.Add(model("a/x", "nlp", 1, 0, 0, 2, 1))
