@@ -96,11 +96,14 @@ export default async function Today({
 
   const movers = (daily.data?.items ?? []).filter((r) => !r.type || !RESOURCE_TYPES.has(r.type));
   const topByStars = top.data?.items ?? [];
-  const ids = Array.from(new Set([...movers.slice(0, 16), ...topByStars].map((r) => r.fullName)));
+  // Every candidate gets its trend (the endpoint takes up to 60 ids): the
+  // story pickers skip a repo whose trend is missing.
+  const ids = Array.from(new Set([...movers, ...topByStars].map((r) => r.fullName)));
   const trends = await getTrends(ids, 31);
 
-  const lead = pickLead(movers, trends);
-  const fresh = pickFresh(movers, trends);
+  const now = Date.now();
+  const lead = pickLead(movers, trends, now);
+  const fresh = pickFresh(movers, trends, now);
   const cool = pickCool(topByStars, trends, new Set([lead?.repo.fullName, fresh?.repo.fullName].filter(Boolean) as string[]));
   const top10 = movers.slice(0, 10);
 
@@ -215,7 +218,7 @@ export default async function Today({
             {lead ? (
               <article className="flex min-w-0 flex-col gap-4">
                 <Kicker>{t('leadKicker')}</Kicker>
-                <h1 className="text-balance font-news text-[30px] font-medium leading-[1.1] tracking-[-0.015em] md:text-[48px]">
+                <h1 className="text-balance break-words font-news [overflow-wrap:anywhere] text-[30px] font-medium leading-[1.1] tracking-[-0.015em] md:text-[48px]">
                   {lead.breakout && lead.prior != null
                     ? t('leadBreakout', {
                         name: lead.repo.name,
@@ -271,7 +274,7 @@ export default async function Today({
               {fresh && (
                 <article className="flex flex-col gap-2.5 border-b border-rule pb-6">
                   <Kicker>{t('freshKicker')}</Kicker>
-                  <h2 className="font-news text-[24px] font-medium leading-[1.2] md:text-[26px]">
+                  <h2 className="break-words font-news [overflow-wrap:anywhere] text-[24px] font-medium leading-[1.2] md:text-[26px]">
                     <Link href={repoHref(fresh.repo)} className="hover:underline">
                       {t('freshHead', { name: fresh.repo.name, days: fresh.days, stars: fmtInt(fresh.repo.stars) })}
                     </Link>
@@ -294,7 +297,7 @@ export default async function Today({
               {cool && (
                 <article className="flex flex-col gap-2.5 border-b border-rule py-6">
                   <Kicker tone="muted">{t('coolKicker')}</Kicker>
-                  <h2 className="font-news text-[24px] font-medium leading-[1.2] md:text-[26px]">
+                  <h2 className="break-words font-news [overflow-wrap:anywhere] text-[24px] font-medium leading-[1.2] md:text-[26px]">
                     <Link href={repoHref(cool.repo)} className="hover:underline">
                       {t('coolHead', {
                         name: cool.repo.name,
@@ -350,7 +353,7 @@ export default async function Today({
             <ol>
               {top10.map((r, i) => {
                 const series = dailySeries(trends[r.fullName]);
-                const isNew = isNewEntry(trends[r.fullName]);
+                const isNew = isNewEntry(trends[r.fullName], now);
                 return (
                   <li key={r.fullName} className="border-b border-rule">
                     <Link
