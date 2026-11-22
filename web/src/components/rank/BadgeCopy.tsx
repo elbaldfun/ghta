@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { track } from '@/lib/analytics';
+import { srButton } from '@/components/ui/controls';
 import { CheckIcon, CopyIcon } from './icons';
 
 /**
@@ -27,21 +28,17 @@ export function BadgeCopy({ src, href, repo }: { src: string; href: string; repo
   }
 
   return (
-    <section className="rounded-card border border-border bg-surface p-4">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{t('badgeTitle')}</h2>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{t('badgeHint')}</p>
-      <img src={src} alt={t('badgeTitle')} height={20} className="mt-3 h-5 w-auto" />
-      <code className="mt-3 block select-all break-all rounded-lg bg-surface2 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-muted">
-        {markdown}
-      </code>
-      <button
-        type="button"
-        onClick={copy}
-        className="mt-2.5 flex items-center gap-1.5 rounded-full border border-border px-3 py-[5px] text-[12px] font-bold hover:border-accent hover:text-accent"
-      >
-        {copied ? <CheckIcon size={13} className="text-accent" /> : <CopyIcon size={13} />}
-        {copied ? t('copied') : t('copyMarkdown')}
-      </button>
+    <section className="flex flex-col gap-3 border-t-2 border-ink pt-3">
+      <h2 className="text-[18px] font-semibold">{t('badgeTitle')}</h2>
+      <p className="text-sr-small text-ink-2">{t('badgeHint')}</p>
+      <img src={src} alt={t('badgeTitle')} height={20} className="h-5 w-auto self-start" />
+      <div className="flex flex-col gap-2 rounded border border-rule bg-sunk p-3">
+        <code className="block select-all break-all font-code text-[12px] leading-relaxed text-ink-2">{markdown}</code>
+        <button type="button" onClick={copy} className={srButton('outline', 'self-start')}>
+          {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
+          {copied ? t('copied') : t('copyMarkdown')}
+        </button>
+      </div>
     </section>
   );
 }

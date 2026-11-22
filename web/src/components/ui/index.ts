@@ -6,3 +6,4 @@ export { SectionHeader, Kicker } from './SectionHeader';
 export { StatBlock } from './StatBlock';
 export { srButton, Tag, Segmented, type SegmentItem } from './controls';
 export { fmtInt, fmtTotal, HOT_DAILY } from './format';
+export { Dropdown, type DropdownLink } from './Dropdown';

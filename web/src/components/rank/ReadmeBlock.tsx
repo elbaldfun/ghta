@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ReadmeHeading } from '@/lib/data';
-import { FileIcon } from './icons';
 
 // Tall enough to read a section without scrolling, capped so the page below
 // (artifacts, related repos) stays reachable on short viewports.
@@ -62,17 +61,16 @@ export function ReadmeBlock({ html, toc }: { html: string; toc: ReadmeHeading[] 
   }
 
   return (
-    <section className="mt-6 overflow-hidden rounded-card border border-border bg-surface">
-      <div className="flex items-center gap-2 border-b border-border bg-surface2 px-4 py-[9px]">
-        <FileIcon size={15} className="text-muted" />
-        <span className="text-xs font-bold tracking-wide">README</span>
-      </div>
+    <section aria-labelledby="readme" className="flex min-w-0 flex-col">
+      <h2 id="readme" className="border-t-2 border-ink py-3 text-[18px] font-semibold">
+        README
+      </h2>
 
-      <div className="flex" style={{ height: VIEWPORT }}>
+      <div className="flex overflow-hidden rounded border border-rule bg-sr-surface" style={{ height: VIEWPORT }}>
         {toc.length > 1 && (
           <nav
             aria-label="README outline"
-            className="hidden w-56 shrink-0 overflow-y-auto overscroll-contain border-r border-border py-3 md:block"
+            className="hidden w-56 shrink-0 overflow-y-auto overscroll-contain border-r border-rule py-3 md:block"
           >
             <ul className="flex flex-col gap-px pr-2">
               {toc.map((h) => (
@@ -83,8 +81,8 @@ export function ReadmeBlock({ html, toc }: { html: string; toc: ReadmeHeading[] 
                     aria-current={activeId === h.id ? 'true' : undefined}
                     className={`block w-full truncate rounded-r-md border-l-2 py-1 pr-2 text-left text-[12px] leading-snug transition-colors ${
                       activeId === h.id
-                        ? 'border-accent bg-surface2 font-semibold text-accent'
-                        : 'border-transparent text-muted hover:bg-surface2 hover:text-fg'
+                        ? 'border-ink bg-sunk font-semibold text-ink'
+                        : 'border-transparent text-ink-3 hover:bg-sunk hover:text-ink'
                     }`}
                     // Indent by heading level; h1 sits flush with the panel edge.
                     style={{ paddingLeft: `${(h.depth - 1) * 12 + 12}px` }}

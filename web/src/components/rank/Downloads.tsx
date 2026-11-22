@@ -47,14 +47,14 @@ export async function Downloads({
   const groups = OS_ORDER.filter((os) => byOS.has(os));
 
   return (
-    <section className="rounded-card border border-border bg-surface p-4">
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 className="text-[13px] font-extrabold">↓ {t('appsDownload')}</h2>
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-sr-small font-semibold">↓ {t('appsDownload')}</h3>
         <a
           href={`https://github.com/${fullName}/releases`}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono text-[11px] font-semibold text-accent hover:underline"
+          className="text-sr-caption text-ink-2 underline underline-offset-4 hover:text-ink"
         >
           {t('detailAllReleases')} →
         </a>
@@ -62,8 +62,8 @@ export async function Downloads({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {groups.map((os) => (
-          <div key={os} className="rounded-lg border border-border bg-surface2 p-2.5">
-            <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-accent">
+          <div key={os} className="rounded border border-rule p-3">
+            <div className="mb-1.5 text-sr-caption font-semibold text-ink-3">
               {OS_LABEL[os]}
             </div>
             <ul className="space-y-1">
@@ -73,11 +73,11 @@ export async function Downloads({
                     href={a.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-baseline justify-between gap-2 text-[11.5px] hover:text-accent"
+                    className="flex items-baseline justify-between gap-2 text-[11.5px] hover:text-ink"
                   >
-                    <span className="truncate font-mono text-fg">{a.name}</span>
+                    <span className="truncate font-code text-ink">{a.name}</span>
                     {fmtSize(a.size) && (
-                      <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted">{fmtSize(a.size)}</span>
+                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-ink-3">{fmtSize(a.size)}</span>
                     )}
                   </a>
                 </li>

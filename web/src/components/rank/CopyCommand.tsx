@@ -32,13 +32,13 @@ export function CopyCommand({ command, repo }: { command: string; repo: string }
       type="button"
       onClick={copy}
       aria-label={t('copyCommand')}
-      className="group flex min-w-0 items-center gap-2 text-left"
+      className="group flex min-h-11 min-w-0 items-center gap-2 text-left md:min-h-0"
     >
-      <code className="truncate font-mono text-xs text-muted group-hover:text-fg">{command}</code>
+      <code className="truncate font-code text-[13px] text-ink-2 group-hover:text-ink">{command}</code>
       {copied ? (
-        <CheckIcon size={13} className="shrink-0 text-accent" />
+        <CheckIcon size={13} className="shrink-0 text-ink" />
       ) : (
-        <CopyIcon size={13} className="shrink-0 text-muted group-hover:text-fg" />
+        <CopyIcon size={13} className="shrink-0 text-ink-3 group-hover:text-ink" />
       )}
     </button>
   );

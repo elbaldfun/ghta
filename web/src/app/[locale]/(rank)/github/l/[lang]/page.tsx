@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { boardFilters, langFromSlug, langSlug, type BoardQuery } from '@/lib/board-url';
-import { GithubBoard, boardMetadata, redirectToCanonical } from '@/components/rank/GithubBoard';
+import { boardMetadata, redirectToCanonical } from '@/components/rank/GithubBoard';
+import { GithubList } from '@/components/rank/GithubList';
 
 type Params = { locale: string; lang: string };
 
@@ -17,5 +18,5 @@ export default async function LanguagePage({ params: { locale, lang }, searchPar
   if (!name) notFound();
   const filters = boardFilters({ lang: name }, searchParams);
   redirectToCanonical(locale, `/github/l/${langSlug(name)}`, filters);
-  return <GithubBoard locale={locale} filters={filters} />;
+  return <GithubList locale={locale} filters={filters} />;
 }
