@@ -458,7 +458,7 @@ export default async function RepoDetailPage({ params }: { params: Params }) {
             <Block id="topics" title={d('topicsTitle')}>
               <div className="flex flex-wrap gap-1.5">
                 {repo.topics.slice(0, 16).map((topic) => (
-                  <span key={topic} className="rounded border border-rule px-2 py-0.5 text-[13px] text-ink-2">
+                  <span key={topic} className="max-w-full break-all rounded border border-rule px-2 py-0.5 text-[13px] text-ink-2">
                     {topic}
                   </span>
                 ))}

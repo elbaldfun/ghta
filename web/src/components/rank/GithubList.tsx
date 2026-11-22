@@ -178,7 +178,7 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
           <h1 className="break-words font-news text-[30px] font-medium leading-[1.1] tracking-[-0.015em] [overflow-wrap:anywhere] md:text-sr-h1">
             {heading}
           </h1>
-          <span className="text-sr-small text-ink-3">
+          <span className="min-w-0 break-words text-sr-small text-ink-3 [overflow-wrap:anywhere]">
             {f.q && (
               <>
                 {b('searchFor', { q: f.q })} ·{' '}
