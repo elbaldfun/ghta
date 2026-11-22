@@ -14,6 +14,20 @@
 #                                     takes the worker back with it)
 #   scripts/release.sh status         what is live right now
 #   scripts/release.sh build api|worker|web  build the image locally only (dry run)
+#   scripts/release.sh promote [--dry-run]   open (or refresh) the develop → main
+#                                     release PR, titled "Release vYYYY.MM.DD.N"
+#   scripts/release.sh tag SERVICES [--dry-run]  tag HEAD and publish its GitHub
+#                                     Release by hand (SERVICES like api,worker,web);
+#                                     a release does this itself once healthy
+#
+# Every release that passes its health check tags the shipped main commit
+# with an annotated date version vYYYY.MM.DD.N (UTC day, N from 1), pushes the
+# tag and publishes a GitHub Release whose notes list the PRs since the
+# previous tag. A commit already tagged is not tagged again. Tags never move:
+# rollback leaves them alone. The rules: docs/BRANCHING_AND_RELEASE.md.
+#
+# The worker (and `all`) is refused during the nightly pipeline, UTC
+# 03:30–08:30: restarting it kills the day's fetch. There is no override.
 #
 # There is no registry: images are cross-built for amd64 here and piped to the
 # server over ssh. The image being replaced is kept as <image>:prev for rollback.
@@ -35,6 +49,38 @@ cd "$ROOT"
 
 say() { printf '▸ %s\n' "$*"; }
 die() { printf '✗ %s\n' "$*" >&2; exit 1; }
+
+# --dry-run (promote, tag): print what would be pushed or created instead.
+DRY_RUN=
+args=()
+for a in "$@"; do
+	if [ "$a" = --dry-run ]; then DRY_RUN=1; else args+=("$a"); fi
+done
+set -- "${args[@]+"${args[@]}"}"
+case "${1:-}" in
+	promote | tag | "") ;;
+	*) [ -z "$DRY_RUN" ] || die "--dry-run is for promote and tag only; for a build without shipping use: scripts/release.sh build <service>" ;;
+esac
+
+# Runs a command that changes something on GitHub, or prints it on a dry run.
+publish() {
+	if [ -n "$DRY_RUN" ]; then
+		printf '  [dry-run] %s\n' "$*"
+		return 0
+	fi
+	"$@"
+}
+
+# The testable half of this script (versions, PR lists, notes): cmd/release.
+# Built once up front by the commands that use it: relcli runs in pipelines
+# and command substitutions, where a lazily set variable would not survive.
+RELCLI_DIR=
+build_relcli() {
+	RELCLI_DIR="$(mktemp -d)"
+	trap 'rm -rf "$RELCLI_DIR"' EXIT
+	go build -o "$RELCLI_DIR/release" ./cmd/release || die "cannot build cmd/release"
+}
+relcli() { "$RELCLI_DIR/release" "$@"; }
 
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=15)
 [ -f "$KEY" ] && SSH_OPTS+=(-i "$KEY" -o IdentitiesOnly=yes)
@@ -66,6 +112,14 @@ require_releasable_tree() {
 	git fetch -q origin main
 	git merge-base --is-ancestor HEAD origin/main ||
 		die "HEAD $(git rev-parse --short HEAD) is not merged into origin/main — merge the PR first"
+}
+
+# The nightly pipeline runs in the worker from UTC 03:30 and is done by 08:30;
+# a restart in between kills it and the day's remaining fetch is lost.
+require_outside_pipeline_window() {
+	if relcli window; then
+		die "it is $(date -u +%H:%M) UTC, inside the nightly pipeline window (UTC 03:30–08:30): restarting the worker now kills the day's fetch. Release after 08:30 UTC."
+	fi
 }
 
 require_docker() {
@@ -181,7 +235,7 @@ verify() {
 
 record() {
 	local what="$1"
-	printf '%s %s %s %s\n' "$(date -u +%FT%TZ)" "$what" "$(git rev-parse --short HEAD)" "$(git log -1 --format=%s)" |
+	printf '%s %s %s %s %s\n' "$(date -u +%FT%TZ)" "$what" "${RELEASE_TAG:--}" "$(git rev-parse --short HEAD)" "$(git log -1 --format=%s)" |
 		remote "cat >> $REMOTE_DIR/releases.log; docker image prune -f >/dev/null"
 }
 
@@ -201,22 +255,154 @@ release() {
 	say "$svc released @ $(git rev-parse --short HEAD)"
 }
 
+# ---- versions, tags and the release PR --------------------------------------
+
+# All tags, local and on origin (a tag pushed from another checkout counts).
+fetch_tags() {
+	git fetch -q --tags origin
+	git tag -l 'v*'
+}
+
+# The date version already on HEAD, if any.
+head_tag() {
+	git tag -l 'v*' --points-at HEAD | relcli latest 2>/dev/null || true
+}
+
+# Decides the tag this release will get, before anything ships, so every
+# releases.log line of the run carries it. HEAD outside origin/main (an
+# RELEASE_ALLOW_UNMERGED emergency) gets none: only main commits are tagged.
+plan_tag() {
+	RELEASE_TAG=
+	TAG_EXISTS=
+	git fetch -q origin main
+	if ! git merge-base --is-ancestor HEAD origin/main; then
+		say "HEAD is not in origin/main — this release will not be tagged"
+		return
+	fi
+	local tags existing
+	tags="$(fetch_tags)"
+	existing="$(head_tag)"
+	if [ -n "$existing" ]; then
+		RELEASE_TAG="$existing" TAG_EXISTS=1
+		say "HEAD is already tagged $existing — it will not be tagged again"
+		return
+	fi
+	RELEASE_TAG="$(printf '%s\n' "$tags" | relcli next-version)"
+	say "this release will be tagged $RELEASE_TAG"
+}
+
+# Release notes for HEAD: the PRs since the previous date version it contains.
+# With no previous one (the first tag) the newest 30 PR merges stand in.
+release_notes() {
+	local services="$1" prev
+	prev="$(git tag -l 'v*' --merged HEAD | relcli latest 2>/dev/null || true)"
+	if [ -n "$prev" ]; then
+		git log --merges --format='%s%x1f%b%x1e' "$prev..HEAD" |
+			relcli notes -version "$RELEASE_TAG" -services "$services"
+		printf '\n上一个版本：%s\n' "$prev"
+	else
+		git log --merges --format='%s%x1f%b%x1e' -n 200 HEAD |
+			relcli notes -version "$RELEASE_TAG" -services "$services" -limit 30
+		printf '\n第一个日期版本：只列最近 30 个 PR。\n'
+	fi
+}
+
+# Tags HEAD as $RELEASE_TAG and publishes the GitHub Release. Called only after
+# every service of the run passed its health check. An existing tag is left as
+# it is; the release notes get a line saying what was shipped again.
+tag_release() {
+	local services="$1"
+	[ -n "${RELEASE_TAG:-}" ] || return 0
+	if [ -n "${TAG_EXISTS:-}" ]; then
+		local note
+		note="$(gh release view "$RELEASE_TAG" --json body --jq .body 2>/dev/null || true)"
+		[ -n "$note" ] || { say "no GitHub Release for $RELEASE_TAG — leaving it"; return 0; }
+		say "adding the services shipped now to the $RELEASE_TAG release notes"
+		publish gh release edit "$RELEASE_TAG" --notes "$(printf '%s\n\n%s 再次发布：%s。\n' "$note" "$(date -u +'%F %H:%M UTC')" "${services//,/、}")"
+		return 0
+	fi
+	local notes
+	notes="$(release_notes "$services")"
+	say "tagging $(git rev-parse --short HEAD) as $RELEASE_TAG"
+	if [ -n "$DRY_RUN" ]; then
+		printf '  [dry-run] git tag -a %s -m "StarRank %s (%s)" %s\n' "$RELEASE_TAG" "$RELEASE_TAG" "$services" "$(git rev-parse --short HEAD)"
+	else
+		git tag -a "$RELEASE_TAG" -m "StarRank $RELEASE_TAG ($services)" HEAD
+	fi
+	publish git push origin "refs/tags/$RELEASE_TAG"
+	if [ -n "$DRY_RUN" ]; then
+		printf '  [dry-run] gh release create %s --verify-tag --latest --title "StarRank %s" --notes <<\n' "$RELEASE_TAG" "$RELEASE_TAG"
+		printf '%s\n' "$notes" | sed 's/^/    | /'
+	else
+		gh release create "$RELEASE_TAG" --verify-tag --latest --title "StarRank $RELEASE_TAG" --notes "$notes"
+	fi
+	if [ -n "$DRY_RUN" ]; then say "dry run: nothing was tagged or published"; else say "tagged $RELEASE_TAG"; fi
+}
+
+# Opens the develop → main release PR, or refreshes the open one: its title
+# carries the version the release is expected to get, its body the PRs that
+# merging it brings to main.
+promote() {
+	git fetch -q origin develop main
+	[ -n "$(git rev-list -n 1 origin/main..origin/develop)" ] ||
+		die "develop has nothing that main lacks — nothing to promote"
+	local version body existing
+	version="$(fetch_tags | relcli next-version)"
+	body="$(git log --merges --format='%s%x1f%b%x1e' origin/main..origin/develop | relcli promote-body -version "$version")"
+	existing="$(gh pr list --base main --head develop --state open --json number --jq '.[0].number // empty')"
+	local action=(gh pr create --base main --head develop)
+	if [ -n "$existing" ]; then
+		say "refreshing release PR #$existing as Release $version"
+		action=(gh pr edit "$existing")
+	else
+		say "opening the release PR: Release $version"
+	fi
+	if [ -n "$DRY_RUN" ]; then
+		printf '  [dry-run] %s --title "Release %s" --body <<\n' "${action[*]}" "$version"
+		printf '%s\n' "$body" | sed 's/^/    | /'
+	else
+		"${action[@]}" --title "Release $version" --body "$body"
+	fi
+}
+
 # ---- commands --------------------------------------------------------------
 
 cmd="${1:-}"
 case "$cmd" in
+	api | web | worker | all | promote | tag) build_relcli ;;
+esac
+case "$cmd" in
 	api | web | worker)
+		[ "$cmd" != worker ] || require_outside_pipeline_window
 		require_releasable_tree; require_docker; require_server
+		plan_tag
 		release "$cmd"
+		tag_release "$cmd"
 		;;
 	all)
+		require_outside_pipeline_window
 		require_releasable_tree; require_docker; require_server
+		plan_tag
 		release api
 		# Same image as the api just shipped: only the container needs replacing.
 		restart worker
 		verify worker
 		record worker
 		release web
+		tag_release api,worker,web
+		;;
+	promote)
+		promote
+		;;
+	tag)
+		services="${2:-}"
+		[ -n "$services" ] || die "usage: scripts/release.sh tag api,worker,web [--dry-run]"
+		for s in ${services//,/ }; do image_of "$s" >/dev/null; done
+		# A dry run creates nothing, so it may run from a scratch checkout.
+		[ -n "$DRY_RUN" ] || [ -z "$(git status --porcelain)" ] || die "working tree is dirty — commit or stash first"
+		plan_tag
+		[ -n "$RELEASE_TAG" ] || die "only commits in origin/main are tagged"
+		tag_release "$services"
 		;;
 	build)
 		# Build only — nothing leaves this machine. Useful as a dry run.
@@ -256,7 +442,8 @@ case "$cmd" in
 			restart worker
 			verify worker
 		fi
-		printf '%s rollback-%s\n' "$(date -u +%FT%TZ)" "$svc" | remote "cat >> $REMOTE_DIR/releases.log"
+		# Tags stay where they are: the log says what is live after a rollback.
+		printf '%s rollback-%s -\n' "$(date -u +%FT%TZ)" "$svc" | remote "cat >> $REMOTE_DIR/releases.log"
 		;;
 	status)
 		require_server
@@ -268,7 +455,7 @@ case "$cmd" in
 			echo '--- last releases'; tail -n 8 $REMOTE_DIR/releases.log 2>/dev/null || echo '(none recorded)'"
 		;;
 	*)
-		sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+		sed -n '2,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 		exit 2
 		;;
 esac
