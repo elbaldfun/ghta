@@ -47,11 +47,11 @@ export function Pagination({
 
   const sr = tone === 'sr';
   const navBtn = sr
-    ? 'flex h-11 min-w-11 items-center justify-center rounded border border-rule text-ink-2 hover:border-ink-3 hover:text-ink md:h-9'
+    ? 'flex h-11 min-w-10 items-center justify-center rounded border border-rule text-ink-2 hover:border-ink-3 hover:text-ink md:h-9 md:min-w-11'
     : 'flex items-center gap-1 rounded-lg border border-border bg-surface px-[11px] py-1.5 text-xs font-semibold text-fg';
   const numClass = (on: boolean) =>
     sr
-      ? `flex h-11 min-w-11 items-center justify-center rounded border text-sr-small tabular-nums md:h-9 ${
+      ? `flex h-11 min-w-10 items-center justify-center rounded border text-sr-small tabular-nums md:h-9 md:min-w-11 ${
           on ? 'border-ink font-semibold text-ink' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
         }`
       : `min-w-[32px] rounded-lg border py-1.5 text-center text-xs font-bold ${
@@ -63,7 +63,7 @@ export function Pagination({
       <span className={sr ? 'text-sr-small tabular-nums text-ink-2' : 'text-xs text-muted'}>
         {t('rangeText', { start, end, total: totalCount.toLocaleString() })}
       </span>
-      <div className={`flex items-center ${sr ? 'gap-2' : 'gap-1.5'}`}>
+      <div className={`flex items-center ${sr ? 'gap-1.5 md:gap-2' : 'gap-1.5'}`}>
         {page > 1 ? (
           <Link href={link(page - 1)} className={navBtn} aria-label="Previous page">
             <ChevronLeft size={13} />

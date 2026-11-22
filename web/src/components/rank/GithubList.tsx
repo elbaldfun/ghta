@@ -283,7 +283,15 @@ export async function GithubList({ locale, filters: f }: { locale: string; filte
                     {bars}
                   </span>
                   <span role="cell" className="order-last text-right text-[13px] font-semibold md:order-none md:text-[15px]">
-                    <Delta value={r.dailyIncrease} />
+                    {/* Phones show one figure: the one the list is sorted by. */}
+                    {sort === 'weekly' ? (
+                      <>
+                        <Delta value={r.weeklyIncrease} hot={false} className="md:hidden" />
+                        <Delta value={r.dailyIncrease} className="hidden md:inline" />
+                      </>
+                    ) : (
+                      <Delta value={r.dailyIncrease} />
+                    )}
                   </span>
                   <span role="cell" className="hidden text-right text-[15px] tabular-nums text-ink-2 md:block">
                     {updatedView

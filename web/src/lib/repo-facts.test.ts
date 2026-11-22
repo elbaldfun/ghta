@@ -44,6 +44,8 @@ test('pace compares the last week with the window’s first', () => {
   assert.equal(pace(rising).momentum, 'rising');
   assert.equal(pace(Array(20).fill(50)).momentum, 'steady');
   assert.equal(pace(Array(13).fill(50)).momentum, 'new');
+  // Nothing gained, before or since: not cooling.
+  assert.equal(pace(Array(20).fill(0)).momentum, 'steady');
   // A repo that gained nothing before is "rising" only from a real gain.
   assert.equal(pace([...Array(7).fill(0), ...Array(7).fill(1)]).momentum, 'steady');
 });

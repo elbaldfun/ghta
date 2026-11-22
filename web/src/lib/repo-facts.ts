@@ -64,7 +64,7 @@ export function pace(series: number[]): Pace {
   if (series.length < 14) return { momentum: 'new', before: 0, recent };
   const before = avg(series.slice(0, 7));
   const base = Math.max(before, 1);
-  const momentum = recent >= base * 1.5 ? 'rising' : recent <= before / 1.5 ? 'cooling' : 'steady';
+  const momentum = recent >= base * 1.5 ? 'rising' : before > 0 && recent <= before / 1.5 ? 'cooling' : 'steady';
   return { momentum, before, recent };
 }
 
