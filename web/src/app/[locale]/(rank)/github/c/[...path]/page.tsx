@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { findCategory, getCategoryTree } from '@/lib/data';
 import { boardFilters, type BoardQuery } from '@/lib/board-url';
-import { GithubBoard, boardMetadata, redirectToCanonical } from '@/components/rank/GithubBoard';
+import { boardMetadata, redirectToCanonical } from '@/components/rank/GithubBoard';
+import { GithubList } from '@/components/rank/GithubList';
 
 type Params = { locale: string; path: string[] };
 
@@ -19,5 +20,5 @@ export default async function CategoryPage({ params: { locale, path }, searchPar
   if (tree.length > 0 && !findCategory(tree, category)) notFound();
   const filters = boardFilters({ category }, searchParams);
   redirectToCanonical(locale, `/github/c/${category}`, filters);
-  return <GithubBoard locale={locale} filters={filters} />;
+  return <GithubList locale={locale} filters={filters} />;
 }

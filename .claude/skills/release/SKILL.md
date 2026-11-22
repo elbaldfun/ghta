@@ -11,6 +11,11 @@ description: 把 starrank.dev 发布到生产 droplet（构建镜像、传到服
 
 ## 流程
 
+0. **代码要先进 main**：待发的改动还在 `develop` 上时，先用 `scripts/release.sh promote`
+   开（或刷新）`develop → main` 发版 PR；CI 通过、没有 `hold` 标签时用 merge commit 合并
+   （谁可以合并见 CLAUDE.md 的分支规则）。
+   规则见 `docs/BRANCHING_AND_RELEASE.md`。
+
 1. **看线上现在是什么版本**
 
    ```bash
@@ -45,11 +50,15 @@ description: 把 starrank.dev 发布到生产 droplet（构建镜像、传到服
 
    脚本会自己做：检查工作区干净且 HEAD 已并入 `origin/main` → `go vet` + `go test`
    （仅 api）→ 交叉编译 amd64 镜像 → 把线上镜像留作 `:prev` → 传到服务器 →
-   `docker compose up -d` → 等健康检查 200 并确认容器跑的是新镜像 → 写发布记录。
+   `docker compose up -d` → 等健康检查 200 并确认容器跑的是新镜像 → 写发布记录 →
+   全部健康后给 HEAD 打日期标签 `vYYYY.MM.DD.N`、推送并建 GitHub Release（已有标签的提交不重复打）。
+
+   `worker` 和 `all` 在 UTC 03:30–08:30 会被拒绝（夜间流水线），等 08:30 以后再发。
 
    构建和传输要几分钟，用足够长的超时（10 分钟）运行。
 
-4. **汇报**：发了哪个服务、哪个 commit、健康检查结果。失败时贴出脚本的报错。
+4. **汇报**：发了哪个服务、哪个 commit、哪个标签、健康检查结果。失败时贴出脚本的报错。
+   发版成功但打标签失败时，用 `scripts/release.sh tag <服务列表>` 补打。
 
 ## 约束
 

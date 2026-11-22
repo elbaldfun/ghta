@@ -1,13 +1,16 @@
 name: CI
 
 # Every pull request is built and tested: the Go backend (build-test) and the
-# Next.js frontend (web). PRs land on develop; sync-main.yml promotes develop
-# to main.
+# Next.js frontend (web). Work PRs land on develop; main only moves through
+# the develop → main release PR (scripts/release.sh promote), and the
+# release-source job fails any PR into main from another branch. Rules:
+# docs/BRANCHING_AND_RELEASE.md.
 #
-# A PR is merged automatically once both jobs pass. To keep one open, mark it
-# as a draft or add the `hold` label; remove either and CI runs again and
-# merges. Not merged automatically: PRs from forks, and PRs that change files
-# under .github/workflows (GitHub refuses that to the workflow token).
+# A PR into develop is merged automatically once both jobs pass. To keep one
+# open, mark it as a draft or add the `hold` label; remove either and CI runs
+# again and merges. Not merged automatically: PRs from forks, PRs that change
+# files under .github/workflows (GitHub refuses that to the workflow token),
+# and release PRs into main — merging one is the decision to release.
 #
 # Merging does not deploy. Releases stay manual: scripts/release.sh.
 
@@ -25,6 +28,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-source:
+    name: release-source
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release PRs come from develop
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != develop ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::PRs into main must come from develop of this repository (got '$HEAD_REPO:$HEAD_REF'). Open the PR against develop; a hotfix goes the same way, then scripts/release.sh promote."
+            exit 1
+          fi
+
   build-test:
     name: build-test
     runs-on: ubuntu-latest
@@ -43,6 +61,8 @@ jobs:
           cache: true
       - name: Format
         run: test -z "$(gofmt -l cmd internal pkg)" || { gofmt -l cmd internal pkg; exit 1; }
+      - name: Release script syntax
+        run: bash -n scripts/release.sh
       - name: Vet
         run: go vet ./...
       - name: Build
@@ -76,7 +96,7 @@ jobs:
     needs: [build-test, web]
     if: >-
       github.event_name == 'pull_request' &&
-      contains(fromJSON('["develop","main"]'), github.event.pull_request.base.ref) &&
+      github.event.pull_request.base.ref == 'develop' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       !github.event.pull_request.draft &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) &&
@@ -85,7 +105,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -95,7 +114,6 @@ jobs:
       # that lands while this job is starting makes the merge fail, and the new
       # commit gets its own run.
       - name: Merge
-        id: merge
         env:
           SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -104,13 +122,3 @@ jobs:
             exit 0
           fi
           gh pr merge "$PR" --merge --match-head-commit "$SHA"
-          echo "merged=true" >> "$GITHUB_OUTPUT"
-
-      # A merge made with the workflow token does not fire push workflows, so
-      # the develop → main sync is started explicitly when it is switched on.
-      - name: Start the sync to main
-        if: >-
-          steps.merge.outputs.merged == 'true' &&
-          github.event.pull_request.base.ref == 'develop' &&
-          vars.AUTO_SYNC_MAIN == 'true'
-        run: gh workflow run sync-main.yml --ref develop
