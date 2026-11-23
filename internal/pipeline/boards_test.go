@@ -21,7 +21,7 @@ func TestBoardsJob(t *testing.T) {
 
 	d1 := 40.0
 	a := gh("al/a", "Go", 5000, "ai/llm-serving")
-	a.Gh, a.Growth.D1 = &item.GitHub{Owner: "al"}, &d1
+	a.Gh, a.Growth.D1 = &item.GitHub{Owner: "al", PushedAt: now.Add(-48 * time.Hour)}, &d1
 	gone := gh("al/gone", "Go", 90000, "ai/llm-serving")
 	gone.Gh, gone.Stale = &item.GitHub{Owner: "al"}, true
 	model := gh("m/x", "", 100)
@@ -81,10 +81,21 @@ func TestBoardsJob(t *testing.T) {
 	if _, err := st.Board(ctx, boards.BestOfKey("system/files"), &best); err != nil || len(best) != 1 {
 		t.Fatalf("best = %+v, %v", best, err)
 	}
+	var verdict []boards.Verdict
+	if _, err := st.Board(ctx, boards.DomainVerdictKey("ai/llm-serving"), &verdict); err != nil || len(verdict) != 1 ||
+		verdict[0].Pick.ExternalID != "al/a" || verdict[0].Pick.PushedDaysAgo != 2 || len(verdict[0].Skipped) != 0 {
+		t.Fatalf("ai/llm-serving verdict = %+v, %v; the stale repo is not a candidate", verdict, err)
+	}
+	// The one app has nothing to download: the shelf has no pick.
+	var shelfVerdict []boards.Verdict
+	if _, err := st.Board(ctx, boards.ShelfVerdictKey("system/files"), &shelfVerdict); err != nil || len(shelfVerdict) != 0 {
+		t.Fatalf("system/files verdict = %+v, %v", shelfVerdict, err)
+	}
 	// Every group's developer and topic boards, every pillar, the five
-	// singles, every model board, a best-of per shelf and the alternatives.
+	// singles, every model board, a best-of and a verdict per shelf, the
+	// alternatives, and a verdict per tree node.
 	groups := len(boards.Groups([]string{"ai", "apps"}))
-	want := int64(groups*4 + len(boards.Pillars)*2 + 5 + (1+len(huggingface.TaskGroups))*len(boards.ModelSorts) + 1 + 1)
+	want := int64(groups*4 + len(boards.Pillars)*2 + 5 + (1+len(huggingface.TaskGroups))*len(boards.ModelSorts) + 2 + 1 + len(tree.Nodes))
 	if n, _ := st.Boards().CountDocuments(ctx, bson.M{}); n != want {
 		t.Fatalf("boards = %d; want %d", n, want)
 	}

@@ -25,7 +25,17 @@ function niceStep(range: number, count: number): number {
  * a fixed-width gutter on the left, dates in a row below, each aligned to the
  * plot's internal padding. Stroke widths are held constant with vector-effect.
  */
-export function GrowthChart({ points, className }: { points: StarPoint[]; className?: string }) {
+export function GrowthChart({
+  points,
+  className,
+  tone = 'legacy',
+}: {
+  points: StarPoint[];
+  className?: string;
+  /** 'sr': design tokens v1 — an ink line on paper, no card. */
+  tone?: 'legacy' | 'sr';
+}) {
+  const sr = tone === 'sr';
   const locale = useLocale();
   if (points.length < 2) return null;
 
@@ -67,14 +77,14 @@ export function GrowthChart({ points, className }: { points: StarPoint[]; classN
   }
 
   return (
-    <figure className={`flex min-w-0 flex-col rounded-card border border-border bg-surface ${className ?? ''}`}>
+    <figure className={`flex min-w-0 flex-col ${sr ? '' : 'rounded-card border border-border bg-surface'} ${className ?? ''}`}>
       <div className="flex min-h-0 flex-1">
         {/* Star-count gutter: labels sit at the same fraction of height as their gridline. */}
         <div className="relative w-11 shrink-0">
           {yTicks.map((t) => (
             <span
               key={t.v}
-              className="absolute right-1.5 -translate-y-1/2 text-[10px] tabular-nums text-muted"
+              className={`absolute right-1.5 -translate-y-1/2 text-[10px] tabular-nums ${sr ? 'text-ink-3' : 'text-muted'}`}
               style={{ top: `${(t.y / H) * 100}%` }}
             >
               {formatCompact(t.v)}
@@ -85,7 +95,7 @@ export function GrowthChart({ points, className }: { points: StarPoint[]; classN
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          className="min-h-0 min-w-0 flex-1 text-accent"
+          className={`min-h-0 min-w-0 flex-1 ${sr ? 'text-ink' : 'text-accent'}`}
           role="img"
           aria-label={`Star growth from ${xTicks[0].label} to ${xTicks[xTicks.length - 1].label}, ${formatCompact(minV)} to ${formatCompact(maxV)} stars`}
         >
@@ -97,7 +107,7 @@ export function GrowthChart({ points, className }: { points: StarPoint[]; classN
               x2={W - PAD}
               y1={t.y}
               y2={t.y}
-              className="stroke-border"
+              className={sr ? 'stroke-rule' : 'stroke-border'}
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />
@@ -109,12 +119,12 @@ export function GrowthChart({ points, className }: { points: StarPoint[]; classN
               x2={t.x}
               y1={PAD}
               y2={H - PAD}
-              className="stroke-border"
+              className={sr ? 'stroke-rule' : 'stroke-border'}
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />
           ))}
-          <path d={area} fill="currentColor" opacity={0.14} />
+          <path d={area} fill="currentColor" opacity={sr ? 0.06 : 0.14} />
           <polyline
             points={line}
             fill="none"
@@ -128,7 +138,7 @@ export function GrowthChart({ points, className }: { points: StarPoint[]; classN
       <figcaption className="flex shrink-0 pb-1.5 pt-1">
         <div className="w-11 shrink-0" aria-hidden />
         <div
-          className="flex flex-1 justify-between text-[10px] tabular-nums text-muted"
+          className={`flex flex-1 justify-between text-[10px] tabular-nums ${sr ? 'text-ink-3' : 'text-muted'}`}
           // Matches the plot's internal PAD so the first and last labels sit under their points.
           style={{ paddingInline: `${(PAD / W) * 100}%` }}
         >

@@ -60,6 +60,7 @@ type AppSource struct {
 	Labels      item.Labels        `bson:"labels"`
 	Assets      item.Assets        `bson:"assets"`
 	Gh          *item.GitHub       `bson:"gh"`
+	Ranks       *item.Ranks        `bson:"ranks"`
 }
 
 // AppFilter selects the candidates: anything the store could list, and
@@ -78,10 +79,11 @@ func AppFilter() bson.M {
 func AppProjection() bson.M {
 	return bson.M{
 		"externalId": 1, "name": 1, "description": 1, "language": 1, "homepage": 1, "license": 1,
-		"metrics.stars": 1, "growth.d1": 1, "assets": 1,
+		"metrics.stars": 1, "growth.d1": 1, "growth.d30": 1, "assets": 1,
 		"labels.domain": 1, "labels.type": 1, "labels.shelf": 1, "labels.hasGui": 1,
 		"labels.taglineZh": 1, "labels.taglineEn": 1, "labels.alternatives": 1,
-		"gh.platforms": 1, "gh.releaseAssets": 1, "gh.latestRelease": 1,
+		"gh.platforms": 1, "gh.releaseAssets": 1, "gh.latestRelease": 1, "gh.pushedAt": 1,
+		"ranks.domain": 1, "ranks.prev.domain": 1,
 	}
 }
 
@@ -123,6 +125,12 @@ type App struct {
 	Group   string    `bson:"group,omitempty" json:"-"`
 	Domains []string  `bson:"domains,omitempty" json:"-"` // top-level domains
 	At      time.Time `bson:"at" json:"-"`
+
+	// What the shelf verdict cites and the store does not serve; unexported,
+	// so neither collection stores it.
+	d30      *int
+	pushedAt time.Time
+	ranks    *item.Ranks
 }
 
 // Key is the row's id in the apps collection.
@@ -171,6 +179,10 @@ func NewApp(s AppSource) (a App, ok bool) {
 	}
 	if s.Growth.D1 != nil {
 		a.Growth = int(*s.Growth.D1)
+	}
+	a.d30, a.ranks = intPtr(s.Growth.D30), s.Ranks
+	if s.Gh != nil {
+		a.pushedAt = s.Gh.PushedAt
 	}
 	if l.Shelf != item.ShelfExcluded {
 		a.Shelf = l.Shelf

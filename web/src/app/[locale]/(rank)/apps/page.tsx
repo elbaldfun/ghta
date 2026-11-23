@@ -2,12 +2,11 @@ import { DEV_SHELVES, shelfLabelKey } from '@/lib/shelves';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getApps, getCategoryTree, type AppSort, type OS } from '@/lib/data';
-import { AppCard } from '@/components/rank/AppCard';
-import { FilterDropdown } from '@/components/rank/FilterDropdown';
+import { getApps, type AppKind, type AppSort, type OS } from '@/lib/data';
 import { Pagination } from '@/components/rank/Pagination';
-import { PageTabs } from '@/components/rank/PageTabs';
 import { PageShell } from '@/components/rank/PageShell';
+import { Dropdown, Segmented, fmtInt } from '@/components/ui';
+import { AppTile, OS_NAME } from '@/components/apps/AppTile';
 import { alternatesFor } from '@/lib/seo';
 
 // Fetched per request (backend caches ~1h); avoids baking an empty page on a
@@ -17,6 +16,8 @@ export const dynamic = 'force-dynamic';
 const PER_PAGE = 30;
 const BOARD_CAP = 300;
 const OSES: OS[] = ['macos', 'windows', 'linux', 'android', 'ios', 'web'];
+const SORTS: AppSort[] = ['hot', 'popular', 'new'];
+const KINDS: AppKind[] = ['app', 'cli'];
 // Consumer shelves = the apps/ branch of taxonomy v3 (slug = path minus "apps/").
 // "dev" is a view, not a shelf: the developer-app leaves that left the
 // consumer shelves; its subs are full domain-leaf paths.
@@ -57,188 +58,170 @@ function validShelf(s: string): boolean {
   if (!subs) return false;
   return sub === undefined || subs.includes(sub);
 }
-/** i18n key for a shelf value. */
-function shelfKey(major: string, value: string): string {
-  return major === DEV && value === DEV ? 'shelfM_dev' : shelfLabelKey(value);
-}
-const OS_LABEL: Record<OS, string> = {
-  macos: 'macOS',
-  windows: 'Windows',
-  linux: 'Linux',
-  android: 'Android',
-  ios: 'iOS',
-  web: 'Web',
-};
 
 export async function generateMetadata({
   params: { locale },
 }: {
   params: { locale: string };
 }): Promise<Metadata> {
-  const t = await getTranslations({ locale, namespace: 'rank' });
-  return { alternates: alternatesFor(locale, '/apps'), title: t('appsTitle'), description: t('appsSubtitle') };
+  const t = await getTranslations({ locale, namespace: 'appsPage' });
+  return { alternates: alternatesFor(locale, '/apps'), title: t('title'), description: t('lead') };
 }
-
 
 export default async function AppsPage({
   params: { locale },
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { os?: string; kind?: string; category?: string; shelf?: string; sort?: string; page?: string };
+  searchParams: { os?: string; kind?: string; shelf?: string; sort?: string; page?: string };
 }) {
   setRequestLocale(locale);
-  const t = await getTranslations('rank');
+  const t = await getTranslations('appsPage');
+  const tr = await getTranslations('rank');
 
   const os = (OSES as string[]).includes(searchParams.os ?? '') ? (searchParams.os as OS) : '';
-  const kind = searchParams.kind === 'app' || searchParams.kind === 'cli' ? searchParams.kind : '';
+  // Form: GUI apps or command-line tools. Old links may also carry
+  // ?category=; it is no longer a filter here and is simply ignored.
+  const kind: AppKind | '' = (KINDS as string[]).includes(searchParams.kind ?? '') ? (searchParams.kind as AppKind) : '';
   const shelf = validShelf(searchParams.shelf ?? '') ? (searchParams.shelf ?? '') : '';
-  const shelfMajor = majorOf(shelf);
-  const sort: AppSort =
-    searchParams.sort === 'popular' || searchParams.sort === 'new' ? searchParams.sort : 'hot';
-  const page = Math.max(1, Number(searchParams.page) || 1);
+  const major = majorOf(shelf);
+  const sort: AppSort = (SORTS as string[]).includes(searchParams.sort ?? '') ? (searchParams.sort as AppSort) : 'hot';
+  const page = Math.max(1, Math.floor(Number(searchParams.page)) || 1);
 
-  const tree = await getCategoryTree();
-  // Validate category against the real top-level domains so it can't be used to
-  // spray arbitrary cache keys, and so the label lookup is safe.
-  const domains = tree.map((n) => ({ path: n.path, label: locale === 'zh' ? n.name : n.nameEn || n.name }));
-  const category = domains.some((d) => d.path === searchParams.category) ? (searchParams.category as string) : '';
-  const activeDomain = domains.find((d) => d.path === category);
+  const { items, total } = await getApps({ os, kind, shelf, sort, limit: PER_PAGE, page });
+  const now = new Date();
 
-  const { items, total } = await getApps({ os, kind, category, shelf, sort, limit: PER_PAGE, page });
-
-  const qp = (over: Record<string, string>) => {
-    const base: Record<string, string> = {};
-    if (os) base.os = os;
-    if (kind) base.kind = kind;
-    if (category) base.category = category;
-    if (shelf) base.shelf = shelf;
-    base.sort = sort;
-    return new URLSearchParams({ ...base, ...over }).toString();
+  /** Link to this page with some filters changed; defaults are left out. */
+  const href = (over: { os?: string; kind?: string; shelf?: string; sort?: AppSort; page?: number }) => {
+    const v = { os, kind, shelf, sort, page, ...over };
+    const q = new URLSearchParams();
+    if (v.os) q.set('os', v.os);
+    if (v.kind) q.set('kind', v.kind);
+    if (v.shelf) q.set('shelf', v.shelf);
+    if (v.sort !== 'hot') q.set('sort', v.sort);
+    if (v.page > 1) q.set('page', String(v.page));
+    const s = q.toString();
+    return s ? `/apps?${s}` : '/apps';
   };
 
-  const osTab = (key: OS | '', label: string) => (
-    <Link
-      key={key || 'all'}
-      href={`/apps?${qp({ os: key, page: '1' })}`}
-      className={`rounded-lg border px-[11px] py-[6px] text-[12px] font-bold ${
-        os === key ? 'border-accent bg-accent/10 text-accent' : 'border-transparent text-muted hover:text-fg'
-      }`}
-    >
-      {label}
-    </Link>
-  );
+  const majorLabel = (m: string) => tr(`shelfM_${m}` as never) as string;
+  const subLabel = (value: string) => tr(shelfLabelKey(value) as never) as string;
+  const sortLabel: Record<AppSort, string> = { hot: t('sortHot'), popular: t('sortPopular'), new: t('sortNew') };
+  const sortRule: Record<AppSort, string> = { hot: t('ruleHot'), popular: t('rulePopular'), new: t('ruleNew') };
 
-  const smallTab = (active: boolean, href: string, label: string) => (
-    <Link
-      href={href}
-      className={`rounded-md px-2.5 py-1 text-[11.5px] font-semibold ${
-        active ? 'text-accent' : 'text-muted hover:text-fg'
-      }`}
-    >
-      {label}
-    </Link>
-  );
+  // What is being shown, for the count line above the grid.
+  const kindName: Record<AppKind, string> = { app: tr('appsKindApp'), cli: tr('appsKindCli') };
+  const scope = [kind ? kindName[kind] : '', os ? OS_NAME[os] : '', shelf && shelf !== major ? subLabel(shelf) : major ? majorLabel(major) : '']
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <PageShell className="py-[22px]">
-      <PageTabs items={[{ href: '/apps', label: t('tabDirectory') }, { href: '/alternatives', label: t('navAlternatives') }]} />
-      <div className="mb-1 flex items-baseline gap-2.5">
-        <h1 className="font-display text-lg font-extrabold">{t('appsTitle')}</h1>
-        <span className="text-xs text-muted">{t('appsSubtitle')}</span>
-      </div>
+    <PageShell className="flex flex-col gap-6 pb-12 md:gap-8">
+      <section className="flex flex-col gap-2 pt-6 md:pt-10">
+        <p className="text-sr-caption text-ink-3">{t('kicker')}</p>
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <h1 className="font-news text-[36px] font-medium leading-[1.05] tracking-[-0.02em] md:text-[56px]">{t('title')}</h1>
+          <span className="text-sr-small text-ink-3">{sortRule[sort]}</span>
+        </div>
+        <p className="max-w-[760px] text-sr-body text-ink-2 md:text-sr-lead">{t('lead')}</p>
+      </section>
 
-      {/* OS filter — the primary dimension */}
-      <div className="scrollbar-hide mb-2 mt-3 -ml-[12px] flex items-center gap-1 overflow-x-auto">
-        {osTab('', t('appsAll'))}
-        {OSES.map((o) => osTab(o, OS_LABEL[o]))}
-      </div>
-
-      {/* shelves: 10 consumer groups + the developer view; picking one reveals its sub-shelves */}
-      <div className="scrollbar-hide -ml-[12px] mb-1 flex items-center gap-1 overflow-x-auto">
-        <Link
-          href={`/apps?${(() => { const p = new URLSearchParams(); if (os) p.set('os', os); if (kind) p.set('kind', kind); p.set('sort', sort); p.set('page', '1'); return p.toString(); })()}`}
-          className={`whitespace-nowrap rounded-lg border px-[11px] py-[5px] text-[12px] font-bold ${
-            shelf === '' ? 'border-accent bg-accent/10 text-accent' : 'border-transparent text-muted hover:text-fg'
-          }`}
-        >
-          {t('appsAllShelves')}
-        </Link>
-        {SHELF_MAJORS.map((m) => (
-          <Link
-            key={m}
-            href={`/apps?${qp({ shelf: m, page: '1' })}`}
-            className={`whitespace-nowrap rounded-lg border px-[11px] py-[5px] text-[12px] font-bold ${
-              shelfMajor === m ? 'border-accent bg-accent/10 text-accent' : 'border-transparent text-muted hover:text-fg'
-            }`}
-          >
-            {t(`shelfM_${m}` as never) as string}
-          </Link>
-        ))}
-      </div>
-      {shelfMajor && SHELF_SUBS[shelfMajor] && (
-        <div className="scrollbar-hide mb-2 flex items-center gap-1 overflow-x-auto pl-1">
-          {SHELF_SUBS[shelfMajor].map((sub) => {
-            const full = shelfValue(shelfMajor, sub);
-            return (
+      <section aria-label={t('filters')} className="flex flex-col gap-3 border-y border-rule py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <nav aria-label={t('kindLabel')} className="flex flex-wrap gap-1.5">
+            {[{ key: '', name: tr('appsAll') }, ...KINDS.map((k) => ({ key: k, name: kindName[k] }))].map((x) => (
               <Link
-                key={full}
-                href={`/apps?${qp({ shelf: shelf === full ? shelfMajor : full, page: '1' })}`}
-                className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11.5px] font-semibold ${
-                  shelf === full ? 'text-accent' : 'text-muted hover:text-fg'
+                key={x.key || 'all'}
+                href={href({ kind: x.key, page: 1 })}
+                aria-current={kind === x.key ? 'true' : undefined}
+                className={`flex h-11 items-center rounded border px-3 text-[13px] md:h-8 ${
+                  kind === x.key ? 'border-ink bg-ink text-paper' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
                 }`}
               >
-                {t(shelfKey(shelfMajor, full) as never) as string}
+                {x.name}
               </Link>
-            );
-          })}
+            ))}
+          </nav>
+          <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-rule md:block" />
+          <nav aria-label={t('osLabel')} className="flex flex-wrap gap-1.5">
+            {[{ key: '', name: t('allOs') }, ...OSES.map((o) => ({ key: o, name: OS_NAME[o] }))].map((x) => (
+              <Link
+                key={x.key || 'all'}
+                href={href({ os: x.key, page: 1 })}
+                aria-current={os === x.key ? 'true' : undefined}
+                className={`flex h-11 items-center rounded border px-3 text-[13px] md:h-8 ${
+                  os === x.key ? 'border-ink bg-ink text-paper' : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
+                }`}
+              >
+                {x.name}
+              </Link>
+            ))}
+          </nav>
         </div>
-      )}
-
-      {/* kind + domain + sort */}
-      <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            {smallTab(kind === '', `/apps?${qp({ kind: '', page: '1' })}`, t('appsAll'))}
-            {smallTab(kind === 'app', `/apps?${qp({ kind: 'app', page: '1' })}`, t('appsKindApp'))}
-            {smallTab(kind === 'cli', `/apps?${qp({ kind: 'cli', page: '1' })}`, t('appsKindCli'))}
-          </div>
-          {domains.length > 0 && (
-            <FilterDropdown
-              label={activeDomain?.label ?? t('appsAllDomains')}
-              active={!!activeDomain}
+        <div className="flex flex-wrap items-center gap-2">
+          <Dropdown
+            label={major ? t('shelfIs', { name: majorLabel(major) }) : t('shelfAll')}
+            active={!!major}
+            items={[
+              { key: 'all', label: t('shelfAllItem'), href: href({ shelf: '', page: 1 }), active: !major },
+              ...SHELF_MAJORS.map((m) => ({ key: m, label: majorLabel(m), href: href({ shelf: m, page: 1 }), active: major === m })),
+            ]}
+          />
+          {major && (
+            <Dropdown
+              label={shelf !== major ? subLabel(shelf) : t('subAll')}
+              active={shelf !== major}
               items={[
-                { key: 'all', label: t('appsAllDomains'), href: `/apps?${qp({ category: '', page: '1' })}`, active: category === '' },
-                ...domains.map((d) => ({
-                  key: d.path,
-                  label: d.label,
-                  href: `/apps?${qp({ category: d.path, page: '1' })}`,
-                  active: category === d.path,
-                })),
+                { key: 'all', label: t('subAll'), href: href({ shelf: major, page: 1 }), active: shelf === major },
+                ...SHELF_SUBS[major].map((s) => {
+                  const v = shelfValue(major, s);
+                  return { key: v, label: subLabel(v), href: href({ shelf: v, page: 1 }), active: shelf === v };
+                }),
               ]}
             />
           )}
+          <Segmented
+            label={t('sortLabel')}
+            items={SORTS.map((s) => ({ key: s, label: sortLabel[s], href: href({ sort: s, page: 1 }), active: sort === s }))}
+          />
         </div>
-        <div className="flex items-center gap-1">
-          {smallTab(sort === 'hot', `/apps?${qp({ sort: 'hot', page: '1' })}`, t('ecoSortHot'))}
-          {smallTab(sort === 'popular', `/apps?${qp({ sort: 'popular', page: '1' })}`, t('ecoSortPopular'))}
-          {smallTab(sort === 'new', `/apps?${qp({ sort: 'new', page: '1' })}`, t('appsSortNew'))}
-        </div>
-      </div>
+      </section>
 
       {items.length === 0 ? (
-        <div className="py-10 text-center text-[13px] text-muted">{t('appsEmpty')}</div>
-      ) : (
-        <div className="overflow-hidden rounded-card border border-border bg-surface">
-          {items.map((a) => (
-            <AppCard key={a.externalId} app={a} />
-          ))}
+        <div className="flex flex-col items-start gap-3 border-b border-rule py-12">
+          <p className="font-news text-[24px] leading-tight">{t('emptyHead')}</p>
+          <p className="max-w-[560px] text-sr-small text-ink-2">{t('emptyBody')}</p>
+          {(os || kind || shelf) && (
+            <Link href={href({ os: '', kind: '', shelf: '', page: 1 })} className="inline-flex min-h-11 items-center text-sr-small font-semibold underline underline-offset-4 md:min-h-0">
+              {t('clear')}
+            </Link>
+          )}
         </div>
+      ) : (
+        <>
+          <p className="-mb-2 text-sr-caption text-ink-3">
+            {scope ? t('countIn', { scope, n: fmtInt(total) }) : t('count', { n: fmtInt(total) })}
+          </p>
+          <section className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((a) => (
+              <AppTile key={a.externalId} app={a} now={now} />
+            ))}
+          </section>
+          <Pagination tone="sr" page={page} perPage={PER_PAGE} totalCount={total} cap={BOARD_CAP} href={(p) => href({ page: p })} />
+        </>
       )}
 
-      {items.length > 0 && (
-        <Pagination page={page} perPage={PER_PAGE} totalCount={total} basePath="/apps" cap={BOARD_CAP} params={{ os, kind, category, shelf, sort }} />
-      )}
+      <footer className="flex flex-col gap-1 border-t-2 border-ink pt-3 text-[13px] leading-relaxed text-ink-2">
+        <span>
+          <span className="font-semibold text-ink">{t('rulesLabel')}</span> {t('rules')}
+        </span>
+        <span>
+          {t('altsNote')}{' '}
+          <Link href="/alternatives" className="font-semibold text-ink underline underline-offset-4">
+            {t('altsLink')}
+          </Link>
+        </span>
+      </footer>
     </PageShell>
   );
 }

@@ -59,13 +59,13 @@ export function Segmented({
   className?: string;
 }) {
   return (
-    <nav aria-label={label} className={`inline-flex shrink-0 self-start overflow-hidden rounded border border-ink ${className}`}>
+    <nav aria-label={label} className={`inline-flex max-w-full shrink-0 self-start overflow-hidden rounded border border-ink ${className}`}>
       {items.map((it) => (
         <Link
           key={it.key}
           href={it.href}
           aria-current={it.active ? 'true' : undefined}
-          className={`flex h-11 items-center whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-150 md:h-[34px] ${
+          className={`flex h-11 min-w-0 items-center px-2 text-center text-[13px] font-medium leading-tight md:whitespace-nowrap md:px-3 transition-colors duration-150 md:h-[34px] ${
             it.active ? 'bg-ink text-paper' : 'text-ink-2 hover:bg-sunk hover:text-ink'
           }`}
         >
