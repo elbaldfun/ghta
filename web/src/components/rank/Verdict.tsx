@@ -48,7 +48,13 @@ export async function PickBlock({
   const p = await getTranslations('pick');
   const locale = await getLocale();
   const num = new Intl.NumberFormat(locale);
-  const list = new Intl.ListFormat(locale, { type: 'conjunction' });
+  const listFmt = new Intl.ListFormat(locale, { type: 'conjunction' });
+  // Chinese lists join with a bare 和 ("macOS和Windows"); the site's Chinese
+  // copy spaces Latin words off from Han characters, so do the same here.
+  const list = (items: string[]) => {
+    const s = listFmt.format(items);
+    return locale.startsWith('zh') ? s.replace(/([A-Za-z0-9])(?=[\u4e00-\u9fff])|([\u4e00-\u9fff])(?=[A-Za-z0-9])/g, '$1$2 ') : s;
+  };
 
   if (!verdict) {
     return (
@@ -78,7 +84,7 @@ export async function PickBlock({
   if (pick.pushedDaysAgo >= 0) facts.push(t('pushed', { days: pick.pushedDaysAgo }));
   facts.push(pick.releaseDaysAgo >= 0 ? t('release', { days: pick.releaseDaysAgo }) : t('noRelease'));
   if (pick.downloads && pick.downloads.length > 0) {
-    facts.push(t('downloads', { platforms: list.format(pick.downloads.map((os) => OS_LABEL[os] ?? os)) }));
+    facts.push(t('downloads', { platforms: list(pick.downloads.map((os) => OS_LABEL[os] ?? os)) }));
   }
 
   const skipReason = (s: VerdictSkip) => {

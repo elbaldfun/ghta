@@ -54,6 +54,9 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 	if err := s.ensureFetchIndexes(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureChartIndexes(ctx); err != nil {
+		return err
+	}
 	// Same names as the old system's indexes, so both can ensure them.
 	if _, err := s.Developers().Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{Keys: bson.D{{Key: "login", Value: 1}}, Options: options.Index().SetUnique(true).SetName("uniq_developer_login")},

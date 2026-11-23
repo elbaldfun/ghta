@@ -77,7 +77,7 @@ export async function Downloads({
                   >
                     <span className="truncate font-code text-ink">{a.name}</span>
                     {fmtSize(a.size) && (
-                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-ink-3">{fmtSize(a.size)}</span>
+                      <span className="shrink-0 font-code text-[11px] tabular-nums text-ink-3">{fmtSize(a.size)}</span>
                     )}
                   </a>
                 </li>
