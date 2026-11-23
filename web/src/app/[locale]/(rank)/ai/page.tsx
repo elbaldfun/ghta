@@ -198,7 +198,7 @@ export default async function AiPage({
         <Section id="by-sub" title={t('bySubTitle')} aside={t('bySubSub')}>
           <div className="grid border-rule md:grid-cols-2 lg:grid-cols-3">
             {top.map((c, i) => (
-              <div key={c.path} className="flex min-w-0 flex-col border-b border-rule py-4 md:pr-6">
+              <div key={c.path} className="flex min-w-0 flex-col border-b border-rule py-4 md:pr-6 md:even:pr-0 lg:even:pr-6 lg:[&:nth-child(3n)]:pr-0">
                 <div className="flex items-baseline justify-between gap-2 pb-2">
                   <span className="truncate text-[16px] font-semibold">{label(c)}</span>
                   <span className="shrink-0 text-sr-caption text-ink-3">{t('projects', { n: fmtInt(c.repos) })}</span>

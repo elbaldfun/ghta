@@ -282,7 +282,7 @@
     "shelf_dev_security_offensive": "Security-Tools",
     "shelf_dev_agents_coding": "Coding-Agenten",
     "appsAllShelves": "Alle",
-    "bestTitle": "Beste Open-Source-{label}-Apps",
+    "bestTitle": "Beste Open-Source-Apps: {label}",
     "bestSeeShelf": "Alle {label} ansehen",
     "bestIntro_productivity_notes": "Open-source note apps keep your knowledge yours: local files, no lock-in, no subscription. This list is ranked by real data — star magnitude, recent momentum, and release activity — and refreshes daily, covering everything from Notion alternatives to Markdown-first editors.",
     "bestIntro_network_download": "From video ripping to multi-threaded downloads, open-source download tools routinely beat their commercial rivals — no ads, no bundleware. Ranked daily by star magnitude, growth momentum, and maintenance activity, mixing CLI powerhouses like yt-dlp with GUI managers.",

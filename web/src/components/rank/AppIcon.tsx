@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * An app's icon with graceful fallback: the app's own brand icon (extracted from
@@ -23,6 +23,19 @@ export function AppIcon({
   // Try the brand icon first, then the owner avatar, then give up to the letter.
   const [src, setSrc] = useState(iconUrl || avatar);
   const [failed, setFailed] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  const fallBack = () => {
+    if (src !== avatar) setSrc(avatar);
+    else setFailed(true);
+  };
+  // A server-rendered <img> can fail before React hydrates and attaches
+  // onError (a blocked cross-origin icon fails fast), leaving a broken image
+  // on the page. Check once on mount and on every src change.
+  useEffect(() => {
+    const el = img.current;
+    if (el && el.complete && el.naturalWidth === 0) fallBack();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
 
   if (failed) {
     // A hue picked from the name, so each app keeps the same color everywhere
@@ -43,16 +56,14 @@ export function AppIcon({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      ref={img}
       src={src}
       alt=""
       loading="lazy"
       width={size}
       height={size}
-      onError={() => {
-        if (src !== avatar) setSrc(avatar);
-        else setFailed(true);
-      }}
-      className="shrink-0 rounded-[10px] border border-border bg-surface2 object-cover"
+      onError={fallBack}
+      className="shrink-0 rounded-[10px] border border-rule bg-sunk object-cover"
       style={{ width: size, height: size }}
     />
   );
