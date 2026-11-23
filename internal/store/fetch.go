@@ -377,6 +377,13 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 		if it.Hf != nil {
 			set["hf"] = it.Hf
 		}
+		if it.App != nil {
+			set["app"] = it.App
+			// A store listing carries its own images; no asset job looks for
+			// them (the asset queue never matches a store item).
+			optional("assets.iconUrl", it.Assets.IconURL)
+			optional("assets.screenshotUrl", it.Assets.ScreenshotURL)
+		}
 
 		onInsert := bson.M{"createdAt": now}
 		if len(it.Labels.Domain) > 0 {
@@ -384,6 +391,10 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 			set["labels.domain"] = it.Labels.Domain
 			set["labels.by"] = it.Labels.By
 			set["jobs.judge.status"] = item.StatusDone
+			if it.Labels.Shelf != "" {
+				// A shelf the source's own category maps to (store sources).
+				set["labels.shelf"] = it.Labels.Shelf
+			}
 		} else {
 			onInsert["labels.domain"] = []string{}
 			onInsert["jobs.judge.status"] = item.StatusPending

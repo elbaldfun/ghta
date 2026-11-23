@@ -28,6 +28,10 @@ const (
 const (
 	SourceGitHub      = "github"
 	SourceHuggingFace = "huggingface"
+	// App store sources (docs/MOBILE-APPS-DATA.md). Named after the URL
+	// prefix (/ios/id123), not the old domain.SourceAppStore.
+	SourceIOS     = "ios"
+	SourceAndroid = "android"
 )
 
 // Job status values.
@@ -71,8 +75,9 @@ type Item struct {
 	Ranks  *Ranks `bson:"ranks,omitempty"`
 	Jobs   Jobs   `bson:"jobs"`
 
-	Gh *GitHub      `bson:"gh,omitempty"`
-	Hf *HuggingFace `bson:"hf,omitempty"`
+	Gh  *GitHub      `bson:"gh,omitempty"`
+	Hf  *HuggingFace `bson:"hf,omitempty"`
+	App *StoreApp    `bson:"app,omitempty"`
 
 	Stale       bool      `bson:"stale,omitempty"`
 	StaleReason string    `bson:"staleReason,omitempty"`
@@ -239,6 +244,29 @@ type HuggingFace struct {
 	TrendingScore float64   `bson:"trendingScore,omitempty"`
 	CreatedAt     time.Time `bson:"createdAt,omitempty"`
 	LastModified  time.Time `bson:"lastModified,omitempty"`
+}
+
+// StoreApp holds the fields of an app store listing (App Store, and Google
+// Play later). Ratings are those of HomeCountry's storefront: each storefront
+// counts its own.
+type StoreApp struct {
+	BundleID      string    `bson:"bundleId"`
+	DeveloperID   string    `bson:"developerId,omitempty"`
+	Developer     string    `bson:"developer"`
+	GenreID       string    `bson:"genreId"`
+	Genre         string    `bson:"genre,omitempty"`
+	GenreIDs      []string  `bson:"genreIds,omitempty"`
+	Version       string    `bson:"version,omitempty"`
+	Currency      string    `bson:"currency,omitempty"`
+	ContentRating string    `bson:"contentRating,omitempty"`
+	Screenshots   []string  `bson:"screenshots,omitempty"`
+	UpdatedAt     time.Time `bson:"updatedAt,omitempty"`  // current version's release
+	ReleasedAt    time.Time `bson:"releasedAt,omitempty"` // first release
+	// HomeCountry is the storefront the metrics come from: the first of the
+	// configured countries whose charts listed the app today.
+	HomeCountry string `bson:"homeCountry"`
+	// Countries are the storefronts whose charts listed the app today.
+	Countries []string `bson:"countries"`
 }
 
 // Blob is an item's cold text, keyed like the item.
