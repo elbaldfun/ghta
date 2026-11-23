@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 
 /**
- * A ranking position's move since yesterday's ranking: ↑n in the up colour,
- * ↓n in the down colour, a small "new" mark for a position the repo did not
+ * A ranking position's move since yesterday's ranking: ↑n in the signal colour,
+ * ↓n in muted ink (a drop is not an alarm, as with Delta), a small "new" mark for a position the repo did not
  * hold yesterday, and nothing when it held still or there is no baseline.
  * `scope` names the ranking for the tooltip and screen readers ("Overall",
  * "Go", a domain's label).
@@ -25,7 +25,7 @@ export function RankMove({
       <span
         title={label}
         aria-label={label}
-        className={`rounded-[3px] bg-accent/10 px-1 py-px font-mono text-[9px] font-bold uppercase leading-none text-accent ${className}`}
+        className={`rounded-[3px] bg-signal-soft px-1 py-px font-code text-[9px] font-bold uppercase leading-none text-signal-ink ${className}`}
       >
         {t('rankNew')}
       </span>
@@ -39,7 +39,7 @@ export function RankMove({
     <span
       title={label}
       aria-label={label}
-      className={`font-mono text-[10px] font-bold tabular-nums leading-none ${up ? 'text-up' : 'text-down'} ${className}`}
+      className={`font-code text-[10px] font-bold tabular-nums leading-none ${up ? 'text-signal' : 'text-ink-3'} ${className}`}
     >
       {up ? '↑' : '↓'}
       {n}
