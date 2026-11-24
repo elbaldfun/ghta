@@ -17,11 +17,17 @@ var AppShelves = []string{
 	"ai/assistant", "ai/local-llm", "ai/generation", "ai/builder",
 	"selfhosted/cloud", "selfhosted/media-server", "selfhosted/monitoring", "selfhosted/tunnel", "selfhosted/automation",
 	"network/browser", "network/download", "network/proxy", "network/remote", "network/browser-ext",
-	"media/player", "media/music", "media/reader",
+	"media/player", "media/music", "media/reader", "media/streaming",
 	"social/messaging", "social/tools",
 	"system/screenshot", "system/launcher", "system/files", "system/transfer", "system/phone", "system/backup",
 	"security/passwords", "security/privacy",
 	"games/games", "games/emulator",
+	"finance/budget", "finance/investing", "finance/payments",
+	"shopping/shopping", "shopping/food",
+	"travel/travel", "travel/navigation",
+	"health/fitness", "health/wellness",
+	"life/lifestyle", "life/weather", "life/sports",
+	"education/learning", "education/reference",
 }
 
 // DevShelves are the developer-facing apps that left the consumer shelves in

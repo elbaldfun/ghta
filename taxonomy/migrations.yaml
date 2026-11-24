@@ -60,3 +60,10 @@
     - { kind: moved, old: ai/coding,          new: agents/coding }
     # ── rejudge：LLM 在 candidates 里二选 ──
     - { kind: rejudge, old: devtools/devops,  candidates: [infra/containers, infra/automation, infra/monitoring] }
+
+# v4：iOS 消费类货架，纯新增 15 个货架，不改不拆已有叶子，所以没有要改写或重判的条目；
+# migrate 只把条目的版本盖到 4，judge 不会因此重排队。
+- from: 3
+  to: 4
+  domain: []
+  shelves: []
