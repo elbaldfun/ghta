@@ -93,9 +93,9 @@ func TestBoardsJob(t *testing.T) {
 	}
 	// Every group's developer and topic boards, every pillar, the five
 	// singles, every model board, a best-of and a verdict per shelf, the
-	// alternatives, and a verdict per tree node.
+	// alternatives, the shelf counts, and a verdict per tree node.
 	groups := len(boards.Groups([]string{"ai", "apps"}))
-	want := int64(groups*4 + len(boards.Pillars)*2 + 5 + (1+len(huggingface.TaskGroups))*len(boards.ModelSorts) + 2 + 1 + len(tree.Nodes))
+	want := int64(groups*4 + len(boards.Pillars)*2 + 5 + (1+len(huggingface.TaskGroups))*len(boards.ModelSorts) + 2 + 1 + 1 + len(tree.Nodes))
 	if n, _ := st.Boards().CountDocuments(ctx, bson.M{}); n != want {
 		t.Fatalf("boards = %d; want %d", n, want)
 	}
