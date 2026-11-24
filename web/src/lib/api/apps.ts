@@ -112,3 +112,14 @@ export async function getBestOfPage(
   if (res.error !== null || !Array.isArray(res.data?.data)) return { items: [], verdict: null, computedAt: null };
   return { items: res.data.data.map(mapApp), verdict: res.data.verdict ?? null, computedAt: res.data.computedAt ?? null };
 }
+
+/**
+ * Listed apps per shelf, from the nightly boards job (GET /v1/facets/shelf).
+ * null when it cannot be read, so the store shows every shelf rather than
+ * none.
+ */
+export async function getShelfCounts(): Promise<Record<string, number> | null> {
+  const res = await apiGet<{ data: { shelf: string; count: number }[] }>('/facets/shelf', 3600);
+  if (res.error !== null || !Array.isArray(res.data?.data)) return null;
+  return Object.fromEntries(res.data.data.map((r) => [r.shelf, r.count]));
+}

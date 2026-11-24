@@ -285,3 +285,350 @@ items:
     paths: [security/reverse]
     shelf: excluded
     why: Dex 反编译器，Q19 逆向归 security/reverse；client/android 是 Android 开发库与组件
+
+  # ── 2026-11-24 搬到 v4 消费类货架（判错的老条目，生产只读查询逐条看过）──
+  - id: maybe-finance/maybe
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人理财应用（预算、净资产）；selfhosted/cloud 只收网盘相册
+  - id: firefly-iii/firefly-iii
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人记账与预算管理器；不是网盘
+  - id: mayswind/ezbookkeeping
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 自托管个人记账应用；不是待办
+  - id: jameskokoska/Cashew
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人预算与消费记账手机应用；不是待办
+  - id: ellite/Wallos
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人订阅费用追踪，叶子说明里的"订阅追踪"；不是待办
+  - id: securo-finance/securo
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人财务管理器；不是自动化
+  - id: ananthakumaran/paisa
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人财务管理（复式记账）；不是知识管理
+  - id: serversideup/financial-freedom
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: Mint、YNAB 的开源替代，个人预算；不是网盘
+  - id: moneymanagerex/moneymanagerex
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 桌面个人记账软件；不是文档办公
+  - id: jakubgarfield/expenses
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人消费记账（存 Google Sheets）；不是待办
+  - id: glink25/Cent
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 多人协作记账 Web App，家庭记账；不是笔记
+  - id: RIP-Comm/sossoldi
+    type: app
+    paths: []
+    shelf: finance/budget
+    why: 个人理财与净资产追踪手机应用；不是知识管理
+  - id: wealthfolio/wealthfolio
+    type: app
+    paths: []
+    shelf: finance/investing
+    why: 本地优先的投资组合与净资产追踪，以持仓为主；不是知识管理
+  - id: portfolio-performance/portfolio
+    type: app
+    paths: []
+    shelf: finance/investing
+    why: 股票、加密资产投资组合的收益追踪；不是自动化
+  - id: 1zilc/fishing-funds
+    type: app
+    paths: []
+    shelf: finance/investing
+    why: 基金、股票、虚拟货币行情的状态栏应用；行情归投资，不是启动器
+  - id: trentpiercy/trace
+    type: app
+    paths: []
+    shelf: finance/investing
+    why: 加密资产投资组合与行情应用；不是待办
+  - id: axiaoxin-com/investool
+    type: cli
+    paths: [data/analytics]
+    shelf: finance/investing
+    why: 财报分析、选股选基的命令行工具；不是知识管理
+  - id: TNT-Likely/PanWatch
+    type: app
+    paths: [agents/assistants]
+    shelf: finance/investing
+    why: A 股、港股、美股的盯盘应用（AI 辅助）；用途是看行情，不是通用 AI 助手
+  - id: Open-Trader/opentrader
+    type: app
+    paths: []
+    shelf: finance/investing
+    why: 带界面的加密资产交易机器人（定投、网格）；不是自动化平台
+  - id: TomBursch/kitchenowl
+    type: app
+    paths: []
+    shelf: shopping/food
+    why: 购物清单与菜谱管理；叶子说明"菜谱"；不是自动化
+  - id: simonoppowa/OpenNutriTracker
+    type: app
+    paths: []
+    shelf: shopping/food
+    why: 卡路里与饮食记录，叶子说明"饮食记录"；不是笔记
+  - id: openfoodfacts/smooth-app
+    type: app
+    paths: []
+    shelf: shopping/food
+    why: Open Food Facts 食品扫码查成分的手机应用；不是知识管理
+  - id: karlomikus/bar-assistant
+    type: app
+    paths: []
+    shelf: shopping/food
+    why: 家庭酒吧与鸡尾酒配方管理；菜谱类，不是自动化
+  - id: clucraft/PriceGhost
+    type: app
+    paths: []
+    shelf: shopping/shopping
+    why: 商品价格追踪，叶子说明"比价"；不是自动化
+  - id: jef/streetmerchant
+    type: app
+    paths: []
+    shelf: shopping/shopping
+    why: 商品到货监控与抢购（显卡、主机）；购物工具，不是站点监控
+  - id: PimpinPumpkin/Vela
+    type: app
+    paths: []
+    shelf: travel/navigation
+    why: 地图与逐向导航应用；不是手机系统工具
+  - id: Freika/dawarich
+    type: app
+    paths: [data/analytics]
+    shelf: travel/navigation
+    why: Google 位置记录的自托管替代，叶子说明"轨迹记录"；不是网盘
+  - id: kylecorry31/Trail-Sense
+    type: app
+    paths: [systems/embedded]
+    shelf: travel/navigation
+    why: 徒步露营的离线导航多功能工具（指南针、轨迹）；不是手机系统工具
+  - id: OpenCPN/OpenCPN
+    type: app
+    paths: []
+    shelf: travel/navigation
+    why: 船用海图导航软件；不是知识管理
+  - id: grote/Transportr
+    type: app
+    paths: []
+    shelf: travel/travel
+    why: 公共交通出行助手，叶子说明"公交与铁路出行"；不是手机系统工具
+  - id: DuarteSantos8/openGym
+    type: app
+    paths: []
+    shelf: health/fitness
+    why: 健身与体重训练记录；不是待办
+  - id: yihong0618/running_page
+    type: app
+    paths: [web/static-site]
+    shelf: health/fitness
+    why: 个人跑步记录主页（同步 Strava 等）；不是站点监控
+  - id: GoldenCheetah/GoldenCheetah
+    type: app
+    paths: []
+    shelf: health/fitness
+    why: 骑行、跑步、铁三的训练分析软件；不是知识管理
+  - id: cpfair/tapiriik
+    type: app
+    paths: []
+    shelf: health/fitness
+    why: 在各健身平台之间同步运动记录；不是通用自动化
+  - id: OpenTracksApp/OpenTracks
+    type: app
+    paths: []
+    shelf: health/fitness
+    why: 运动轨迹记录应用（跑步骑行）；不是手机系统工具
+  - id: hishizuka/pizero_bikecomputer
+    type: app
+    paths: [systems/embedded]
+    shelf: health/fitness
+    why: 树莓派做的码表（GPS、ANT+），骑行配套；不是游戏引擎
+  - id: meditohq/medito-app
+    type: app
+    paths: []
+    shelf: health/wellness
+    why: 免费冥想应用，叶子说明"冥想"；不是播放器
+  - id: fastenhealth/fasten-onprem
+    type: app
+    paths: []
+    shelf: health/wellness
+    why: 个人与家庭的电子病历管理；不是网盘
+  - id: PranshulGG/WeatherMaster
+    type: app
+    paths: []
+    shelf: life/weather
+    why: 安卓天气应用；不是手机系统工具
+  - id: darkmoonight/Rain
+    type: app
+    paths: []
+    shelf: life/weather
+    why: 天气应用；不是笔记
+  - id: schachmat/wego
+    type: cli
+    paths: [devtools/terminal]
+    shelf: life/weather
+    why: 终端里看天气的命令行工具；用途是天气，不是开发者终端工具
+  - id: Veirt/weathr
+    type: cli
+    paths: [devtools/terminal]
+    shelf: life/weather
+    why: 终端天气应用（ASCII 动画）；用途是天气
+  - id: fcambus/ansiweather
+    type: cli
+    paths: [devtools/terminal]
+    shelf: life/weather
+    why: 终端天气命令行；用途是天气
+  - id: genuinetools/weather
+    type: cli
+    paths: []
+    shelf: life/weather
+    why: 命令行看天气；不是下载工具
+  - id: echo-loop/Echo-Loop
+    type: app
+    paths: [ai/speech-audio]
+    shelf: education/learning
+    why: 英语精听与间隔复习应用，叶子说明"语言学习"；不是通用 AI 助手
+  - id: LuteOrg/lute-v3
+    type: app
+    paths: []
+    shelf: education/learning
+    why: 通过阅读学外语的应用；不是知识管理
+  - id: simjanos-dev/LinguaCafe
+    type: app
+    paths: []
+    shelf: education/learning
+    why: 自托管的外语阅读学习软件；不是阅读器
+  - id: Chuloo/mural
+    type: app
+    paths: [agents/assistants]
+    shelf: education/learning
+    why: iPhone 语言学习应用；不是通用 AI 助手
+  - id: olmps/memo
+    type: app
+    paths: []
+    shelf: education/learning
+    why: 间隔重复记忆卡片软件，叶子说明"记忆卡片"；不是知识管理
+  - id: solidSpoon/DashPlayer
+    type: app
+    paths: []
+    shelf: education/learning
+    why: 为英语学习者做的视频播放器；用途是学语言，不是通用播放器
+  - id: xiaoyifang/goldendict-ng
+    type: app
+    paths: []
+    shelf: education/reference
+    why: 词典软件 GoldenDict 新版；不是文档办公
+  - id: tisfeng/Easydict
+    type: app
+    paths: [ai/cv]
+    shelf: education/reference
+    why: macOS 词典与翻译应用；不是笔记
+  - id: beyondtranslate/beyondtranslate-ce
+    type: app
+    paths: []
+    shelf: education/reference
+    why: 桌面翻译应用；不是知识管理
+  - id: zu1k/translator
+    type: app
+    paths: []
+    shelf: education/reference
+    why: 划词翻译软件；不是笔记
+  - id: CopyTranslator/CopyTranslator
+    type: app
+    paths: []
+    shelf: education/reference
+    why: 复制即翻译的外文阅读翻译工具；不是 AI 助手
+  - id: niedev/RTranslator
+    type: app
+    paths: [ai/speech-audio]
+    shelf: education/reference
+    why: 安卓端实时对话翻译应用；叶子说明"翻译"
+  - id: recloudstream/cloudstream
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线影视流媒体应用；不是本地播放器
+  - id: popcorntime/popcorntime
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线看电影剧集的应用；不是本地播放器
+  - id: truelockmc/streambert
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线看电影、剧集、动漫的桌面应用；不是本地播放器
+  - id: lizongying/my-tv
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 电视直播应用，自带直播源；不是本地播放器
+  - id: streamlink/streamlink-twitch-gui
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: Twitch 直播浏览客户端；不是本地播放器
+  - id: twireapp/Twire
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: Twitch 第三方安卓客户端，看直播为主
+  - id: robvdpol/RaceControl
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: F1TV 的桌面客户端，看赛事直播
+  - id: Sle2p/AniCh
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线看番的弹幕应用；不是漫画阅读器
+  - id: komikku-app/anikku
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 安卓在线看番应用；不是阅读器
+  - id: Predidit/oneAnime
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: anime1 第三方看番客户端；不是本地播放器
+  - id: akuse-app/akuse
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线看番的桌面应用；不是本地播放器
+  - id: kl3jvi/animity
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 安卓在线看番应用；不是本地播放器
+  - id: lanlinju/Animius
+    type: app
+    paths: []
+    shelf: media/streaming
+    why: 在线看动漫的应用（多数据源、弹幕）；不是本地播放器

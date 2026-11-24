@@ -23,6 +23,7 @@ func (a *API) registerBoards(r gin.IRouter) {
 	r.GET("/heat", a.heat)
 	r.GET("/categories", a.categories)
 	r.GET("/facets/type", a.typeFacets)
+	r.GET("/facets/shelf", a.shelfFacets)
 	r.GET("/stats/languages", a.languages)
 	r.GET("/stats/staleness", a.staleness)
 	r.GET("/models", a.models)
@@ -172,6 +173,10 @@ func (a *API) categories(c *gin.Context) { whole[[]boards.CategoryNode](a, c, bo
 
 // GET /v1/facets/type — the forms with item counts, in filter-chip order.
 func (a *API) typeFacets(c *gin.Context) { whole[[]boards.Facet](a, c, boards.TypeFacetsKey) }
+
+// GET /v1/facets/shelf — listed apps per shelf, every shelf of the tree and
+// the developer shelves, empty ones included.
+func (a *API) shelfFacets(c *gin.Context) { whole[[]boards.ShelfCount](a, c, boards.ShelfFacetsKey) }
 
 // GET /v1/stats/languages?limit=20
 func (a *API) languages(c *gin.Context) {

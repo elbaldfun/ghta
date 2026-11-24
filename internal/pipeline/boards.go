@@ -148,6 +148,9 @@ func (j *Boards) Run(ctx context.Context) (worker.Report, error) {
 			return rep, err
 		}
 	}
+	if err := put(boards.ShelfFacetsKey, boards.ShelfFacets(apps, boards.Shelves(j.tree))); err != nil {
+		return rep, err
+	}
 	if err := put(boards.AltTargetsKey, boards.AltTargets(apps)); err != nil {
 		return rep, err
 	}

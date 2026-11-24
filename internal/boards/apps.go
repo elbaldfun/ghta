@@ -47,6 +47,9 @@ var (
 
 func BestOfKey(shelf string) string { return "apps-best|" + shelf }
 
+// ShelfFacetsKey is the board of listed apps per shelf.
+const ShelfFacetsKey = "facets|shelf"
+
 // AppSource is what the boards job reads of a candidate app.
 type AppSource struct {
 	ExternalID  string             `bson:"externalId"`
@@ -218,6 +221,29 @@ func Shelves(tree taxonomy.Tree) []string {
 		if leaves[s] {
 			out = append(out, s)
 		}
+	}
+	return out
+}
+
+// ShelfCount is how many listed apps a shelf holds.
+type ShelfCount struct {
+	Shelf string `bson:"shelf" json:"shelf"`
+	Count int    `bson:"count" json:"count"`
+}
+
+// ShelfFacets counts the listed apps of every shelf in shelves, in that
+// order, empty shelves included: the store's filter shows a shelf only once
+// something is on it. Developer shelves are counted like the rest.
+func ShelfFacets(apps []App, shelves []string) []ShelfCount {
+	counts := map[string]int{}
+	for i := range apps {
+		if apps[i].Listed && apps[i].Shelf != "" {
+			counts[apps[i].Shelf]++
+		}
+	}
+	out := make([]ShelfCount, len(shelves))
+	for i, s := range shelves {
+		out[i] = ShelfCount{Shelf: s, Count: counts[s]}
 	}
 	return out
 }
