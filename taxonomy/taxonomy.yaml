@@ -21,8 +21,14 @@
 #   · infra/ci-cd + infra/iac → infra/automation；data/search + data/analytics → data/analytics
 #   · blockchain 两叶合一
 #   · apps 四叶 → 10 个货架大类 39 个货架（v2 的 53 个货架：devtools 大类移出、小格合并、补 browser-ext）
+#
+# v4（2026-11-22，iOS 消费类货架，docs/MOBILE-APPS-DATA.md 第十一节）
+#   · 纯新增，不动已有叶子：新增 6 个货架大类 finance / shopping / travel / health / life / education，
+#     加 media/streaming，共 15 个货架，apps 分支到 16 个大类 54 个货架
+#   · 每个货架对应哪些 App Store genre，待建的 store-genres.yaml 来定（建好后与本树一起校验）
+#   · 已有条目不重判：migrate 只把版本盖到 4；GitHub 上该搬过来的应用（记账、地图、健身类）按条目修正或重判
 
-version: 3
+version: 4
 
 nodes:
   - path: agents
@@ -199,6 +205,7 @@ nodes:
           - { path: apps/media/player, name: 播放器, nameEn: Players, est: 340, from: [media/player], desc: 本地视频与音频播放器 }
           - { path: apps/media/music, name: 音乐, nameEn: Music, est: 250, from: [media/music], desc: 音乐播放与流媒体客户端、歌词与音乐库管理 }
           - { path: apps/media/reader, name: 阅读, nameEn: Readers, est: 280, from: [media/reader], desc: 电子书、漫画、RSS 与新闻阅读器 }
+          - { path: apps/media/streaming, name: 视频与直播, nameEn: Streaming & Video, desc: 在线视频、短视频、直播与追剧平台的客户端（App Store 娱乐 genre）；本地播放器归 media/player，自建影音库归 selfhosted/media-server }
       - path: apps/social
         name: 社交与通讯
         nameEn: Social & Messaging
@@ -227,6 +234,44 @@ nodes:
         children:
           - { path: apps/games/games, name: 游戏, nameEn: Games, est: 515, from: [games/games], desc: 可以直接玩的开源游戏、游戏启动器与游戏库管理 }
           - { path: apps/games/emulator, name: 模拟器, nameEn: Emulators, est: 135, from: [games/emulator], desc: 游戏机与旧平台模拟器 }
+      - path: apps/finance
+        name: 财务
+        nameEn: Finance
+        children:
+          - { path: apps/finance/budget, name: 记账与预算, nameEn: Budgeting, desc: 个人与家庭的记账、预算、账单与订阅追踪；面向企业的 ERP、会计与发票系统不算 }
+          - { path: apps/finance/investing, name: 投资与交易, nameEn: Investing, desc: 股票、基金、加密资产的行情、交易与持仓管理客户端；区块链节点与开发工具归 blockchain/core }
+          - { path: apps/finance/payments, name: 银行与支付, nameEn: Banking & Payments, desc: 手机银行、转账、支付与电子钱包、信用卡与信用分 }
+      - path: apps/shopping
+        name: 购物与美食
+        nameEn: Shopping & Food
+        children:
+          - { path: apps/shopping/shopping, name: 购物, nameEn: Shopping, desc: 网购、比价、优惠券与二手交易的客户端；搭网店用的电商系统不算 }
+          - { path: apps/shopping/food, name: 美食与外卖, nameEn: Food & Drink, desc: 外卖与点餐、菜谱与饮食记录、餐厅点评 }
+      - path: apps/travel
+        name: 出行
+        nameEn: Travel
+        children:
+          - { path: apps/travel/travel, name: 旅行与交通, nameEn: Travel & Transport, desc: 机票、酒店与行程规划，打车、公交与铁路出行 }
+          - { path: apps/travel/navigation, name: 地图与导航, nameEn: Maps & Navigation, desc: 地图、导航、离线地图与轨迹记录；做地图的开发库不算 }
+      - path: apps/health
+        name: 健康
+        nameEn: Health
+        children:
+          - { path: apps/health/fitness, name: 运动健身, nameEn: Fitness, desc: 健身计划与训练记录、跑步骑行、计步与运动手表配套应用 }
+          - { path: apps/health/wellness, name: 健康与医疗, nameEn: Health & Medical, desc: 睡眠、冥想、经期、饮水与体征记录，问诊、用药与医疗服务 }
+      - path: apps/life
+        name: 生活
+        nameEn: Lifestyle
+        children:
+          - { path: apps/life/lifestyle, name: 生活服务, nameEn: Lifestyle, desc: 家居、房产、婚恋交友、宗教与本地生活服务 }
+          - { path: apps/life/weather, name: 天气, nameEn: Weather, desc: 天气预报、空气质量与气象雷达 }
+          - { path: apps/life/sports, name: 体育, nameEn: Sports, desc: 体育赛事比分、新闻与直播，球队与球迷应用 }
+      - path: apps/education
+        name: 学习
+        nameEn: Education
+        children:
+          - { path: apps/education/learning, name: 学习与课程, nameEn: Learning, desc: 语言学习、背单词与记忆卡片、题库与在线课程、儿童启蒙；教程与课程仓库本身是资料，不上货架 }
+          - { path: apps/education/reference, name: 词典与参考, nameEn: Reference, desc: 词典、翻译、百科与参考工具书 }
 
   # 移出 apps 的货架（原 devtools 大类 8 格 + security/pentest 共 5,220 条）去向：
   #   devtools/editor → devtools/editors        devtools/terminal → devtools/terminal
