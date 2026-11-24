@@ -1,6 +1,7 @@
 package boards
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -81,5 +82,20 @@ func TestBestOfAndAltTargets(t *testing.T) {
 	targets := AltTargets(apps)
 	if len(targets) != 2 || targets[0].Slug != "photoshop" || targets[0].Count != 2 || targets[0].Name != "Photoshop" {
 		t.Fatalf("targets = %+v; the most-starred app names the product", targets)
+	}
+}
+
+func TestShelfFacets(t *testing.T) {
+	apps := []App{
+		{ExternalID: "a", Shelf: "media/music", Listed: true},
+		{ExternalID: "b", Shelf: "media/music", Listed: true},
+		{ExternalID: "c", Shelf: "finance/budget"}, // an alternative only
+		{ExternalID: "d", Listed: true},            // listed, on no shelf
+		{ExternalID: "e", Shelf: "devtools/terminal", Listed: true},
+	}
+	got := ShelfFacets(apps, []string{"media/music", "finance/budget", "devtools/terminal"})
+	want := []ShelfCount{{"media/music", 2}, {"finance/budget", 0}, {"devtools/terminal", 1}}
+	if !slices.Equal(got, want) {
+		t.Fatalf("shelf facets = %+v, want %+v", got, want)
 	}
 }

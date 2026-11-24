@@ -2,7 +2,7 @@ import { DEV_SHELVES, shelfLabelKey } from '@/lib/shelves';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { getApps, type AppKind, type AppSort, type OS } from '@/lib/data';
+import { getApps, getShelfCounts, type AppKind, type AppSort, type OS } from '@/lib/data';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
 import { Dropdown, Segmented, fmtInt } from '@/components/ui';
@@ -95,7 +95,19 @@ export default async function AppsPage({
   const sort: AppSort = (SORTS as string[]).includes(searchParams.sort ?? '') ? (searchParams.sort as AppSort) : 'hot';
   const page = Math.max(1, Math.floor(Number(searchParams.page)) || 1);
 
-  const { items, total } = await getApps({ os, kind, shelf, sort, limit: PER_PAGE, page });
+  const [{ items, total }, counts] = await Promise.all([
+    getApps({ os, kind, shelf, sort, limit: PER_PAGE, page }),
+    getShelfCounts(),
+  ]);
+  // A shelf with nothing on it stays out of the filter until the boards job
+  // counts something there; the one being viewed always shows. Without the
+  // counts every shelf shows.
+  const shown = (major: string, sub: string) => {
+    const v = shelfValue(major, sub);
+    return counts === null || (counts[v] ?? 0) > 0 || v === shelf;
+  };
+  const subsOf = (major: string) => SHELF_SUBS[major].filter((sub) => shown(major, sub));
+  const majors = SHELF_MAJORS.filter((m) => m === major || subsOf(m).length > 0);
   const now = new Date();
 
   /** Link to this page with some filters changed; defaults are left out. */
@@ -171,7 +183,7 @@ export default async function AppsPage({
             active={!!major}
             items={[
               { key: 'all', label: t('shelfAllItem'), href: href({ shelf: '', page: 1 }), active: !major },
-              ...SHELF_MAJORS.map((m) => ({ key: m, label: majorLabel(m), href: href({ shelf: m, page: 1 }), active: major === m })),
+              ...majors.map((m) => ({ key: m, label: majorLabel(m), href: href({ shelf: m, page: 1 }), active: major === m })),
             ]}
           />
           {major && (
@@ -180,7 +192,7 @@ export default async function AppsPage({
               active={shelf !== major}
               items={[
                 { key: 'all', label: t('subAll'), href: href({ shelf: major, page: 1 }), active: shelf === major },
-                ...SHELF_SUBS[major].map((s) => {
+                ...subsOf(major).map((s) => {
                   const v = shelfValue(major, s);
                   return { key: v, label: subLabel(v), href: href({ shelf: v, page: 1 }), active: shelf === v };
                 }),
