@@ -69,7 +69,11 @@ func run(log *slog.Logger, runList string, list bool) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(strings.Join(names(append(jobs, scheduled(nil, log)...)), "\n"))
+		extra, err := scheduled(nil, log)
+		if err != nil {
+			return err
+		}
+		fmt.Println(strings.Join(names(append(jobs, extra...)), "\n"))
 		return nil
 	}
 	uri, db := os.Getenv("MONGODB_URI"), os.Getenv("MONGODB_DB")
@@ -102,7 +106,10 @@ func run(log *slog.Logger, runList string, list bool) error {
 	}
 	runner := worker.NewRunner(st, log)
 
-	extra := scheduled(st, log)
+	extra, err := scheduled(st, log)
+	if err != nil {
+		return err
+	}
 	if runList != "" {
 		chosen, err := pick(append(jobs, extra...), runList)
 		if err != nil {
@@ -215,11 +222,19 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 
 // scheduled are the jobs outside the nightly pipeline, each on its own
 // schedule: today only the App Store charts.
-func scheduled(st *store.Store, log *slog.Logger) []worker.Job {
+func scheduled(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	pace := time.Duration(envInt("IOS_PACE_MS", 3000)) * time.Millisecond
-	// No shelver yet: the genre → shelf tables wait on the taxonomy work
-	// (docs/MOBILE-APPS-DATA.md §11).
-	return []worker.Job{pipeline.NewIOS(st, appstore.NewClient(pace), iosCountries(), nil, log)}
+	dir := getEnv("TAXONOMY_DIR", "taxonomy")
+	tree, err := taxonomy.LoadTree(filepath.Join(dir, "taxonomy.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	genres, err := taxonomy.LoadStoreGenres(filepath.Join(dir, "store-genres.yaml"), tree)
+	if err != nil {
+		return nil, err
+	}
+	shelve := appstore.NewShelver(genres)
+	return []worker.Job{pipeline.NewIOS(st, appstore.NewClient(pace), iosCountries(), shelve, log)}, nil
 }
 
 // iosCountries are the App Store storefronts to chart, in priority order: an

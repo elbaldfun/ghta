@@ -391,8 +391,10 @@ func (s *Store) WriteFetched(ctx context.Context, batch []item.Fetched, now time
 			set["labels.domain"] = it.Labels.Domain
 			set["labels.by"] = it.Labels.By
 			set["jobs.judge.status"] = item.StatusDone
-			if it.Labels.Shelf != "" {
+			if it.Labels.Shelf != "" || it.App != nil {
 				// A shelf the source's own category maps to (store sources).
+				// A store listing always carries the mapping's answer, none
+				// included, so a genre table that drops a shelf clears it.
 				set["labels.shelf"] = it.Labels.Shelf
 			}
 		} else {

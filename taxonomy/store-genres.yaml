@@ -1,0 +1,170 @@
+# App Store genre → 货架（2026-11-25 负责人"都按建议"，方案见 Obsidian「StarRank iOS 应用在网页上展示」榜单线小节）
+#
+# - 只按主 genre（app.genreId）映射，不看次 genre，一个应用只上一个货架。
+# - rules 按顺序匹配应用名称；名称都没命中，再拿标了 description: true 的规则匹配简介前 300 字；都没命中用 shelf（默认货架）。
+#   简介匹配只开给财务、健康两类：其他类别的简介里"file""video""chat""AI"太常见，误判多于命中。
+# - shelf 为空表示不进货架，必须写 why。match 是正则，不区分大小写；英文词用 \b 防止误命中（run ≠ brunch）。
+# - 货架只给 iOS 详情页的"同类开源应用"和搜索用；iOS 页内筛选直接用 App Store 分类，/apps 不混排 iOS。
+# - 改了以后，第二天还在榜上的应用会在 ios 任务里换成新货架，不用写 migration。
+# - go test ./internal/taxonomy 校验：每个目标是树上的货架，store-golden.yaml 全部命中。
+genres:
+  # ── 一对一 ──
+  - id: "6024"
+    name: Shopping
+    shelf: shopping/shopping
+  - id: "6023"
+    name: Food & Drink
+    shelf: shopping/food
+  - id: "6010"
+    name: Navigation
+    shelf: travel/navigation
+  - id: "6020"
+    name: Medical
+    shelf: health/wellness
+  - id: "6012"
+    name: Lifestyle
+    shelf: life/lifestyle
+  - id: "6001"
+    name: Weather
+    shelf: life/weather
+  - id: "6004"
+    name: Sports
+    shelf: life/sports
+  - id: "6017"
+    name: Education
+    shelf: education/learning
+  - id: "6006"
+    name: Reference
+    shelf: education/reference
+  - id: "6016"
+    name: Entertainment
+    shelf: media/streaming
+  - id: "6018"
+    name: Books
+    shelf: media/reader
+  - id: "6009"
+    name: News
+    shelf: media/reader
+  - id: "6021"
+    name: Magazines & Newspapers
+    shelf: media/reader
+  - id: "6011"
+    name: Music
+    shelf: media/music
+
+  # ── genre 加关键词 ──
+  - id: "6015"
+    name: Finance
+    shelf: finance/payments # 榜上大多是银行、信用卡、贷款
+    rules:
+      # 银行排最前：银行的名字和简介里也常有"理财""invest"；记账排在投资前：记账应用的名字里常带"理财"
+      - match: '\b(bank|banking|sparkasse|volksbank|credit cards?)\b|银行|銀行|信用卡|カード|Bank\b'
+        shelf: finance/payments
+        description: true
+      - match: '\b(budget\w*|expenses?|spending|money manager|bills?)\b|记账|账本|预算|家計簿|Haushaltsbuch|Ausgaben'
+        shelf: finance/budget
+        description: true
+      - match: '\b(stocks?|invest\w*|trad(e|ing)|crypto\w*|bitcoin|btc|broker\w*|portfolio|etfs?|forex|robinhood|coinbase|binance)\b|股票|炒股|投资|基金|证券|証券|株式投資|株価|理财|Aktien?|Börse|Depot'
+        shelf: finance/investing
+        description: true
+  - id: "6003"
+    name: Travel
+    shelf: travel/travel
+    rules:
+      - match: '\b(maps?|navigat\w*|gps)\b|地图|导航|地図|ナビ'
+        shelf: travel/navigation
+  - id: "6013"
+    name: Health & Fitness
+    shelf: health/wellness
+    rules:
+      # 睡眠、冥想、经期排在健身前：这类应用的简介里也会提"运动"
+      - match: '\b(sleep\w*|meditat\w*|mindful\w*|breath\w*|period|cycle tracker|fertility|pregnan\w*)\b|睡眠|冥想|助眠|白噪音|月经|经期|例假|孕|瞑想|生理|Schlaf'
+        shelf: health/wellness
+        description: true
+      - match: '\b(workouts?|fitness|running|gym|cycling|bike|steps?|pedometer|strength|training|yoga|pilates|hiit|exercises?|climb\w*)\b|跑步|健身|运动|骑行|瑜伽|筋トレ|ランニング|歩数|フィットネス|ヨガ|Laufen|Training'
+        shelf: health/fitness
+        description: true
+  - id: "6008"
+    name: Photo & Video
+    shelf: creative/image
+    rules:
+      # 剪辑工具排最前：剪映、快影的名字里也带"抖音""快手"
+      - match: '\b(video editor|movie maker|vlog)\b|剪辑|剪映|快影|動画編集'
+        shelf: creative/video
+      - match: '\b(youtube|twitch|tiktok|live ?stream\w*)\b|直播|快手|抖音|ライブ配信'
+        shelf: media/streaming
+      - match: '\b(video|videos|film|reels?)\b|视频|動画'
+        shelf: creative/video
+  - id: "6027"
+    name: Graphics & Design
+    shelf: creative/image
+    rules:
+      - match: '\b(widgets?|wallpapers?|icon themes?|themes?)\b|小组件|壁纸|ウィジェット|壁紙'
+        shelf: system/launcher
+  - id: "6005"
+    name: Social Networking
+    shelf: social/tools
+    rules:
+      - match: '\b(dating|tinder|bumble|hinge|match)\b|交友|婚恋|约会|マッチング|恋活|婚活|出会い'
+        shelf: life/lifestyle
+      - match: '\b(chat|messag\w*|messenger|whatsapp|telegram|signal|discord|line)\b|微信|wechat|\bqq\b|聊天|メッセ|チャット'
+        shelf: social/messaging
+  - id: "6007"
+    name: Productivity
+    shelf: ""
+    why: 没命中关键词的是倒数日、计算器、快递、积分之类的杂项，放进哪个货架都不合适
+    rules:
+      # 笔记、待办、文档排在 AI 前面：Goodnotes、WPS 的名字里也带 AI，但它们是笔记和办公软件
+      - match: '\b(vpn|proxy)\b|加速器'
+        shelf: network/proxy
+      - match: '\b(notes?|notebook|memo)\b|笔记|便签|ノート|メモ|Notiz'
+        shelf: productivity/notes
+      - match: '\b(to-? ?do|tasks?|calendar|habits?|reminders?|planner)\b|日历|待办|提醒|カレンダー|タスク|リマインダー|Kalender|Aufgaben'
+        shelf: productivity/todo
+      - match: '\b(pdf|scan\w*|office|docs|documents?|word|excel|sheets|powerpoint|e-?sign\w*|signatures?)\b|文档|表格|扫描|スキャン|書類'
+        shelf: productivity/docs
+      - match: '\b(authenticator|passwords?|2fa)\b|密码|パスワード'
+        shelf: security/passwords
+      - match: '\b(e-?mail|mail|inbox|gmail|outlook)\b|邮箱|邮件|メール'
+        shelf: social/messaging
+      - match: '\b(cloud storage|drive|dropbox|zip|rar|files?)\b|网盘|云盘|解压|ファイル'
+        shelf: system/files
+      - match: '\b(ai|gpt|chatgpt|gemini|copilot|claude|grok|perplexity|assistant)\b|豆包|千问|kimi|deepseek|文心|AI ?助手|智能助手'
+        shelf: ai/assistant
+  - id: "6002"
+    name: Utilities
+    shelf: system/phone
+    rules:
+      - match: '\b(vpn|proxy)\b|加速器|翻墙'
+        shelf: network/proxy
+      - match: '\b(browser|chrome|firefox|duckduckgo|opera|brave)\b|浏览器|ブラウザ'
+        shelf: network/browser
+      - match: '\b(passwords? manager|authenticator|2fa|otp|keepass)\b|密码管理|パスワード管理|Passwort'
+        shelf: security/passwords
+      - match: '\b(backup|back up)\b|备份|バックアップ'
+        shelf: system/backup
+      - match: '\b(files?|cloud storage|drive)\b|网盘|云盘|文件|互传|ファイル'
+        shelf: system/files
+      - match: '\b(widgets?|keyboard|launcher|wallpapers?|icons?)\b|小组件|壁纸|键盘|ウィジェット|壁紙|キーボード'
+        shelf: system/launcher
+  - id: "6000"
+    name: Business
+    shelf: ""
+    why: 没命中关键词的是招聘、排班、物流司机和企业内部应用（Indeed、WorkJam、FedEx），不是个人软件
+    rules:
+      - match: '\b(meetings?|zoom|teams|slack|chat|messag\w*|webex)\b|会议|钉钉|飞书|企业微信|ビジネスチャット'
+        shelf: social/messaging
+      - match: '\b(pdf|scan\w*|e-?sign\w*|signatures?)\b|文档|扫描|スキャン'
+        shelf: productivity/docs
+      - match: '\b(authenticator|duo mobile|2fa)\b'
+        shelf: security/passwords
+
+  # ── 不进货架 ──
+  - id: "6014"
+    name: Games
+    shelf: ""
+    why: games/games 是开源游戏，商业手游混进去性质不同，量也会盖过它；子 genre 一期没采
+  - id: "6026"
+    name: Developer Tools
+    shelf: ""
+    why: v3 起开发者工具不在 apps 分支，iOS 同一口径

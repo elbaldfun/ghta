@@ -53,9 +53,8 @@ const (
 // whole text goes to the blob.
 const descriptionMax = 1000
 
-// Shelver maps a listing to a store shelf slug, or "" for none. The mapping
-// tables are not decided yet (docs/MOBILE-APPS-DATA.md §11); until they are,
-// no shelver is configured and App Store items carry no shelf.
+// Shelver maps a listing to a store shelf slug, or "" for none: NewShelver,
+// by taxonomy/store-genres.yaml.
 type Shelver func(a App) string
 
 // Listing is what the job knows about an app from today's charts.
