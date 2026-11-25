@@ -227,9 +227,10 @@ lookups:
 	if _, err := j.st.AgeGrowth(ctx, item.SourceIOS, day); err != nil {
 		return rep, err
 	}
-	// Every chart was read, so an app whose charts are older than today is
-	// on none of them now.
-	cleared, err := j.st.ClearCharts(ctx, item.SourceIOS, day)
+	// Every chart was read, so an app not seen on one today is on none. An
+	// app seen but not listed in its home storefront keeps its old places,
+	// dated by chartsDay.
+	cleared, err := j.st.ClearCharts(ctx, item.SourceIOS, order)
 	if err != nil {
 		return rep, err
 	}

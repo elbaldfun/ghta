@@ -123,12 +123,12 @@ func (s *Store) PrevChart(ctx context.Context, source, country, chart, genre, da
 	return c, true, nil
 }
 
-// ClearCharts removes app.charts from the store items whose charts are not
-// of day: the apps on no chart that day. ChartsDay is kept, so the last day
-// an app was on a chart stays known.
-func (s *Store) ClearCharts(ctx context.Context, source, day string) (int, error) {
+// ClearCharts removes app.charts from the store items not in onCharts, the
+// apps on some chart this run: what is left had no place on any chart read.
+// ChartsDay is kept, so the last day an app was on a chart stays known.
+func (s *Store) ClearCharts(ctx context.Context, source string, onCharts []string) (int, error) {
 	res, err := s.Items().UpdateMany(ctx,
-		bson.M{"source": source, "app.chartsDay": bson.M{"$ne": day}, "app.charts.0": bson.M{"$exists": true}},
+		bson.M{"source": source, "externalId": bson.M{"$nin": onCharts}, "app.charts.0": bson.M{"$exists": true}},
 		bson.M{"$unset": bson.M{"app.charts": ""}})
 	if err != nil {
 		return 0, fmt.Errorf("clear charts: %w", err)

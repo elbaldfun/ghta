@@ -261,6 +261,15 @@ func TestIOSAppCharts(t *testing.T) {
 		t.Errorf("app off the charts kept %+v day %q", a.Charts, a.ChartsDay)
 	}
 
+	// A rerun the same day where 4 has left: its places go too.
+	f.charts["jp/free/all"] = []string{"2"}
+	if _, err := iosJob(st, f, "2026-11-24").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if a := get("4"); len(a.Charts) != 0 {
+		t.Errorf("rerun kept the places of an app that left %+v", a.Charts)
+	}
+
 	// Day three: a chart fails, so app 1 (only on it) keeps yesterday's.
 	f.chartErr = map[string]error{"us/free/all": fmt.Errorf("appstore: http 503")}
 	if _, err := iosJob(st, f, "2026-11-25").Run(ctx); err != nil {
