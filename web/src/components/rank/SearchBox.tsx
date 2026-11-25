@@ -95,13 +95,21 @@ export function SearchBox() {
     router.push(`/repo/${owner}/${name}`);
   }
 
+  // Folds the lg search back to its icon, list and all, and hands focus to
+  // the icon so the keyboard user is not left on a hidden field.
+  function fold() {
+    setOpen(false);
+    setExpanded(false);
+    requestAnimationFrame(() => opener.current?.focus());
+  }
+
   function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape' && expanded) {
+      fold();
+      return;
+    }
     if (!open || items.length === 0) {
       if (e.key === 'Enter') fullSearch();
-      if (e.key === 'Escape' && expanded) {
-        setExpanded(false);
-        requestAnimationFrame(() => opener.current?.focus());
-      }
       return;
     }
     if (e.key === 'ArrowDown') {
@@ -119,7 +127,20 @@ export function SearchBox() {
   }
 
   return (
-    <div ref={ref} className="relative flex w-full flex-1 lg:max-xl:justify-end">
+    <div
+      ref={ref}
+      className="relative flex w-full flex-1 lg:max-xl:justify-end"
+      onBlur={(e) => {
+        // Tabbing out of the open field. A null target (a click on nothing
+        // focusable, or Safari not focusing a clicked button) is left to the
+        // mousedown handler, so picking a suggestion still works.
+        const to = e.relatedTarget as Node | null;
+        if (to && !ref.current?.contains(to)) {
+          setOpen(false);
+          setExpanded(false);
+        }
+      }}
+    >
       <button
         ref={opener}
         type="button"
@@ -129,7 +150,7 @@ export function SearchBox() {
         }}
         aria-label={t('searchPlaceholder')}
         aria-expanded={expanded}
-        className={`hidden h-11 w-11 items-center justify-center rounded text-ink-3 hover:bg-sunk hover:text-ink ${expanded ? '' : 'lg:max-xl:flex'}`}
+        className={`hidden h-9 w-9 items-center justify-center rounded border border-rule text-ink-2 transition-colors duration-150 hover:border-ink-3 hover:text-ink ${expanded ? '' : 'lg:max-xl:flex'}`}
       >
         <SearchIcon size={17} />
       </button>
