@@ -27,17 +27,19 @@ export function RankHeader() {
         </Link>
         <nav
           aria-label={t('navMain')}
-          className="order-3 -mx-4 flex w-[calc(100%+2rem)] items-center gap-5 overflow-x-auto px-4 text-sr-small font-medium lg:order-2 lg:mx-0 lg:w-auto lg:gap-7 lg:overflow-visible lg:px-0"
+          className="order-3 -mx-4 flex w-[calc(100%+2rem)] items-center gap-5 overflow-x-auto px-4 text-sr-small font-medium lg:order-2 lg:mx-0 lg:w-auto lg:gap-4 lg:overflow-visible lg:px-0 xl:gap-7"
         >
           <NavLink href="/" label={t('navToday')} />
           <NavLink href="/ai" label={t('navAi')} alsoOn={['/ecosystem']} />
           <NavLink href="/github" label="GitHub" alsoOn={['/breakout', '/topics', '/map', '/repo']} />
           <NavLink href="/apps" label={t('navApps')} alsoOn={['/alternatives']} />
+          {/* A brand name, the same in every locale. */}
+          <NavLink href="/ios" label="App Store" />
           <NavLink href="/models" label={t('navModels')} />
           <NavLink href="/developers" label={t('navDevelopers')} />
           <NavLink href="/blog" label={tb('nav')} />
         </nav>
-        <div className="order-4 w-full pb-3 lg:order-3 lg:ml-auto lg:w-auto lg:max-w-[360px] lg:flex-1 lg:pb-0">
+        <div className="order-4 w-full pb-3 lg:order-3 lg:ml-auto lg:w-auto lg:pb-0 xl:max-w-[360px] xl:flex-1">
           <Suspense>
             <SearchBox />
           </Suspense>
