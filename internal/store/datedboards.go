@@ -70,9 +70,9 @@ func (s *Store) DeleteDatedBoards(ctx context.Context, prefix, day string) (int6
 }
 
 // ChartedOn counts the store items of a source whose chart places are
-// those of day.
-func (s *Store) ChartedOn(ctx context.Context, source, day string) (int64, error) {
-	n, err := s.Items().CountDocuments(ctx, bson.M{"source": source, "app.chartsDay": day})
+// those of day and include one in country.
+func (s *Store) ChartedOn(ctx context.Context, source, day, country string) (int64, error) {
+	n, err := s.Items().CountDocuments(ctx, bson.M{"source": source, "app.chartsDay": day, "app.charts.country": country})
 	if err != nil {
 		return 0, fmt.Errorf("charted on %s: %w", day, err)
 	}

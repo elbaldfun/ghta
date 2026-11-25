@@ -58,7 +58,7 @@ func TestIOSNewJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Processed != 2 || rep.Notes["us"] != 1 || rep.Notes["jp"] != 2 || rep.Notes["gb"] != 0 || rep.Notes["pruned"] != int64(1) {
+	if rep.Processed != 2 || rep.Notes["us"] != 1 || rep.Notes["jp"] != 2 || rep.Notes["gb"] != "kept" || rep.Notes["pruned"] != int64(1) {
 		t.Fatalf("report %+v", rep)
 	}
 	var jpRows []boards.IOSNewRow
@@ -68,9 +68,9 @@ func TestIOSNewJob(t *testing.T) {
 	if len(jpRows) != 2 || jpRows[0].Best != jp || jpRows[0].Charts != 1 {
 		t.Errorf("jp board = %+v", jpRows)
 	}
-	var gb []boards.IOSNewRow
-	if _, err := st.Board(ctx, boards.IOSNewKey("gb", day), &gb); err != nil || gb == nil || len(gb) != 0 {
-		t.Errorf("gb board = %+v %v; want an empty board", gb, err)
+	// No app has a gb place today (its charts failed): no gb board for the day.
+	if _, err := st.Board(ctx, boards.IOSNewKey("gb", day), &[]boards.IOSNewRow{}); err != store.ErrNoBoard {
+		t.Errorf("gb board for a storefront with no places today: %v", err)
 	}
 	if n, _ := st.Boards().CountDocuments(ctx, bson.M{"key": boards.IOSNewKey("us", "2026-11-01")}); n != 0 {
 		t.Error("old board kept")

@@ -47,25 +47,33 @@ func (j *IOSNew) Run(ctx context.Context) (rep worker.Report, err error) {
 	if err != nil {
 		return rep, fmt.Errorf("ios-new: chart day %q: %w", day, err)
 	}
-	// The places come with each app's lookup. Charts read but every lookup
-	// failed (throttled) leave no app with today's places: publishing would
-	// put empty boards over yesterday's good ones, so keep those.
-	if n, err := j.st.ChartedOn(ctx, item.SourceIOS, day); err != nil {
-		return rep, err
-	} else if n == 0 {
-		return rep, fmt.Errorf("ios-new: no app carries the chart places of %s; keeping the previous boards", day)
-	}
 	apps, err := j.st.ChartedSince(ctx, item.SourceIOS, day, at.Add(-boards.IOSNewWindow))
 	if err != nil {
 		return rep, err
 	}
 	now := j.now()
+	written := 0
 	for _, country := range j.countries {
+		// The places come with each app's lookup. A storefront whose charts
+		// all failed, or whose lookups did (throttled), has no app with
+		// today's places there: an empty board would hide yesterday's good
+		// one, so keep that.
+		if n, err := j.st.ChartedOn(ctx, item.SourceIOS, day, country); err != nil {
+			return rep, err
+		} else if n == 0 {
+			j.log.Warn("ios-new: no app carries today's places in this storefront; keeping its previous board", "country", country, "day", day)
+			rep.Note(country, "kept")
+			continue
+		}
 		rows := boards.IOSNew(apps, country, day)
 		if err := j.st.PutBoard(ctx, boards.IOSNewKey(country, day), rows, now); err != nil {
 			return rep, err
 		}
 		rep.Note(country, len(rows))
+		written++
+	}
+	if written == 0 {
+		return rep, fmt.Errorf("ios-new: no storefront has the chart places of %s; kept every previous board", day)
 	}
 	pruned, err := j.st.DeleteDatedBoards(ctx, boards.IOSNewPrefix, at.Add(-iosNewKeep).Format(time.DateOnly))
 	if err != nil {
