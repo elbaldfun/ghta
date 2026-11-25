@@ -281,6 +281,11 @@ GitHub 全量流水线 UTC 03:30 开始，实际要跑到约 07:30（"全量抓�
 | 来源专有字段 | 新增 `App *StoreApp`（bson `app`，不用 `store`，避免和旧系统的 `store.*` 字段混淆）：`bundleId`、`developerId`、`developer`、`genreId`、`genreIds`、`version`、`currency`、`contentRating`、`screenshots`（前 3 张）、`updatedAt`、`releasedAt`、`homeCountry`、`countries`（今天在哪些国家上榜） | 同一个结构，`bundleId` 存包名 |
 
 - **主国家** `homeCountry`：应用第一次被看到的那天，按国家列表顺序（us、cn、jp、gb、de）取它上榜的第一个国家，**之后固定不变**。以后哪怕它只在别的国家上榜，也照样去主国家查详情，否则一条 history 里会混进两个国家的评分数（codex 审查 11-22 发现）。
+- **各榜名次** `app.charts` 和 `app.chartsDay`（11-25 批次 0，给 iOS 详情页和列表卡片用，见 Obsidian「StarRank iOS 应用在网页上展示」前端小节第 2 节）：
+  - `app.charts` 是 `[{country, chart, genre, rank, prev}]`，记应用当天上过的每一张榜，覆盖全部配置国家，不只主国家。排序是国家、榜型、genre（all 在前）。`genre` 和 `chart_snapshots` 一致，取值是 "all" 或 genre id。
+  - `prev` 是这张榜上一份快照（上一个读到它的那天，不一定是昨天）里的名次。那份快照里没有这个应用、或者没有更早的快照时，不写 `prev`。前端和榜单页比较的是同两份快照。
+  - 跟着同一次 upsert 写进 `app`，不多一轮全量写。
+  - 全部请求都成功的那天，`chartsDay` 不是当天的条目（当天不在任何榜上）会去掉 `app.charts`，`chartsDay` 留着，表示最后一次上榜的日子。有请求失败的那天不清，因为可能只是失败漏掉了。
   评分、评分数只在主国家取，每个应用一天只查一次 Lookup。代价是只在日区上榜的应用，展示的就是日区的评分数，
   详情页要写明"日本区评分"。
 - `StoreApp` 是 iOS 和 Android 共用的一个结构，不像 `Gh`、`Hf` 那样每个源一个，因为两个商店的字段几乎一样。

@@ -267,6 +267,22 @@ type StoreApp struct {
 	HomeCountry string `bson:"homeCountry"`
 	// Countries are the storefronts whose charts listed the app today.
 	Countries []string `bson:"countries"`
+	// Charts are the app's places on the charts of ChartsDay, in every
+	// configured storefront: in country, chart, then genre order. Removed on
+	// a day every chart was read and the app was on none of them.
+	Charts    []ChartPos `bson:"charts,omitempty"`
+	ChartsDay string     `bson:"chartsDay,omitempty"`
+}
+
+// ChartPos is an app's place on one store chart.
+type ChartPos struct {
+	Country string `bson:"country" json:"country"`
+	Chart   string `bson:"chart" json:"chart"` // free, paid or grossing
+	Genre   string `bson:"genre" json:"genre"` // "all" or an App Store genre id
+	Rank    int    `bson:"rank" json:"rank"`
+	// Prev is the rank on the same chart's previous snapshot; 0 (left out)
+	// when the app was not on it, or the chart has no earlier snapshot.
+	Prev int `bson:"prev,omitempty" json:"prev,omitempty"`
 }
 
 // Blob is an item's cold text, keyed like the item.

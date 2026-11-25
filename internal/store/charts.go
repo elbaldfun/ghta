@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -105,4 +106,32 @@ func (s *Store) HomeCountries(ctx context.Context, source string, externalIDs []
 		}
 	}
 	return out, nil
+}
+
+// PrevChart returns the latest snapshot of a chart before day, if any: the
+// previous day the chart was read, which is not always yesterday.
+func (s *Store) PrevChart(ctx context.Context, source, country, chart, genre, day string) (c ChartSnapshot, ok bool, err error) {
+	err = s.ChartSnapshots().FindOne(ctx,
+		bson.M{"source": source, "country": country, "chart": chart, "genre": genre, "day": bson.M{"$lt": day}},
+		options.FindOne().SetSort(bson.D{{Key: "day", Value: -1}})).Decode(&c)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return c, false, nil
+	}
+	if err != nil {
+		return c, false, fmt.Errorf("prev chart: %w", err)
+	}
+	return c, true, nil
+}
+
+// ClearCharts removes app.charts from the store items whose charts are not
+// of day: the apps on no chart that day. ChartsDay is kept, so the last day
+// an app was on a chart stays known.
+func (s *Store) ClearCharts(ctx context.Context, source, day string) (int, error) {
+	res, err := s.Items().UpdateMany(ctx,
+		bson.M{"source": source, "app.chartsDay": bson.M{"$ne": day}, "app.charts.0": bson.M{"$exists": true}},
+		bson.M{"$unset": bson.M{"app.charts": ""}})
+	if err != nil {
+		return 0, fmt.Errorf("clear charts: %w", err)
+	}
+	return int(res.ModifiedCount), nil
 }
