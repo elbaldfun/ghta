@@ -76,12 +76,18 @@ func TestRank(t *testing.T) {
 		PrimaryMetric: "downloads", MetricDirection: "desc-better", Metrics: map[string]float64{"downloads": 5},
 		Labels: item.Labels{Domain: []string{"hf/text-generation"}},
 	}
+	// An App Store item is never ranked: ranks it got before are dropped.
+	app := item.Item{
+		Source: item.SourceIOS, ExternalID: "123", Topics: []string{}, History: []item.Point{},
+		PrimaryMetric: "ratings", MetricDirection: "desc-better", Metrics: map[string]float64{"ratings": 1e6},
+		Labels: item.Labels{Domain: []string{"ios/finance"}}, Ranks: &item.Ranks{Overall: 1},
+	}
 	docs := []any{
 		gh("o/a", "Go", 300, "web/frontend", "ai/agents"),
 		gh("o/b", "Rust", 500, "ai/agents"),
 		gh("o/c", "Go", 100, "web/frontend", "web/frontend"), // a repeated path counts once
 		gh("o/d", "", 300),                                   // ties with o/a; later by id
-		stale, noMetric, model,
+		stale, noMetric, model, app,
 	}
 	if _, err := st.Items().InsertMany(ctx, docs); err != nil {
 		t.Fatal(err)
@@ -94,7 +100,7 @@ func TestRank(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Processed != 5 || rep.Notes["written"] != 5 || rep.Notes["cleared"] != 1 {
+	if rep.Processed != 5 || rep.Notes["written"] != 5 || rep.Notes["cleared"] != 2 {
 		t.Fatalf("report = %+v", rep)
 	}
 
@@ -112,8 +118,8 @@ func TestRank(t *testing.T) {
 			t.Errorf("%s ranks = %+v, want %+v at %v", id, g, w, t1)
 		}
 	}
-	if got["o/gone"] != nil || got["o/empty"] != nil {
-		t.Errorf("stale or metric-less items keep ranks: %+v %+v", got["o/gone"], got["o/empty"])
+	if got["o/gone"] != nil || got["o/empty"] != nil || got["123"] != nil {
+		t.Errorf("stale, metric-less or App Store items keep ranks: %+v %+v %+v", got["o/gone"], got["o/empty"], got["123"])
 	}
 
 	// The next day every ranked item takes its first positions as the

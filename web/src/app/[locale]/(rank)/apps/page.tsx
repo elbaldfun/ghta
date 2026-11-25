@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { getApps, getShelfCounts, type AppKind, type AppSort, type OS } from '@/lib/data';
 import { Pagination } from '@/components/rank/Pagination';
 import { PageShell } from '@/components/rank/PageShell';
-import { Dropdown, Segmented, fmtInt } from '@/components/ui';
+import { Dropdown, Segmented, fmtInt, srButton } from '@/components/ui';
 import { AppTile, OS_NAME } from '@/components/apps/AppTile';
 import { alternatesFor } from '@/lib/seo';
 
@@ -85,6 +85,7 @@ export default async function AppsPage({
   setRequestLocale(locale);
   const t = await getTranslations('appsPage');
   const tr = await getTranslations('rank');
+  const ti = await getTranslations('ios');
 
   const os = (OSES as string[]).includes(searchParams.os ?? '') ? (searchParams.os as OS) : '';
   // Form: GUI apps or command-line tools. Old links may also carry
@@ -140,7 +141,13 @@ export default async function AppsPage({
         <p className="text-sr-caption text-ink-3">{t('kicker')}</p>
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
           <h1 className="font-news text-[36px] font-medium leading-[1.05] tracking-[-0.02em] md:text-[56px]">{t('title')}</h1>
-          <span className="text-sr-small text-ink-3">{sortRule[sort]}</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="text-sr-small text-ink-3">{sortRule[sort]}</span>
+            {/* The App Store charts are their own page, not a shelf of this one. */}
+            <Link href="/ios" className={srButton('quiet')}>
+              {ti('entry')} →
+            </Link>
+          </span>
         </div>
         <p className="max-w-[760px] text-sr-body text-ink-2 md:text-sr-lead">{t('lead')}</p>
       </section>

@@ -402,3 +402,31 @@ func TestWriteFetchedLightKeepsDetail(t *testing.T) {
 		t.Errorf("fallback detailedOn = %q; want the fetchedAt day", s.DetailedOn)
 	}
 }
+
+// A store listing carries the genre table's shelf every day, none included:
+// a table that stops mapping a genre clears the shelf it gave before.
+func TestWriteFetchedStoreShelf(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	now := time.Date(2026, 11, 26, 9, 0, 0, 0, time.UTC)
+	listing := func(shelf string) item.Fetched {
+		return item.Fetched{Item: item.Item{
+			Source: item.SourceIOS, ExternalID: "123", Name: "Penny", Topics: []string{},
+			PrimaryMetric: "ratings", MetricDirection: "desc-better", Metrics: map[string]float64{"ratings": 9},
+			Labels: item.Labels{Domain: []string{"ios/finance"}, By: item.BySource, Shelf: shelf},
+			App:    &item.StoreApp{BundleID: "a.penny", GenreID: "6015", HomeCountry: "us"},
+		}}
+	}
+	if _, err := st.WriteFetched(ctx, []item.Fetched{listing("finance/budget")}, now); err != nil {
+		t.Fatal(err)
+	}
+	if it := getItem(t, st, "123"); it.Labels.Shelf != "finance/budget" {
+		t.Fatalf("shelf = %q", it.Labels.Shelf)
+	}
+	if _, err := st.WriteFetched(ctx, []item.Fetched{listing("")}, now.Add(24*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if it := getItem(t, st, "123"); it.Labels.Shelf != "" {
+		t.Errorf("shelf after the mapping dropped it = %q", it.Labels.Shelf)
+	}
+}
