@@ -205,3 +205,77 @@ func TestIOSFailedChartKeepsGrowth(t *testing.T) {
 		t.Errorf("growth of an app behind a failed chart was aged: %+v", three.Growth)
 	}
 }
+
+// app.charts lists every chart an app is on today, with its rank on the
+// chart's previous snapshot; an app on no chart loses it on a clean day only.
+func TestIOSAppCharts(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	get := func(id string) *item.StoreApp {
+		t.Helper()
+		var it item.Item
+		if err := st.Items().FindOne(ctx, bson.M{"source": item.SourceIOS, "externalId": id}).Decode(&it); err != nil {
+			t.Fatal(err)
+		}
+		return it.App
+	}
+	f := &fakeAppStore{ratings: 1000, charts: map[string][]string{
+		"us/free/all":  {"1", "2"},
+		"us/free/6007": {"2"},
+		"us/paid/all":  {"3"},
+		"jp/free/all":  {"2"},
+	}}
+	if _, err := iosJob(st, f, "2026-11-22").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	want := []item.ChartPos{
+		{Country: "us", Chart: "free", Genre: "all", Rank: 2},
+		{Country: "us", Chart: "free", Genre: "6007", Rank: 1},
+		{Country: "jp", Chart: "free", Genre: "all", Rank: 1},
+	}
+	if a := get("2"); fmt.Sprint(a.Charts) != fmt.Sprint(want) || a.ChartsDay != "2026-11-22" {
+		t.Fatalf("first day charts %+v day %q", a.Charts, a.ChartsDay)
+	}
+
+	// Day two (day 23 not read at all): 2 rises, 1 falls, 3 leaves.
+	f.charts = map[string][]string{
+		"us/free/all":  {"2", "1"},
+		"us/free/6007": {"2"},
+		"jp/free/all":  {"4", "2"},
+	}
+	if _, err := iosJob(st, f, "2026-11-24").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	want = []item.ChartPos{
+		{Country: "us", Chart: "free", Genre: "all", Rank: 1, Prev: 2},
+		{Country: "us", Chart: "free", Genre: "6007", Rank: 1, Prev: 1},
+		{Country: "jp", Chart: "free", Genre: "all", Rank: 2, Prev: 1},
+	}
+	if a := get("2"); fmt.Sprint(a.Charts) != fmt.Sprint(want) || a.ChartsDay != "2026-11-24" {
+		t.Errorf("second day charts %+v day %q", a.Charts, a.ChartsDay)
+	}
+	if a := get("4"); fmt.Sprint(a.Charts) != fmt.Sprint([]item.ChartPos{{Country: "jp", Chart: "free", Genre: "all", Rank: 1}}) {
+		t.Errorf("new app charts %+v", a.Charts)
+	}
+	if a := get("3"); len(a.Charts) != 0 || a.ChartsDay != "2026-11-22" {
+		t.Errorf("app off the charts kept %+v day %q", a.Charts, a.ChartsDay)
+	}
+
+	// A rerun the same day where 4 has left: its places go too.
+	f.charts["jp/free/all"] = []string{"2"}
+	if _, err := iosJob(st, f, "2026-11-24").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if a := get("4"); len(a.Charts) != 0 {
+		t.Errorf("rerun kept the places of an app that left %+v", a.Charts)
+	}
+
+	// Day three: a chart fails, so app 1 (only on it) keeps yesterday's.
+	f.chartErr = map[string]error{"us/free/all": fmt.Errorf("appstore: http 503")}
+	if _, err := iosJob(st, f, "2026-11-25").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if a := get("1"); len(a.Charts) != 1 || a.ChartsDay != "2026-11-24" {
+		t.Errorf("app hidden by a failed chart %+v day %q", a.Charts, a.ChartsDay)
+	}
+}
