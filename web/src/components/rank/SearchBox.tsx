@@ -31,7 +31,12 @@ export function SearchBox() {
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1); // keyboard-highlighted row
+  // Between lg and xl the header has no room for a field: the search sits
+  // behind an icon and opens over the nav when clicked.
+  const [expanded, setExpanded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
 
   useEffect(() => setValue(current), [current]);
 
@@ -64,7 +69,10 @@ export function SearchBox() {
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setExpanded(false);
+      }
     }
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -74,6 +82,7 @@ export function SearchBox() {
     const q = value.trim();
     if (q) track('search', { search_term: q });
     setOpen(false);
+    setExpanded(false);
     router.push(q ? `/github?q=${encodeURIComponent(q)}` : '/github');
   }
 
@@ -81,11 +90,24 @@ export function SearchBox() {
     const [owner = '', name = ''] = s.externalId.split('/');
     track('search_result_click', { repo: s.externalId, search_term: value.trim() });
     setOpen(false);
+    setExpanded(false);
     setValue('');
     router.push(`/repo/${owner}/${name}`);
   }
 
+  // Folds the lg search back to its icon, list and all, and hands focus to
+  // the icon so the keyboard user is not left on a hidden field.
+  function fold() {
+    setOpen(false);
+    setExpanded(false);
+    requestAnimationFrame(() => opener.current?.focus());
+  }
+
   function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape' && expanded) {
+      fold();
+      return;
+    }
     if (!open || items.length === 0) {
       if (e.key === 'Enter') fullSearch();
       return;
@@ -105,10 +127,43 @@ export function SearchBox() {
   }
 
   return (
-    <div ref={ref} className="relative flex w-full flex-1">
-      <div className="flex h-11 w-full items-center gap-2.5 rounded border border-rule bg-sunk px-3 focus-within:border-ink-3 md:h-9">
+    <div
+      ref={ref}
+      className="relative flex w-full flex-1 lg:max-xl:justify-end"
+      onBlur={(e) => {
+        // Tabbing out of the open field. A null target (a click on nothing
+        // focusable, or Safari not focusing a clicked button) is left to the
+        // mousedown handler, so picking a suggestion still works.
+        const to = e.relatedTarget as Node | null;
+        if (to && !ref.current?.contains(to)) {
+          setOpen(false);
+          setExpanded(false);
+        }
+      }}
+    >
+      <button
+        ref={opener}
+        type="button"
+        onClick={() => {
+          setExpanded(true);
+          requestAnimationFrame(() => input.current?.focus());
+        }}
+        aria-label={t('searchPlaceholder')}
+        aria-expanded={expanded}
+        className={`hidden h-9 w-9 items-center justify-center rounded border border-rule text-ink-2 transition-colors duration-150 hover:border-ink-3 hover:text-ink ${expanded ? '' : 'lg:max-xl:flex'}`}
+      >
+        <SearchIcon size={17} />
+      </button>
+      <div
+        className={`flex h-11 w-full items-center gap-2.5 rounded border border-rule bg-sunk px-3 focus-within:border-ink-3 md:h-9 ${
+          expanded
+            ? 'lg:max-xl:absolute lg:max-xl:right-0 lg:max-xl:top-1/2 lg:max-xl:z-40 lg:max-xl:w-[360px] lg:max-xl:-translate-y-1/2 lg:max-xl:shadow-sr-pop'
+            : 'lg:max-xl:hidden'
+        }`}
+      >
         <SearchIcon size={15} className="shrink-0 text-ink-3" />
         <input
+          ref={input}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
@@ -121,7 +176,11 @@ export function SearchBox() {
       </div>
 
       {open && items.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-lg border border-rule bg-sr-surface shadow-sr-pop">
+        <div
+          className={`absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-lg border border-rule bg-sr-surface shadow-sr-pop lg:max-xl:left-auto lg:max-xl:w-[360px] ${
+            expanded ? '' : 'lg:max-xl:hidden'
+          }`}
+        >
           {items.map((s, i) => {
             const [owner = '', name = ''] = s.externalId.split('/');
             return (
