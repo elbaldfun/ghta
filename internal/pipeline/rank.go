@@ -28,6 +28,10 @@ const (
 // Rank writes every item's positions: within its source, within its language
 // and within each of its domain leaves, all by the primary metric.
 //
+// App Store items are left out: their order is the store's own chart
+// position, and their rating counts come from different storefronts, so a
+// position by rating count means nothing and the site shows none.
+//
 // The whole corpus is ranked in memory from a narrow projection (a few MB for
 // 130k items) and only items whose positions or baseline moved are written.
 type Rank struct {
@@ -102,7 +106,7 @@ func (j *Rank) Run(ctx context.Context) (worker.Report, error) {
 			continue
 		}
 		v, ok := row.Metrics[row.PrimaryMetric]
-		if row.Stale || !ok {
+		if row.Stale || !ok || row.Source == item.SourceIOS {
 			// Out of every ranking: drop positions it may still carry.
 			if row.Ranks != nil {
 				if err := queue(row.ID, bson.M{"$unset": bson.M{"ranks": ""}}); err != nil {
