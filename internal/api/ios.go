@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/item"
 	"github.com/elbaldfun/ghta/internal/source/appstore"
 )
@@ -19,6 +20,7 @@ import (
 func (a *API) registerIOS(r gin.IRouter) {
 	r.GET("/ios/genres", a.iosGenres)
 	r.GET("/ios/charts/:country/:chart", a.iosChart)
+	r.GET("/ios/new/:country", a.iosNew)
 	r.GET("/ios/apps/:id", a.iosApp)
 	r.GET("/ios/apps/:id/history", a.iosHistory)
 }
@@ -180,6 +182,88 @@ func (a *API) iosChart(c *gin.Context) {
 			e.Change, e.New = move(prev[id], e.Rank)
 		}
 		page.Entries = append(page.Entries, e)
+	}
+	a.cached(c, maxAgeStore, gin.H{"data": page})
+}
+
+// NewEntry is one app on the new-apps view. Rank is its place in this
+// view, not on any Apple chart; Best is the Apple chart place it is
+// ordered by, and Charts how many of the storefront's charts it is on.
+type NewEntry struct {
+	Rank       int        `json:"rank"`
+	Best       ChartPlace `json:"best"`
+	Charts     int        `json:"charts"`
+	ReleasedAt time.Time  `json:"releasedAt"`
+	App        IOSCard    `json:"app"`
+}
+
+// NewPage is a storefront's new-apps view on its latest day.
+type NewPage struct {
+	Country string `json:"country"`
+	Day     string `json:"day"`
+	// Synthetic marks a StarRank view rather than an Apple chart: it merges
+	// every chart of the storefront. Sort says how it is ordered ("best":
+	// by best chart place), WindowDays how recent a first release must be.
+	Synthetic  bool       `json:"synthetic"`
+	Sort       string     `json:"sort"`
+	WindowDays int        `json:"windowDays"`
+	Total      int        `json:"total"`
+	Entries    []NewEntry `json:"entries"`
+}
+
+// GET /v1/ios/new/{country}?limit= — apps first released in the last 90
+// days that are on any of the storefront's charts today, best chart place
+// first (boards.IOSNew). limit is 1–500, default 100. 404 before the first
+// ios-new run.
+func (a *API) iosNew(c *gin.Context) {
+	country := c.Param("country")
+	if !slices.Contains(IOSCountries, country) {
+		a.fail(c, errBadInput("country must be one of "+strings.Join(IOSCountries, ", ")))
+		return
+	}
+	limit, err := intParam(c, "limit", 100, 1, 500)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	key, err := a.st.LatestDatedBoard(ctx, boards.IOSNewPrefix+country+"|")
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	if key == "" {
+		a.fail(c, errNotFound)
+		return
+	}
+	var rows []boards.IOSNewRow
+	if _, err := a.st.Board(ctx, key, &rows); err != nil {
+		a.fail(c, err)
+		return
+	}
+	page := NewPage{
+		Country: country, Day: key[strings.LastIndex(key, "|")+1:], Synthetic: true, Sort: "best",
+		WindowDays: int(boards.IOSNewWindow / (24 * time.Hour)), Total: len(rows), Entries: []NewEntry{},
+	}
+	head := rows[:min(limit, len(rows))]
+	ids := make([]string, len(head))
+	for i, r := range head {
+		ids[i] = r.ID
+	}
+	cards, err := a.st.StoreCards(ctx, item.SourceIOS, ids)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	for _, r := range head {
+		it, ok := cards[r.ID]
+		if !ok || it.Stale {
+			continue
+		}
+		page.Entries = append(page.Entries, NewEntry{
+			Rank: len(page.Entries) + 1, Charts: r.Charts, ReleasedAt: r.ReleasedAt, App: iosCard(&it),
+			Best: ChartPlace{Country: r.Best.Country, Chart: r.Best.Chart, Genre: genreSlug(r.Best.Genre), Rank: r.Best.Rank},
+		})
 	}
 	a.cached(c, maxAgeStore, gin.H{"data": page})
 }
