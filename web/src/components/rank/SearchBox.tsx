@@ -155,7 +155,11 @@ export function SearchBox() {
       </div>
 
       {open && items.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden lg:max-xl:left-auto lg:max-xl:w-[360px] rounded-lg border border-rule bg-sr-surface shadow-sr-pop">
+        <div
+          className={`absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-lg border border-rule bg-sr-surface shadow-sr-pop lg:max-xl:left-auto lg:max-xl:w-[360px] ${
+            expanded ? '' : 'lg:max-xl:hidden'
+          }`}
+        >
           {items.map((s, i) => {
             const [owner = '', name = ''] = s.externalId.split('/');
             return (
