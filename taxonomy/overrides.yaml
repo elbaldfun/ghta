@@ -632,3 +632,34 @@ items:
     paths: []
     shelf: media/streaming
     why: 在线看动漫的应用（多数据源、弹幕）；不是本地播放器
+  # ── 2026-11-25 负责人定"按建议搬三组"（#89 拿不准的表）──
+  - id: trezor/trezor-suite
+    type: app
+    paths: [blockchain/core, security/crypto-auth]
+    shelf: finance/investing
+    why: Trezor 硬件钱包配套应用，管理加密资产；不是密码管理器（原标签来自规则层）
+  - id: achannarasappa/ticker
+    type: cli
+    paths: [devtools/terminal]
+    shelf: finance/investing
+    why: 终端里看股票和加密资产行情与持仓；按用途上投资货架，领域保留终端（同天气 CLI）
+  - id: iSoron/uhabits
+    type: app
+    paths: []
+    shelf: health/wellness
+    why: 习惯追踪应用；负责人定习惯类归健康，不归待办
+  - id: daya0576/beaverhabits
+    type: app
+    paths: [web/backend]
+    shelf: health/wellness
+    why: 自托管习惯追踪；负责人定习惯类归健康，不归待办
+  - id: FriesI23/mhabit
+    type: app
+    paths: []
+    shelf: health/wellness
+    why: 习惯追踪应用；负责人定习惯类归健康，不归待办
+  - id: xpavle00/Habo
+    type: app
+    paths: []
+    shelf: health/wellness
+    why: 习惯追踪应用；负责人定习惯类归健康，不归待办
