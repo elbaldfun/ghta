@@ -21,6 +21,18 @@ func TestIOSNewJob(t *testing.T) {
 		Day: day, FetchedAt: at.Add(9 * time.Hour), Entries: []string{"1"}}); err != nil {
 		t.Fatal(err)
 	}
+	// Charts read but no lookup landed: no board is written.
+	if _, err := st.Items().InsertOne(ctx, item.Item{Source: item.SourceIOS, ExternalID: "0", Topics: []string{}, History: []item.Point{},
+		App: &item.StoreApp{ReleasedAt: at, ChartsDay: "2026-11-24"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewIOSNew(st, []string{"us"}, nil).Run(ctx); err == nil {
+		t.Fatal("ran without any of today's chart places")
+	}
+	if n, _ := st.Boards().CountDocuments(ctx, bson.M{}); n != 0 {
+		t.Fatalf("%d boards written without today's places", n)
+	}
+
 	listing := func(id string, released time.Time, places ...item.ChartPos) item.Item {
 		return item.Item{Source: item.SourceIOS, ExternalID: id, Topics: []string{}, History: []item.Point{},
 			App: &item.StoreApp{ReleasedAt: released, ChartsDay: day, Charts: places}}

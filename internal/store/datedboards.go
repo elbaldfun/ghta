@@ -69,6 +69,16 @@ func (s *Store) DeleteDatedBoards(ctx context.Context, prefix, day string) (int6
 	return res.DeletedCount, nil
 }
 
+// ChartedOn counts the store items of a source whose chart places are
+// those of day.
+func (s *Store) ChartedOn(ctx context.Context, source, day string) (int64, error) {
+	n, err := s.Items().CountDocuments(ctx, bson.M{"source": source, "app.chartsDay": day})
+	if err != nil {
+		return 0, fmt.Errorf("charted on %s: %w", day, err)
+	}
+	return n, nil
+}
+
 // ChartedSince returns the store items of a source whose chart places are
 // those of day and whose first release is at or after since: what the
 // new-apps boards rank. Only the fields those boards read are filled.
