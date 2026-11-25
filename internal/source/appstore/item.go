@@ -61,7 +61,9 @@ type Shelver func(a App) string
 type Listing struct {
 	HomeCountry string
 	Countries   []string
-	BestRank    int // in the home storefront; 0 when unknown
+	BestRank    int             // in the home storefront; 0 when unknown
+	Charts      []item.ChartPos // today's places, every storefront
+	Day         string          // the day of Charts
 }
 
 // ToFetched normalizes one Lookup result read in l.HomeCountry.
@@ -82,6 +84,10 @@ func ToFetched(a App, l Listing, shelve Shelver) item.Fetched {
 		ContentRating: a.ContentAdvisoryRating, Screenshots: firstN(a.ScreenshotURLs, 3),
 		UpdatedAt: parseTime(a.CurrentVersionReleaseDate), ReleasedAt: parseTime(a.ReleaseDate),
 		HomeCountry: l.HomeCountry, Countries: l.Countries,
+		Charts: l.Charts,
+	}
+	if len(l.Charts) > 0 {
+		app.ChartsDay = l.Day
 	}
 	if len(app.Screenshots) == 0 {
 		app.Screenshots = firstN(a.IPadScreenshotURLs, 3)
