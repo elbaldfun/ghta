@@ -30,9 +30,9 @@ type AppStore interface {
 // to items. The home storefront is fixed the first day an app is seen — the
 // first configured country that charted it — so its rating history never
 // mixes two countries. An app that left every chart is not looked up; its
-// growth ages like a GitHub item's that fell out of range, but only on a day
-// every chart and lookup succeeded: an app missed because a request failed
-// has not stopped growing.
+// growth ages like a GitHub item's that fell out of range and its app.charts
+// is removed, but only on a day every chart and lookup succeeded: an app
+// missed because a request failed has not stopped growing or left the charts.
 type IOS struct {
 	st        *store.Store
 	client    AppStore
@@ -59,9 +59,10 @@ func (*IOS) Name() string { return "ios" }
 
 // seenApp is what today's charts say about one app.
 type seenApp struct {
-	first     string         // first configured country that charted it today
-	countries []string       // countries that charted it today, in order
-	rank      map[string]int // best rank today, by country
+	first     string          // first configured country that charted it today
+	countries []string        // countries that charted it today, in order
+	rank      map[string]int  // best rank today, by country
+	charts    []item.ChartPos // every chart it is on today, in fetch order
 }
 
 func (j *IOS) Run(ctx context.Context) (rep worker.Report, err error) {
@@ -104,6 +105,18 @@ charts:
 					failed++
 					continue
 				}
+				// The rank each app had on this chart's previous snapshot, for
+				// app.charts: the chart page compares the same two snapshots.
+				prev, ok, err := j.st.PrevChart(ctx, item.SourceIOS, country, chart, genre, day)
+				if err != nil {
+					return rep, err
+				}
+				prevRank := map[string]int{}
+				if ok {
+					for i, id := range prev.Entries {
+						prevRank[id] = i + 1
+					}
+				}
 				ids := make([]string, len(entries))
 				for i, e := range entries {
 					ids[i] = e.ID
@@ -119,6 +132,9 @@ charts:
 					if r, ok := a.rank[country]; !ok || e.Rank < r {
 						a.rank[country] = e.Rank
 					}
+					a.charts = append(a.charts, item.ChartPos{
+						Country: country, Chart: chart, Genre: genre, Rank: e.Rank, Prev: prevRank[e.ID],
+					})
 				}
 				if err := j.st.WriteChart(ctx, store.ChartSnapshot{
 					Source: item.SourceIOS, Country: country, Chart: chart, Genre: genre,
@@ -185,6 +201,7 @@ lookups:
 				}
 				fetched = append(fetched, appstore.ToFetched(a, appstore.Listing{
 					HomeCountry: country, Countries: s.countries, BestRank: s.rank[country],
+					Charts: s.charts, Day: day,
 				}, j.shelve))
 			}
 			gone += len(batch) - len(fetched)
@@ -210,5 +227,13 @@ lookups:
 	if _, err := j.st.AgeGrowth(ctx, item.SourceIOS, day); err != nil {
 		return rep, err
 	}
+	// Every chart was read, so an app not seen on one today is on none. An
+	// app seen but not listed in its home storefront keeps its old places,
+	// dated by chartsDay.
+	cleared, err := j.st.ClearCharts(ctx, item.SourceIOS, order)
+	if err != nil {
+		return rep, err
+	}
+	rep.Note("chartsCleared", cleared)
 	return rep, nil
 }
