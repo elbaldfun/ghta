@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
+	"github.com/elbaldfun/ghta/internal/boards"
 	"github.com/elbaldfun/ghta/internal/item"
 	"github.com/elbaldfun/ghta/internal/store"
 )
@@ -165,6 +166,61 @@ func TestIOSApp(t *testing.T) {
 	for _, x := range g.Data.Genres {
 		if x.Slug == "productivity" && x.Count != 2 || x.Slug == "games" && x.Count != 0 {
 			t.Errorf("genre %+v", x)
+		}
+	}
+}
+
+func TestIOSNew(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	gone := iosApp("3", "Gone", "6007", 1, now)
+	gone.Stale = true
+	seed(t, st, iosApp("1", "One", "6007", 900, now), iosApp("2", "Two", "6015", 50, now), gone)
+	released := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	rows := []boards.IOSNewRow{
+		{ID: "2", ReleasedAt: released, Best: item.ChartPos{Country: "us", Chart: "paid", Genre: "6015", Rank: 1}, Charts: 3},
+		{ID: "3", ReleasedAt: released, Best: item.ChartPos{Country: "us", Chart: "free", Genre: "all", Rank: 2}, Charts: 1},
+		{ID: "1", ReleasedAt: released, Best: item.ChartPos{Country: "us", Chart: "free", Genre: "all", Rank: 4}, Charts: 2},
+	}
+	// An older day's board is not the one served.
+	if err := st.PutBoard(ctx, boards.IOSNewKey("us", "2026-11-24"), rows[:1], now); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.PutBoard(ctx, boards.IOSNewKey("us", "2026-11-25"), rows, now); err != nil {
+		t.Fatal(err)
+	}
+	r := router(st)
+
+	var p struct{ Data NewPage }
+	if w := get(t, r, "/v1/ios/new/us", nil, &p); w.Code != http.StatusOK {
+		t.Fatalf("new = %d %s", w.Code, w.Body)
+	}
+	d := p.Data
+	if !d.Synthetic || d.Sort != "best" || d.WindowDays != 90 || d.Day != "2026-11-25" || d.Total != 3 || len(d.Entries) != 2 {
+		t.Fatalf("page = %+v", d)
+	}
+	// The gone app leaves no gap: ranks are places in this view.
+	e := d.Entries[0]
+	if e.Rank != 1 || e.App.ID != "2" || e.App.Name != "Two" || e.Best != (ChartPlace{Country: "us", Chart: "paid", Genre: "finance", Rank: 1}) || e.Charts != 3 || !e.ReleasedAt.Equal(released) {
+		t.Errorf("entry 0 = %+v", e)
+	}
+	if e := d.Entries[1]; e.Rank != 2 || e.App.ID != "1" || e.Best.Genre != "all" || e.Best.Rank != 4 {
+		t.Errorf("entry 1 = %+v", e)
+	}
+	var one struct{ Data NewPage }
+	get(t, r, "/v1/ios/new/us?limit=1", nil, &one)
+	if len(one.Data.Entries) != 1 || one.Data.Total != 3 {
+		t.Errorf("limit 1 = %+v", one.Data)
+	}
+	for url, code := range map[string]int{
+		"/v1/ios/new/fr":           http.StatusBadRequest,
+		"/v1/ios/new/us?limit=0":   http.StatusBadRequest,
+		"/v1/ios/new/us?limit=501": http.StatusBadRequest,
+		"/v1/ios/new/jp":           http.StatusNotFound,
+	} {
+		if w := get(t, r, url, nil, nil); w.Code != code {
+			t.Errorf("%s = %d, want %d", url, w.Code, code)
 		}
 	}
 }

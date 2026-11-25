@@ -221,7 +221,7 @@ func nightly(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 }
 
 // scheduled are the jobs outside the nightly pipeline, each on its own
-// schedule: today only the App Store charts.
+// schedule: today only the App Store charts and the boards built on them.
 func scheduled(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 	pace := time.Duration(envInt("IOS_PACE_MS", 3000)) * time.Millisecond
 	dir := getEnv("TAXONOMY_DIR", "taxonomy")
@@ -234,7 +234,11 @@ func scheduled(st *store.Store, log *slog.Logger) ([]worker.Job, error) {
 		return nil, err
 	}
 	shelve := appstore.NewShelver(genres)
-	return []worker.Job{pipeline.NewIOS(st, appstore.NewClient(pace), iosCountries(), shelve, log)}, nil
+	return []worker.Job{
+		pipeline.NewIOS(st, appstore.NewClient(pace), iosCountries(), shelve, log),
+		// After the charts: the new-apps boards read the places ios just wrote.
+		pipeline.NewIOSNew(st, iosCountries(), log),
+	}, nil
 }
 
 // iosCountries are the App Store storefronts to chart, in priority order: an
