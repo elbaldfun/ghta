@@ -77,36 +77,6 @@ func (s *Store) StoreCards(ctx context.Context, source string, externalIDs []str
 	return out, nil
 }
 
-// ChartPos is one chart an app was on, as the ios job keeps it on the item
-// (app.charts): Prev is its rank on the previous snapshot of that chart, 0
-// when it was not on it.
-type ChartPos struct {
-	Country string `bson:"country"`
-	Chart   string `bson:"chart"`
-	Genre   string `bson:"genre"` // "all" or a genre id
-	Rank    int    `bson:"rank"`
-	Prev    int    `bson:"prev,omitempty"`
-}
-
-// AppCharts reads an app's chart positions and the day they were written.
-func (s *Store) AppCharts(ctx context.Context, source, externalID string) ([]ChartPos, string, error) {
-	var row struct {
-		App struct {
-			Charts    []ChartPos `bson:"charts"`
-			ChartsDay string     `bson:"chartsDay"`
-		} `bson:"app"`
-	}
-	err := s.Items().FindOne(ctx, bson.M{"source": source, "externalId": externalID},
-		options.FindOne().SetProjection(bson.M{"app.charts": 1, "app.chartsDay": 1})).Decode(&row)
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, "", ErrNoItem
-	}
-	if err != nil {
-		return nil, "", fmt.Errorf("app charts: %w", err)
-	}
-	return row.App.Charts, row.App.ChartsDay, nil
-}
-
 // DomainCounts counts a source's live items per domain label.
 func (s *Store) DomainCounts(ctx context.Context, source string) (map[string]int, error) {
 	cur, err := s.Items().Aggregate(ctx, mongo.Pipeline{

@@ -251,27 +251,25 @@ func (a *API) iosApp(c *gin.Context) {
 	} else if full = strings.TrimSpace(full); full != "" {
 		d.Description = full
 	}
-	if err := a.placeCharts(c, &d); err != nil {
+	if err := a.placeCharts(c, &d, s); err != nil {
 		a.log.Warn("api: ios charts", "app", id, "err", err)
 	}
 	a.cached(c, maxAgeStore, gin.H{"data": d})
 }
 
 // placeCharts fills an app's chart places from the positions the ios job
-// keeps on it, when they are today's: an app that left every chart is not
-// looked up again, and its stored positions would be stale.
-func (a *API) placeCharts(c *gin.Context, d *IOSDetail) error {
-	ctx := c.Request.Context()
-	pos, day, err := a.st.AppCharts(ctx, item.SourceIOS, d.ID)
-	if err != nil || len(pos) == 0 {
+// keeps on it, when they are today's: positions left from an earlier day
+// (a run that could not read every chart does not clear them) are stale.
+func (a *API) placeCharts(c *gin.Context, d *IOSDetail, s *item.StoreApp) error {
+	if len(s.Charts) == 0 {
+		return nil
+	}
+	latest, err := a.st.LatestChartDay(c.Request.Context(), item.SourceIOS)
+	if err != nil || s.ChartsDay != latest {
 		return err
 	}
-	latest, err := a.st.LatestChartDay(ctx, item.SourceIOS)
-	if err != nil || day != latest {
-		return err
-	}
-	d.ChartsDay = day
-	for _, p := range pos {
+	d.ChartsDay = s.ChartsDay
+	for _, p := range s.Charts {
 		g := genreSlug(p.Genre)
 		if g == "" || p.Rank <= 0 {
 			continue
