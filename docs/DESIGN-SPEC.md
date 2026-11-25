@@ -46,7 +46,8 @@ iOS / Android 商店榜在"应用"入口下以平台切换呈现，而不是再�
 | 模式 | 示例 | 说明 |
 |---|---|---|
 | `/{source}` | `/github` `/chrome` | 源首页 = 该源的"今天在涨 + 总榜" |
-| `/{source}/c/{path}` | `/github/c/ai/agents` `/ios/c/productivity` | 分类落地页，静态可索引 |
+| `/{source}/c/{path}` | `/github/c/ai/agents` | 分类落地页，静态可索引 |
+| `/ios/{country}/{chart}/{genre?}` | `/ios/us/free` `/ios/jp/grossing/games` | App Store 榜单：国家 × 榜型（free / paid / grossing）× Apple 的 25 个分类，静态可索引；`/ios` 按记住的国家或界面语言临时跳转 |
 | `/{source}/l/{lang}` | `/github/l/rust` | 仅 GitHub |
 | `/{source}/t/{facet}` | `/github/t/cli` | 形态 |
 | `/{source}/{id…}` | `/github/mattpocock/skills` `/ios/id1234567` `/chrome/{extId}` | 详情 |
@@ -54,7 +55,7 @@ iOS / Android 商店榜在"应用"入口下以平台切换呈现，而不是再�
 | `/apps/alternatives/{slug}` | `/apps/alternatives/notion` | 跨平台替代品 |
 | `/developers`、`/developers/{login}` | | 人物页 |
 | `/badge/{source}/{id}.svg` | | 徽章 |
-| 国家 | `?country=jp` | 商店类源的查询参数，默认按用户地区推断，可记住 |
+| 国家 | `/ios/jp/…` | 商店类源的国家放在路径里（2026-11-25 负责人定），每个国家的榜都是可收录的静态页；进入 `/ios` 时按 cookie 里记住的国家、否则按界面语言（zh→cn、ja→jp、de→de，其余→us）跳转 |
 
 现有 `/?category=…`、`/repo/{owner}/{name}`、`/breakout`、`/ecosystem`、`/topics`、`/map`
 全部 301 到新路径。
