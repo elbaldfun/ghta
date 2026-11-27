@@ -173,7 +173,7 @@
     "hotNew": "新",
     "hotColGain": "増加",
     "hotEmpty": "急上昇データはありません",
-    "navApps": "アプリ",
+    "navApps": "オープンソース",
     "appsTitle": "オープンソースアプリ",
     "appsSubtitle": "ダウンロード可能なアプリと CLI、OS で絞り込み",
     "appsAll": "すべて",
@@ -717,7 +717,7 @@
     "rel_other": "{base} ベース"
   },
   "appsPage": {
-    "kicker": "アプリ · インストールできるオープンソースソフトウェア",
+    "kicker": "オープンソースアプリ · すぐにインストールできる",
     "title": "オープンソースアプリ",
     "lead": "リリースビルドを公開しているオープンソースのアプリと CLI。システムと棚で絞り込めます。「ダウンロード」から最新リリースへ直接移動します。",
     "filters": "絞り込み",
@@ -754,7 +754,7 @@
     "details": "詳細",
     "pick": "おすすめ",
     "crumbLabel": "パンくずリスト",
-    "crumbApps": "アプリ",
+    "crumbApps": "オープンソースアプリ",
     "kindLabel": "形態"
   },
   "pick": {

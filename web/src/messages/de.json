@@ -173,7 +173,7 @@
     "hotNew": "NEU",
     "hotColGain": "Zuwachs",
     "hotEmpty": "Derzeit keine Aufsteiger-Daten",
-    "navApps": "Apps",
+    "navApps": "Open-Source-Apps",
     "appsTitle": "Open-Source-Apps",
     "appsSubtitle": "Ladbare Apps & CLIs, nach deinem OS gefiltert",
     "appsAll": "Alle",
@@ -717,7 +717,7 @@
     "rel_other": "Basiert auf {base}"
   },
   "appsPage": {
-    "kicker": "Apps · Open-Source-Software zum Installieren",
+    "kicker": "Open-Source-Apps · zum Installieren",
     "title": "Open-Source-Apps",
     "lead": "Open-Source-Apps und CLIs mit Release-Builds. Nach System und Regal filtern; „Download“ führt direkt zum neuesten Release.",
     "filters": "Filter",
@@ -754,7 +754,7 @@
     "details": "Details",
     "pick": "Tipp",
     "crumbLabel": "Brotkrümelnavigation",
-    "crumbApps": "Apps",
+    "crumbApps": "Open-Source-Apps",
     "kindLabel": "Form"
   },
   "pick": {

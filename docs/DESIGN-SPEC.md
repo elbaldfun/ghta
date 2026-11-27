@@ -47,7 +47,7 @@ iOS / Android 商店榜在"应用"入口下以平台切换呈现，而不是再�
 |---|---|---|
 | `/{source}` | `/github` `/chrome` | 源首页 = 该源的"今天在涨 + 总榜" |
 | `/{source}/c/{path}` | `/github/c/ai/agents` | 分类落地页，静态可索引 |
-| `/ios/{country}/{chart}/{genre?}` | `/ios/us/free` `/ios/jp/grossing/games` | App Store 榜单：国家 × 榜型（free / paid / grossing）× Apple 的 25 个分类，静态可索引；`/ios` 按记住的国家或界面语言临时跳转 |
+| `/ios/{country}/{chart}/{genre?}` | `/ios/us/free` `/ios/jp/grossing/games` | App Store 榜单：国家 × 榜型（free / paid / grossing）× Apple 的 25 个分类，静态可索引；分类平铺成一排标签（2026-11-26 负责人定），按当前国家、当前榜型的总榜里各分类的应用数从多到少排、标签上带数量，总榜里没有的分类排最后、不带数量；手机宽度一行横滑，lg 起换行；`/ios` 按记住的国家或界面语言临时跳转 |
 | `/ios/{country}/new` | `/ios/us/new` | App Store 新上架：StarRank 合成的视图（近 90 天首发、今天在该国任一榜上，按最好名次排），不是 Apple 原榜，页面上写明；不分分类，没有 genre 段；在榜型切换里排在 free / paid / grossing 后面 |
 | `/{source}/l/{lang}` | `/github/l/rust` | 仅 GitHub |
 | `/{source}/t/{facet}` | `/github/t/cli` | 形态 |

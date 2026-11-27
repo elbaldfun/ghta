@@ -173,7 +173,7 @@
     "hotNew": "NEW",
     "hotColGain": "Gained",
     "hotEmpty": "No breakout data right now",
-    "navApps": "Apps",
+    "navApps": "Open-source apps",
     "appsTitle": "Open-Source Apps",
     "appsSubtitle": "Downloadable apps & CLIs, filtered by your OS",
     "appsAll": "All",
@@ -717,7 +717,7 @@
     "rel_other": "Based on {base}"
   },
   "appsPage": {
-    "kicker": "Apps · open-source software you can install",
+    "kicker": "Open-source apps · ready to install",
     "title": "Open-source apps",
     "lead": "Open-source apps and CLIs that ship release builds. Filter by system and shelf; Download goes straight to the latest release.",
     "filters": "Filters",
@@ -754,7 +754,7 @@
     "details": "Details",
     "pick": "Pick",
     "crumbLabel": "Breadcrumb",
-    "crumbApps": "Apps",
+    "crumbApps": "Open-source apps",
     "kindLabel": "Form"
   },
   "pick": {

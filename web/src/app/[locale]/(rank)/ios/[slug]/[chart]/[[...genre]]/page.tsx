@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { PageShell } from '@/components/rank/PageShell';
-import { Dropdown, Segmented } from '@/components/ui';
+import { Segmented } from '@/components/ui';
 import { ChartRow } from '@/components/ios/ChartRow';
+import { GenreChips } from '@/components/ios/GenreChips';
 import { RememberCountry } from '@/components/ios/RememberCountry';
 import {
   COUNTRY_COOKIE,
@@ -58,9 +59,21 @@ export default async function IOSChartPage({ params }: { params: Params }) {
   const { locale } = params;
   setRequestLocale(locale);
   const t = await getTranslations('ios');
-  const res = await getChart(c.country, c.chart, c.genre);
+  // The overall chart counts each genre's apps for the chips; a genre page
+  // reads it too (cached, the same fetch every genre page of this chart makes).
+  const [res, overall] = await Promise.all([
+    getChart(c.country, c.chart, c.genre),
+    c.genre === 'all' ? null : getChart(c.country, c.chart),
+  ]);
   const page = res.data;
   const genreName = (g: string) => (g === 'all' ? t('genreAll') : t(`g_${g}` as never));
+  const counts = new Map<string, number>();
+  for (const e of (overall ?? res).data?.entries ?? []) {
+    if (e.app.genre) counts.set(e.app.genre, (counts.get(e.app.genre) ?? 0) + 1);
+  }
+  // Busiest first; ties, and the genres with no app on the overall chart,
+  // keep Apple's order, the empty ones last.
+  const genres = IOS_GENRES.map((g, i) => ({ g, i, n: counts.get(g) ?? 0 })).sort((x, y) => y.n - x.n || x.i - y.i);
   const chartName = t(`chart_${c.chart}`);
   const country = countryName(c.country, locale);
   const heading = c.genre === 'all' ? chartName : `${genreName(c.genre)} · ${chartName}`;
@@ -89,33 +102,34 @@ export default async function IOSChartPage({ params }: { params: Params }) {
             active: k === c.country,
           }))}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <Segmented
-            label={t('chartLabel')}
-            items={[
-              ...IOS_CHARTS.map((k) => ({
-                key: k,
-                label: t(`chart_${k}`),
-                href: chartPath(c.country, k, c.genre),
-                active: k === c.chart,
-              })),
-              // StarRank's own view, one per storefront: it drops the genre.
-              { key: 'new', label: t('chart_new'), href: newPath(c.country) },
-            ]}
-          />
-          <Dropdown
-            label={genreName(c.genre)}
-            active={c.genre !== 'all'}
-            align="right"
-            items={['all', ...IOS_GENRES].map((g) => ({
-              key: g,
-              label: genreName(g),
-              href: chartPath(c.country, c.chart, g),
-              active: g === c.genre,
-            }))}
-          />
-        </div>
+        <Segmented
+          label={t('chartLabel')}
+          items={[
+            ...IOS_CHARTS.map((k) => ({
+              key: k,
+              label: t(`chart_${k}`),
+              href: chartPath(c.country, k, c.genre),
+              active: k === c.chart,
+            })),
+            // StarRank's own view, one per storefront: it drops the genre.
+            { key: 'new', label: t('chart_new'), href: newPath(c.country) },
+          ]}
+        />
       </section>
+
+      <GenreChips
+        label={t('genreLabel')}
+        items={[
+          { key: 'all', label: t('genreAll'), count: null, href: chartPath(c.country, c.chart), active: c.genre === 'all' },
+          ...genres.map(({ g, n }) => ({
+            key: g,
+            label: genreName(g),
+            count: n,
+            href: chartPath(c.country, c.chart, g),
+            active: g === c.genre,
+          })),
+        ]}
+      />
 
       {!page ? (
         <p className="py-10 text-center text-sr-body text-ink-3">{res.error === 'backend HTTP 404' ? t('empty') : t('loadError')}</p>

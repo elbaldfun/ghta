@@ -173,7 +173,7 @@
     "hotNew": "新",
     "hotColGain": "新增",
     "hotEmpty": "暂无爆款数据",
-    "navApps": "应用",
+    "navApps": "开源应用",
     "appsTitle": "开源应用",
     "appsSubtitle": "可下载的应用与命令行工具，按你的系统筛选",
     "appsAll": "全部",
@@ -717,7 +717,7 @@
     "rel_other": "基于 {base}"
   },
   "appsPage": {
-    "kicker": "应用 · 可直接下载安装的开源软件",
+    "kicker": "开源应用 · 可直接下载安装",
     "title": "开源应用",
     "lead": "有发版安装包的开源应用和命令行工具。按系统和货架筛选，点「下载」直接去最新发版。",
     "filters": "筛选",
@@ -754,7 +754,7 @@
     "details": "详情",
     "pick": "首选",
     "crumbLabel": "位置",
-    "crumbApps": "应用",
+    "crumbApps": "开源应用",
     "kindLabel": "形态"
   },
   "pick": {
