@@ -173,7 +173,7 @@
     "hotNew": "NOUV",
     "hotColGain": "Gain",
     "hotEmpty": "Aucune donnée pour le moment",
-    "navApps": "Apps",
+    "navApps": "Open source",
     "appsTitle": "Applications open-source",
     "appsSubtitle": "Applis & CLIs téléchargeables, filtrées par OS",
     "appsAll": "Toutes",
@@ -717,7 +717,7 @@
     "rel_other": "Basé sur {base}"
   },
   "appsPage": {
-    "kicker": "Apps · logiciels open source à installer",
+    "kicker": "Apps open source · prêtes à installer",
     "title": "Apps open source",
     "lead": "Apps et CLI open source qui publient des versions. Filtrez par système et par rayon ; « Télécharger » mène directement à la dernière version.",
     "filters": "Filtres",
@@ -754,7 +754,7 @@
     "details": "Détails",
     "pick": "Choix",
     "crumbLabel": "Fil d’Ariane",
-    "crumbApps": "Applications",
+    "crumbApps": "Apps open source",
     "kindLabel": "Type"
   },
   "pick": {
