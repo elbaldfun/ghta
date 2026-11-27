@@ -16,6 +16,7 @@ import {
   isChart,
   isCountry,
   isGenre,
+  newPath,
   type IOSChart,
   type IOSCountry,
 } from '@/lib/api/ios';
@@ -91,12 +92,16 @@ export default async function IOSChartPage({ params }: { params: Params }) {
         <div className="flex flex-wrap items-center gap-2">
           <Segmented
             label={t('chartLabel')}
-            items={IOS_CHARTS.map((k) => ({
-              key: k,
-              label: t(`chart_${k}`),
-              href: chartPath(c.country, k, c.genre),
-              active: k === c.chart,
-            }))}
+            items={[
+              ...IOS_CHARTS.map((k) => ({
+                key: k,
+                label: t(`chart_${k}`),
+                href: chartPath(c.country, k, c.genre),
+                active: k === c.chart,
+              })),
+              // StarRank's own view, one per storefront: it drops the genre.
+              { key: 'new', label: t('chart_new'), href: newPath(c.country) },
+            ]}
           />
           <Dropdown
             label={genreName(c.genre)}

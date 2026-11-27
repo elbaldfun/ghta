@@ -782,6 +782,7 @@
     "chart_free": "Grátis",
     "chart_paid": "Pagos",
     "chart_grossing": "Maior faturamento",
+    "chart_new": "Lançamentos",
     "genreAll": "Todas as categorias",
     "pageTitle": "{genre} · {chart} na App Store de {country}",
     "pageDescription": "Os 100 apps de {genre} em {chart} na App Store de {country}, na ordem da Apple, atualizados diariamente com mudanças de posição e avaliações.",
@@ -840,6 +841,13 @@
     "g_sports": "Esportes",
     "g_travel": "Viagens",
     "g_utilities": "Utilidades",
-    "g_weather": "Tempo"
+    "g_weather": "Tempo",
+    "newPageTitle": "Apps novos nas paradas da App Store ({country})",
+    "newPageDescription": "Apps lançados nos últimos 90 dias que estão hoje nas paradas da App Store ({country}), ordenados pela melhor posição. Atualizado diariamente.",
+    "newLead": "Visão montada pelo StarRank, não é uma parada da Apple: apps lançados pela primeira vez nos últimos {days} dias que estão hoje em alguma parada deste país, ordenados pela melhor posição. Cada linha mostra de qual parada vem essa posição.",
+    "newEmpty": "Ainda não há lista de lançamentos para este país. Ela é montada todo dia depois da atualização das paradas.",
+    "newCount": "{n} apps das paradas de hoje foram lançados nos últimos {days} dias",
+    "newOnCharts": "em {n} paradas",
+    "newReleased": "Lançado em {day}"
   }
 }

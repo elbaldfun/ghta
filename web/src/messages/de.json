@@ -782,6 +782,7 @@
     "chart_free": "Kostenlos",
     "chart_paid": "Kostenpflichtig",
     "chart_grossing": "Umsatzstärkste",
+    "chart_new": "Neu erschienen",
     "genreAll": "Alle Kategorien",
     "pageTitle": "{genre} · {chart} im App Store ({country})",
     "pageDescription": "Die Top 100 {genre}-Apps ({chart}) im App Store {country}, in Apples Reihenfolge, täglich aktualisiert mit Rangänderungen und Bewertungen.",
@@ -840,6 +841,13 @@
     "g_sports": "Sport",
     "g_travel": "Reisen",
     "g_utilities": "Dienstprogramme",
-    "g_weather": "Wetter"
+    "g_weather": "Wetter",
+    "newPageTitle": "Neue Apps in den App-Store-Charts ({country})",
+    "newPageDescription": "Apps, die in den letzten 90 Tagen erschienen sind und heute in den App-Store-Charts ({country}) stehen, nach bester Platzierung sortiert. Täglich aktualisiert.",
+    "newLead": "Von StarRank zusammengestellt, keine Apple-Chart: Apps, die in den letzten {days} Tagen erstmals erschienen sind und heute in einer Chart dieses Stores stehen, nach bester Platzierung sortiert. Jede Zeile nennt die Chart dieser Platzierung.",
+    "newEmpty": "Für diesen Store gibt es noch keine Liste der Neuerscheinungen. Sie wird täglich nach dem Chart-Update erstellt.",
+    "newCount": "{n} Apps in den heutigen Charts sind in den letzten {days} Tagen erschienen",
+    "newOnCharts": "in {n} Charts",
+    "newReleased": "Erschienen am {day}"
   }
 }

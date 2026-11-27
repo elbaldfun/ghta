@@ -46,6 +46,12 @@ export function chartPath(country: string, chart: string, genre?: string): strin
   return `/ios/${country}/${chart}${genre && genre !== 'all' ? `/${genre}` : ''}`;
 }
 
+/**
+ * The new-apps view of a storefront: /ios/us/new. Not an Apple chart, so not
+ * in IOS_CHARTS, and it has no genre segment.
+ */
+export const newPath = (country: string) => `/ios/${country}/new`;
+
 export const appPath = (id: string) => `/ios/id${id}`;
 
 /** The app's listing on Apple's site, in its home storefront. */
@@ -112,6 +118,29 @@ export interface IOSDetail extends IOSApp {
   fetchedAt: string;
 }
 
+export interface NewEntry {
+  /** Place in this StarRank view, not an Apple rank. */
+  rank: number;
+  /** The app's best place today among the storefront's charts. */
+  best: ChartPlace;
+  /** How many of the storefront's charts it is on today. */
+  charts: number;
+  releasedAt: string;
+  app: IOSApp;
+}
+
+export interface NewPage {
+  country: IOSCountry;
+  day: string;
+  /** Always true: compiled by StarRank from Apple's charts, not one of them. */
+  synthetic: boolean;
+  sort: string;
+  /** How recent a first release must be to count as new. */
+  windowDays: number;
+  total: number;
+  entries: NewEntry[];
+}
+
 export interface IOSPoint {
   t: number;
   v: number;
@@ -120,6 +149,13 @@ export interface IOSPoint {
 export async function getChart(country: string, chart: string, genre = 'all'): Promise<Fetched<ChartPage>> {
   const q = genre && genre !== 'all' ? `?genre=${encodeURIComponent(genre)}` : '';
   const res = await apiGet<{ data: ChartPage }>(`/ios/charts/${country}/${chart}${q}`, 3600);
+  if (res.error !== null) return res;
+  return { data: { ...res.data.data, entries: res.data.data.entries ?? [] }, error: null };
+}
+
+/** A storefront's new apps; 404 until the ios-new job has built its first board. */
+export async function getNew(country: string, limit = 100): Promise<Fetched<NewPage>> {
+  const res = await apiGet<{ data: NewPage }>(`/ios/new/${country}?limit=${limit}`, 3600);
   if (res.error !== null) return res;
   return { data: { ...res.data.data, entries: res.data.data.entries ?? [] }, error: null };
 }

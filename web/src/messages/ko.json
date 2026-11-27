@@ -782,6 +782,7 @@
     "chart_free": "무료",
     "chart_paid": "유료",
     "chart_grossing": "최고 매출",
+    "chart_new": "신규 출시",
     "genreAll": "모든 카테고리",
     "pageTitle": "{country} App Store {genre} {chart} 차트",
     "pageDescription": "{country} App Store {genre} {chart} 차트 상위 100개. Apple 공식 순위로 매일 업데이트, 순위 변동과 평점 포함.",
@@ -840,6 +841,13 @@
     "g_sports": "스포츠",
     "g_travel": "여행",
     "g_utilities": "유틸리티",
-    "g_weather": "날씨"
+    "g_weather": "날씨",
+    "newPageTitle": "{country} App Store 신규 앱",
+    "newPageDescription": "최근 90일 안에 출시되어 오늘 {country} App Store 차트에 오른 앱을 최고 순위순으로 보여 줍니다. 매일 업데이트됩니다.",
+    "newLead": "StarRank가 Apple 차트를 바탕으로 만든 보기이며 Apple 공식 차트가 아닙니다. 최근 {days}일 안에 처음 출시되어 오늘 이 국가의 차트 중 하나에 오른 앱을 최고 순위순으로 정렬하고, 각 행에 그 순위가 나온 차트를 표시합니다.",
+    "newEmpty": "이 국가의 신규 출시 목록이 아직 없습니다. 매일 차트가 갱신된 뒤 만들어집니다.",
+    "newCount": "오늘 차트에 오른 앱 중 {n}개가 최근 {days}일 안에 출시되었습니다",
+    "newOnCharts": "차트 {n}개",
+    "newReleased": "{day} 출시"
   }
 }

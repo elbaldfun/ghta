@@ -782,6 +782,7 @@
     "chart_free": "Gratuites",
     "chart_paid": "Payantes",
     "chart_grossing": "Les plus rentables",
+    "chart_new": "Nouveautés",
     "genreAll": "Toutes les catégories",
     "pageTitle": "{genre} · {chart} sur l'App Store ({country})",
     "pageDescription": "Les 100 premières apps {genre} ({chart}) sur l'App Store {country}, dans l'ordre d'Apple, mises à jour chaque jour avec l'évolution des rangs et les notes.",
@@ -840,6 +841,13 @@
     "g_sports": "Sports",
     "g_travel": "Voyages",
     "g_utilities": "Utilitaires",
-    "g_weather": "Météo"
+    "g_weather": "Météo",
+    "newPageTitle": "Nouvelles apps dans les classements de l'App Store ({country})",
+    "newPageDescription": "Les apps sorties ces 90 derniers jours qui figurent aujourd'hui dans les classements de l'App Store ({country}), triées par meilleur rang. Mis à jour chaque jour.",
+    "newLead": "Vue établie par StarRank, pas un classement d'Apple : les apps sorties pour la première fois ces {days} derniers jours et présentes aujourd'hui dans un classement de ce pays, triées par meilleur rang. Chaque ligne indique le classement d'où vient ce rang.",
+    "newEmpty": "Pas encore de liste des nouveautés pour ce pays. Elle est établie chaque jour après la mise à jour des classements.",
+    "newCount": "{n} apps des classements du jour sont sorties ces {days} derniers jours",
+    "newOnCharts": "dans {n} classements",
+    "newReleased": "Sortie le {day}"
   }
 }

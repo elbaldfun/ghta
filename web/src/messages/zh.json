@@ -782,6 +782,7 @@
     "chart_free": "免费榜",
     "chart_paid": "付费榜",
     "chart_grossing": "畅销榜",
+    "chart_new": "新上架",
     "genreAll": "全部分类",
     "pageTitle": "{country} App Store {genre}{chart}",
     "pageDescription": "{country} App Store {genre}{chart}前 100 名，按 Apple 官方名次排列，每天更新，附名次变化和评分。",
@@ -840,6 +841,13 @@
     "g_sports": "体育",
     "g_travel": "旅游",
     "g_utilities": "工具",
-    "g_weather": "天气"
+    "g_weather": "天气",
+    "newPageTitle": "{country} App Store 新上架应用",
+    "newPageDescription": "近 90 天首发、今天登上{country} App Store 榜单的应用，按最好名次排序，每天更新。",
+    "newLead": "这是 StarRank 根据 Apple 各榜单合成的视图，不是 Apple 原榜：收录近 {days} 天首发、今天上了这个国家任一榜单的应用，按最好名次排序，每行注明名次来自哪张榜。",
+    "newEmpty": "这个国家的新上架榜还没生成，每天榜单更新后生成。",
+    "newCount": "今天在榜的应用里，有 {n} 个是近 {days} 天首发的",
+    "newOnCharts": "上了 {n} 张榜",
+    "newReleased": "首发 {day}"
   }
 }
