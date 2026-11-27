@@ -5,7 +5,7 @@ import { listPosts } from '@/lib/blog';
 import { FILTER_LANGS } from '@/lib/rank-data';
 import { boardPath } from '@/lib/board-url';
 import { SITE_URL } from '@/lib/seo';
-import { IOS_CHARTS, IOS_COUNTRIES, IOS_GENRES, appPath, chartPath, getChart } from '@/lib/api/ios';
+import { IOS_CHARTS, IOS_COUNTRIES, IOS_GENRES, appPath, chartPath, getChart, newPath } from '@/lib/api/ios';
 
 type Entry = MetadataRoute.Sitemap[number];
 
@@ -59,10 +59,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // App Store: every chart page (5 storefronts × 3 charts × overall + 25
-  // genres), and the apps on the overall charts. Other app pages are left to
-  // links; the ones off every chart for a week are noindex anyway.
+  // genres), each storefront's new-apps view, and the apps on the overall
+  // charts. Other app pages are left to links; the ones off every chart for
+  // a week are noindex anyway.
   const iosApps = new Set<string>();
   for (const country of IOS_COUNTRIES) {
+    entries.push(...everyLocale(newPath(country), { changeFrequency: 'daily' }));
     for (const chart of IOS_CHARTS) {
       for (const genre of ['all', ...IOS_GENRES]) {
         entries.push(...everyLocale(chartPath(country, chart, genre), { changeFrequency: 'daily' }));
