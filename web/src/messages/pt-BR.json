@@ -173,7 +173,8 @@
     "hotNew": "NOVO",
     "hotColGain": "Ganho",
     "hotEmpty": "Sem dados de alta no momento",
-    "navApps": "Apps",
+    "navApps": "Apps livres",
+    "navAppsShort": "Apps",
     "appsTitle": "Apps de código aberto",
     "appsSubtitle": "Apps e CLIs baixáveis, filtrados pelo seu SO",
     "appsAll": "Todos",
@@ -717,7 +718,7 @@
     "rel_other": "Baseado em {base}"
   },
   "appsPage": {
-    "kicker": "Apps · software de código aberto para instalar",
+    "kicker": "Apps de código aberto · prontos para instalar",
     "title": "Apps de código aberto",
     "lead": "Apps e CLIs de código aberto que publicam versões. Filtre por sistema e prateleira; “Baixar” leva direto à versão mais recente.",
     "filters": "Filtros",
@@ -754,7 +755,7 @@
     "details": "Detalhes",
     "pick": "Escolha",
     "crumbLabel": "Trilha de navegação",
-    "crumbApps": "Apps",
+    "crumbApps": "Apps de código aberto",
     "kindLabel": "Tipo"
   },
   "pick": {
