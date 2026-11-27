@@ -32,7 +32,7 @@ export function RankHeader() {
           <NavLink href="/" label={t('navToday')} />
           <NavLink href="/ai" label={t('navAi')} alsoOn={['/ecosystem']} />
           <NavLink href="/github" label="GitHub" alsoOn={['/breakout', '/topics', '/map', '/repo']} />
-          <NavLink href="/apps" label={t('navApps')} alsoOn={['/alternatives']} />
+          <NavLink href="/apps" label={t('navApps')} short={t('navAppsShort')} alsoOn={['/alternatives']} />
           {/* A brand name, the same in every locale. */}
           <NavLink href="/ios" label="App Store" />
           <NavLink href="/models" label={t('navModels')} />
