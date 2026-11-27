@@ -782,6 +782,7 @@
     "chart_free": "Top Free",
     "chart_paid": "Top Paid",
     "chart_grossing": "Top Grossing",
+    "chart_new": "New releases",
     "genreAll": "All categories",
     "pageTitle": "{genre} {chart} on the {country} App Store",
     "pageDescription": "The top 100 {genre} apps in {chart} on the {country} App Store, in Apple's order, updated daily with rank changes and ratings.",
@@ -840,6 +841,13 @@
     "g_sports": "Sports",
     "g_travel": "Travel",
     "g_utilities": "Utilities",
-    "g_weather": "Weather"
+    "g_weather": "Weather",
+    "newPageTitle": "New apps on the {country} App Store charts",
+    "newPageDescription": "Apps first released in the last 90 days that are on the {country} App Store charts today, ordered by their best chart rank. Updated daily.",
+    "newLead": "Compiled by StarRank, not an Apple chart: apps first released in the last {days} days that are on any of this storefront's charts today, ordered by their best place. Each row says which chart that place is on.",
+    "newEmpty": "No new-releases list for this storefront yet. It is compiled daily after the charts update.",
+    "newCount": "{n} apps on today's charts were first released in the last {days} days",
+    "newOnCharts": "on {n} charts",
+    "newReleased": "Released {day}"
   }
 }

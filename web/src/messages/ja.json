@@ -782,6 +782,7 @@
     "chart_free": "無料",
     "chart_paid": "有料",
     "chart_grossing": "売上",
+    "chart_new": "新着",
     "genreAll": "すべてのカテゴリ",
     "pageTitle": "{country} App Store {genre} {chart}ランキング",
     "pageDescription": "{country} App Store の{genre}{chart}ランキング上位 100。Apple 公式の順位で毎日更新、順位変動と評価付き。",
@@ -840,6 +841,13 @@
     "g_sports": "スポーツ",
     "g_travel": "旅行",
     "g_utilities": "ユーティリティ",
-    "g_weather": "天気"
+    "g_weather": "天気",
+    "newPageTitle": "{country} App Store の新着アプリ",
+    "newPageDescription": "過去 90 日以内にリリースされ、今日 {country} の App Store ランキングに入っているアプリを最高順位順に表示。毎日更新。",
+    "newLead": "StarRank が Apple のランキングから作成した独自ビューで、Apple の公式ランキングではありません。過去 {days} 日以内に初リリースされ、今日この国のいずれかのランキングに入っているアプリを最高順位順に並べ、各行にその順位のランキングを示します。",
+    "newEmpty": "この国の新着リストはまだありません。ランキング更新後、毎日作成されます。",
+    "newCount": "今日ランクインしているアプリのうち {n} 件が過去 {days} 日以内のリリースです",
+    "newOnCharts": "{n} 個のランキングに掲載",
+    "newReleased": "{day} リリース"
   }
 }
